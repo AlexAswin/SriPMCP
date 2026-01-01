@@ -1,0 +1,43 @@
+.container {
+    height: 100vh;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    background-image: url('../../assets/Car_2.jpg');
+    background-size: cover;   
+    background-position: center; 
+    background-repeat: no-repeat;
+
+    mat-card {
+        width: 25%;
+        padding: 20px 20px;
+        min-height: 50%;
+        display: flex;
+        justify-content: space-around;
+        margin-right: 10%;
+        background-color: #f4bf5dc9;
+        
+        h2 {
+            width: 100%;
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+      
+            mat-form-field {
+                mat-label {
+
+                }
+                input {
+
+                } 
+            }
+            button {
+    
+            }
+        }
+    }
+}
+
+  
