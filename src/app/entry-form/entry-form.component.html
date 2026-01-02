@@ -1,0 +1,22 @@
+<div>
+    <h1>Customer Entry Form</h1>
+</div>
+
+<div class="search-row">
+    <h2 class="search-label">Vehicle Number</h2>
+  
+    <mat-form-field appearance="outline" class="search-input">
+      <input matInput placeholder="Enter Vehicle Number" />
+    </mat-form-field>
+  
+    <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary" (click)="checkExistingUser()">
+      
+    </app-button>
+  </div>
+
+  <mat-card class="alert-card" *ngIf="show" [ngClass]="type">
+    <mat-icon>{{ type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
+    <span class="message">{{ message }}</span>
+      <mat-icon (click)="close()">close</mat-icon>
+  </mat-card>
+  

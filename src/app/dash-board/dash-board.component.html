@@ -1,1 +1,21 @@
-<p>dash-board works!</p>
+<app-nav-bar></app-nav-bar>
+
+<mat-sidenav-container class="dashboard-container">
+  <mat-sidenav mode="side" opened class="side-nav">
+      <mat-nav-list>
+        <a mat-list-item>
+          <span>Monthly Customer</span>
+        </a>
+  
+        <a mat-list-item>
+          <span>Daily Customer</span>
+        </a>
+
+      </mat-nav-list>
+    </mat-sidenav>
+    <mat-sidenav-content>
+        <app-entry-form></app-entry-form>
+    </mat-sidenav-content>
+  
+</mat-sidenav-container>
+  

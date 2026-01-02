@@ -1,0 +1,11 @@
+mat-toolbar {
+    min-height: 120px;
+    background-color: #f3f2ee;
+    border-bottom: 2px solid black;
+    display: flex;
+    justify-content: space-around;
+
+    img {
+        max-width: 100px;
+    }
+}
