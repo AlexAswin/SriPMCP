@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat');
+
+body {
+    font-family: 'Montserrat';
+    
+}
+
+h1 {
+    width: 100%;
+    text-align: center;
+    padding: 20px 0px;
+    font-family: 'Montserrat';
+}
+
+.search-row {
+    min-height: 70px;
+    padding: 20px 0px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+
+    h2 {
+        margin-bottom: 0px;
+        font-family: 'Montserrat';
+
+    }
+
+    mat-form-field {
+        min-width: 30%;
+
+        .mat-mdc-form-field.mat-form-field-appearance-outline
+        .mat-mdc-form-field-subscript-wrapper {
+          display: none;
+        }
+    }
+}
+
+.alert-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin: 8px 0;
+    padding: 15px 50px;
+  }
+  
+  .alert-card .message {
+    flex: 1;
+  }
+  
+  .alert-card.success {
+    background-color: #e8f5e9; 
+    color: #2e7d32;         
+  }
