@@ -1,0 +1,149 @@
+
+
+<form [formGroup]="vehicleForm" (ngSubmit)="submitForm()" class="form-container">
+
+<mat-grid-list cols="2" rowHeight="350px">
+    <mat-grid-tile>
+        <div class="vehicleDetails">
+            <div>
+                <label>Vehicle Details</label>
+            </div>
+            <div>
+                <label>Vehicle Number</label>
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Vehicle Number</mat-label>
+                    <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
+                    <mat-error *ngIf="vehicleForm.get('vehicleNumber')?.hasError('required')">
+                        Vehicle number is required
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div>
+                <label>Vehicle Type</label>
+                <mat-form-field>
+                    <mat-label>Vehicle Type</mat-label>
+                    <mat-select formControlName="vehicleType">
+                        <mat-option *ngFor="let types of vehicleTypes" [value]="types">{{types}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div> 
+    </mat-grid-tile>
+
+    <mat-grid-tile>
+        <div class="customerDetails">
+            <div>
+                <label>Customer Details</label>
+            </div>
+            <div>
+                <label>Customer Name </label>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Customer Name</mat-label>
+                  <input matInput placeholder="Enter customer name" formControlName="customerName" />
+                  <mat-error *ngIf="vehicleForm.get('customerName')?.hasError('required')">
+                    Customer name is required
+                  </mat-error>
+                </mat-form-field>
+            </div>
+            <div>
+                <label>Customer Type</label>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Customer Type</mat-label>
+                  <mat-select formControlName="customerType" (selectionChange)="onCustomerTypeChange($event.value)">
+                    <mat-option *ngFor="let customer of customerTypes" [value]="customer">{{customer}}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+
+<mat-grid-list cols="1" rowHeight="350px" *ngIf="isDailyCustomer">
+
+    <mat-grid-tile>
+        <div class="billing">
+            <div>
+                <h2>Billing Details</h2>
+            </div>
+            <div class="billingDetails">
+                <div>
+                    <div>
+                        <label>Amount</label>
+                        <mat-form-field appearance="outline" class="full-width">
+                          <mat-label>Amount</mat-label>
+                          <input matInput placeholder="Enter customer name" formControlName="amount" readonly/>
+                        </mat-form-field>
+                    </div>
+                    <div>
+                        <label>From Date</label>
+                        <mat-form-field class="example-full-width">
+                            <mat-label>Choose a date</mat-label>
+                            <input matInput [matDatepicker]="picker">
+                            <mat-hint>MM/DD/YYYY</mat-hint>
+                            <mat-datepicker-toggle matIconSuffix [for]="picker">
+                              <mat-icon matDatepickerToggleIcon>calendar_month</mat-icon>
+                            </mat-datepicker-toggle>
+                            <mat-datepicker #picker></mat-datepicker>
+                          </mat-form-field>
+                    </div>
+                    
+                </div>
+                <div> 
+                    <div>
+                        <label>Bill No</label>
+                        <mat-form-field appearance="outline" class="full-width">
+                          <mat-label>Bill No</mat-label>
+                          <input matInput placeholder="ABCD 1234" formControlName="billNumber" />
+                          <mat-error *ngIf="vehicleForm.get('vehicleNumber')?.hasError('required')">
+                            Bill number is required
+                          </mat-error>
+                        </mat-form-field>
+                    </div>   
+                   
+                    <div>
+                        <label id="example-radio-group-label">Status</label>
+                        <mat-radio-group
+                            aria-labelledby="example-radio-group-label"
+                            class="example-radio-group"
+                            formControlName="status">
+                            @for (status of status; track status) {
+                            
+                            <mat-radio-button class="example-radio-button" [value]="status">{{status}}</mat-radio-button>
+                            }
+                        </mat-radio-group>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+
+<mat-grid-list cols="1" rowHeight="100px" *ngIf="isDailyCustomer">
+    <mat-grid-tile >
+        <div class="noteArea">
+            <h3 id="example-radio-group-label">Note</h3>
+              <mat-form-field class="example-full-width">
+                <mat-label>Leave a comment</mat-label>
+                <textarea matInput formControlName="note"></textarea>
+              </mat-form-field>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+
+<mat-grid-list cols="1" rowHeight="100px">
+    <mat-grid-tile >
+        <div class="formActionButttonGrp">
+            <app-button label="Save"  variant="primary">
+                Save
+              </app-button>
+        
+              <app-button label="Cancel"  variant="secondary">
+                Cancel
+              </app-button>
+        </div>
+       
+    </mat-grid-tile>   
+</mat-grid-list>
+
+</form>
+  

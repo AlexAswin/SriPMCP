@@ -4,11 +4,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { ButtonComponent } from '../Common/button/button.component';
 import { CommonModule } from '@angular/common';
+import { NewCustomerEntryFormComponent } from '../new-customer-entry-form/new-customer-entry-form.component';
 
 @Component({
   selector: 'app-entry-form',
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, MatIconModule, ButtonComponent, CommonModule],
+  imports: [MatFormFieldModule, MatInputModule, MatIconModule, ButtonComponent, CommonModule, NewCustomerEntryFormComponent],
   templateUrl: './entry-form.component.html',
   styleUrl: './entry-form.component.scss'
 })
