@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
@@ -24,13 +24,22 @@ export class NewCustomerEntryFormComponent {
   vehicleForm: FormGroup;
   vehicleTypes = ['Car', '2-Wheeler', '4-Wheeler', 'Lorry']
   customerTypes = ['Daily', 'Monthly'];
-  status = ['Paid', 'Unpaid']
+  status = ['Paid', 'Unpaid'];
+  advanceStatus = ['Yes', 'No'];
+
+  monthlyStatus = ['Active', 'InActive']
   pricing: any = {
     Daily: {
       Car: 1000,
       '2-Wheeler': 2000,
       '4-Wheeler': 3000,
       Lorry: 4000
+    },
+    Monthly: {
+      Car: 5000,
+      '2-Wheeler': 7000,
+      '4-Wheeler': 9000,
+      Lorry: 10000
     }
   };
 
@@ -45,15 +54,29 @@ export class NewCustomerEntryFormComponent {
       vehicleType: ['', Validators.required],
       customerType: ['', Validators.required],
       amount: [{ value: '', disabled: false }],
-      billNumber: ['', Validators.required],
-      status: ['Unpaid', Validators.required],
-      address: [''],
+      advance: [''],
+      billNumber: ['', this.billNumberRequiredIfDaily()],
+      status: ['Unpaid'],
+      monthlyStatus: ['Active', Validators.required],
       note: [''],
 
     });
     this.vehicleForm.valueChanges.subscribe(values => {
       this.calculateAmount(values.customerType, values.vehicleType);
     });
+  }
+
+  billNumberRequiredIfDaily(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.parent) return null; 
+      const customerType = control.parent.get('customerType')?.value;
+      const billNumber = control.value;
+  
+      if (customerType === 'Daily' && (!billNumber || billNumber.trim() === '')) {
+        return { requiredIfDaily: true };
+      }
+      return null;
+    };
   }
 
   onCustomerTypeChange(value: string) {
@@ -76,7 +99,17 @@ export class NewCustomerEntryFormComponent {
 
   submitForm() {
     if (this.vehicleForm.valid) {
-      console.log(this.vehicleForm.value);
+
+      const payload = { ...this.vehicleForm.value };
+
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === '' || payload[key] == null) {
+          delete payload[key];
+        }
+      });
+
+      console.log(payload);
+
     }
   }
 }
