@@ -58,7 +58,7 @@
     </mat-grid-tile>
 </mat-grid-list>
 
-<mat-grid-list cols="1" rowHeight="350px" *ngIf="isDailyCustomer">
+<mat-grid-list cols="1" rowHeight="350px" *ngIf="isDailyCustomer && vehicleForm.get('vehicleType')?.value">
 
     <mat-grid-tile>
         <div class="billing">
@@ -78,7 +78,7 @@
                         <label>From Date</label>
                         <mat-form-field class="example-full-width">
                             <mat-label>Choose a date</mat-label>
-                            <input matInput [matDatepicker]="picker">
+                            <input matInput [matDatepicker]="picker" formControlName="fromDateDaily">
                             <mat-hint>MM/DD/YYYY</mat-hint>
                             <mat-datepicker-toggle matIconSuffix [for]="picker">
                               <mat-icon matDatepickerToggleIcon>calendar_month</mat-icon>
@@ -118,7 +118,7 @@
     </mat-grid-tile>
 </mat-grid-list>
 
-<mat-grid-list cols="1" rowHeight="350px" *ngIf="isMonthlyCustomer">
+<mat-grid-list cols="1" rowHeight="350px" *ngIf="isMonthlyCustomer && vehicleForm.get('vehicleType')?.value">
 
     <mat-grid-tile>
         <div class="billing">
@@ -138,7 +138,7 @@
                         <label>From Date</label>
                         <mat-form-field class="example-full-width">
                             <mat-label>Choose a date</mat-label>
-                            <input matInput [matDatepicker]="picker">
+                            <input matInput [matDatepicker]="picker" formControlName="fromDateMonthly">
                             <mat-hint>MM/DD/YYYY</mat-hint>
                             <mat-datepicker-toggle matIconSuffix [for]="picker">
                               <mat-icon matDatepickerToggleIcon>calendar_month</mat-icon>
@@ -180,7 +180,7 @@
     </mat-grid-tile>
 </mat-grid-list>
 
-<mat-grid-list cols="1" rowHeight="100px" *ngIf="isDailyCustomer || isMonthlyCustomer">
+<mat-grid-list cols="1" rowHeight="100px" *ngIf="(isDailyCustomer || isMonthlyCustomer) && vehicleForm.get('vehicleType')?.value">
     <mat-grid-tile >
         <div class="noteArea">
             <h3 id="example-radio-group-label">Note</h3>
@@ -199,7 +199,7 @@
                 Save
               </app-button>
         
-              <app-button label="Cancel"  variant="secondary">
+              <app-button label="Cancel"  variant="secondary" (clicked)="cancelEntry()">
                 Cancel
               </app-button>
         </div>
