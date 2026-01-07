@@ -1,0 +1,76 @@
+.vehicle-form {
+  max-width: 80%;
+  margin: 0 auto;
+  padding: 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* EACH ROW */
+.form-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+/* LABEL */
+.form-row label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #444;
+  text-align: right;
+  display: flex;
+  justify-content: flex-start;
+  font-size: medium;
+}
+
+/* INPUT / SELECT */
+.form-row input,
+.form-row select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  min-height: 40px;
+  font-size: medium;
+}
+
+.form-row input:focus,
+.form-row select:focus {
+  border-color: #1976d2;
+}
+
+.form-row input:disabled,
+.form-row select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* DAILY / MONTHLY SECTIONS */
+.daily-section,
+.monthly-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #ddd;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row label {
+    text-align: left;
+  }
+}

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -57,6 +57,9 @@ export class NewCustomerEntryFormComponent {
   isDailyCustomer: boolean = false;
   isMonthlyCustomer: boolean = false;
   selectedVehicleType: string = '';
+  selectedTime: string = '';
+
+  @Output() formClosed = new EventEmitter<void>();
 
   
 
@@ -67,16 +70,19 @@ export class NewCustomerEntryFormComponent {
     this.vehicleForm = this.fb.group({
       vehicleNumber: ['', Validators.required],
       customerName: ['', Validators.required],
+      phoneNumber: ['', Validators.required],
       vehicleType: ['', Validators.required],
       customerType: ['', Validators.required],
       amount: [{ value: '', disabled: false }],
       advance: [''],
       fromDateDaily: [null],
+      timeIn: [''],
       fromDateMonthly: [null],
       billNumber: ['', this.billNumberRequiredIfDaily()],
       status: ['Unpaid'],
       monthlyStatus: ['Active', Validators.required],
       note: [''],
+      address: ['']
     });
 
     this.vehicleForm.get('customerType')?.valueChanges.subscribe(type => {
@@ -86,6 +92,8 @@ export class NewCustomerEntryFormComponent {
       const monthlyStatusCtrl = this.vehicleForm.get('monthlyStatus');
       const fromDateMonthlyStatusCtrl = this.vehicleForm.get('fromDateMonthly');
       const fromDateDailyStatusCtrl = this.vehicleForm.get('fromDateDaily');
+      const timeInCtrl = this.vehicleForm.get('timeInCtrl');
+
 
     
       if (type === 'Monthly') {
@@ -95,6 +103,7 @@ export class NewCustomerEntryFormComponent {
         advanceCtrl?.enable({ emitEvent: false });
         fromDateMonthlyStatusCtrl?.enable({ emitEvent: false });
         fromDateDailyStatusCtrl?.disable({ emitEvent: false });
+        timeInCtrl?.disable({ emitEvent: false });
       }
     
       if (type === 'Daily') {
@@ -104,6 +113,7 @@ export class NewCustomerEntryFormComponent {
         billNumberCtrl?.enable({ emitEvent: false });
         fromDateMonthlyStatusCtrl?.disable({ emitEvent: false });
         fromDateDailyStatusCtrl?.enable({ emitEvent: false });
+        timeInCtrl?.enable({ emitEvent: false });
       }
     
       statusCtrl?.updateValueAndValidity({ emitEvent: false });
@@ -130,6 +140,25 @@ export class NewCustomerEntryFormComponent {
     };
   }
 
+  onDateChange(event: any) {
+    const selectedDate = event.target.value;
+  
+    if (!selectedDate) return;
+  
+    const time = new Date().toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    console.log(time);
+  
+    this.vehicleForm.patchValue({
+      timeIn: time
+    });
+  
+  }
+
   onCustomerTypeChange(value: string) {
     if (value === 'Daily') {
       this.isDailyCustomer = true;
@@ -145,31 +174,48 @@ export class NewCustomerEntryFormComponent {
     this.vehicleForm.get('amount')?.setValue(amount, { emitEvent: false });
   }
 
-  submitForm() {
-    if (this.vehicleForm.valid) {
-      const payload = { ...this.vehicleForm.value };
-
-      Object.keys(payload).forEach((key) => {
-        if (payload[key] === '' || payload[key] == null) {
-          delete payload[key];
-        }
-      });
-
-      console.log(payload);
-
-      this.newCustomerEntry
-        .addNewCustomerEntry(payload)
-        .then(() => {
-          console.log('Customer Details saved successfully');
-          this.vehicleForm.reset();
-        })
-        .catch((error) => {
-          console.error('Error saving Customer Details:', error);
-        });
-    }
+  private normalizeVehicleNumber(value: string): string {
+    return value
+      .toUpperCase()
+      .replace(/\s+/g, '')
+      .trim();
   }
+
+  submitForm() {
+    if (this.vehicleForm.invalid) {
+      this.vehicleForm.markAllAsTouched();
+      return;
+    }
+
+    const payload: any = { ...this.vehicleForm.value };
+  
+    if (payload.vehicleNumber) {
+      payload.vehicleNumber = this.normalizeVehicleNumber(payload.vehicleNumber);
+    }
+  
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
+        delete payload[key];
+      }
+    });
+  
+    console.log('Final Payload:', payload);
+  
+    this.newCustomerEntry
+      .addNewCustomerEntry(payload)
+      .then(() => {
+        console.log('Customer Details saved successfully');
+        this.vehicleForm.reset();
+        this.formClosed.emit();
+      })
+      .catch(error => {
+        console.error('Error saving Customer Details:', error);
+      });
+  }
+  
 
   cancelEntry() {
     this.vehicleForm.reset();
+    this.formClosed.emit();
   }
 }

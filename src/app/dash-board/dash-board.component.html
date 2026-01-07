@@ -1,21 +1,22 @@
 <app-nav-bar></app-nav-bar>
+  
+<div class="layout">
 
-<mat-sidenav-container class="dashboard-container">
-  <mat-sidenav mode="side" opened class="side-nav">
-      <mat-nav-list>
-        <a mat-list-item>
-          <span>Monthly Customer</span>
-        </a>
-  
-        <a mat-list-item>
-          <span>Daily Customer</span>
-        </a>
+  <aside class="sidebar">
+    <mat-nav-list>
+      <a mat-list-item (click)="openMonthlyCustomerForm()">
+        Monthly Customer
+      </a>
 
-      </mat-nav-list>
-    </mat-sidenav>
-    <mat-sidenav-content>
-        <app-entry-form></app-entry-form>
-    </mat-sidenav-content>
-  
-</mat-sidenav-container>
-  
+      <a mat-list-item (click)="openDailyCustomerForm()">
+        Daily Customer
+      </a>
+    </mat-nav-list>
+  </aside>
+
+  <main class="content">
+    <app-entry-form *ngIf="!monthlyCustomerForm"></app-entry-form>
+    <app-monthly-customer-details *ngIf="monthlyCustomerForm"></app-monthly-customer-details>
+  </main>
+
+</div>

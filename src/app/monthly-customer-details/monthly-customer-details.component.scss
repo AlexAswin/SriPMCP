@@ -5,34 +5,14 @@ body {
     
 }
 
-
-
-.searchGroup {
-
-    h1 {
-      width: 100%;
-      text-align: center;
-      padding: 20px 0px;
-      font-family: 'Montserrat';
-      margin-top: 50px;
-
-  }
-
-  .info-card {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+h1 {
+    width: 100%;
+    text-align: center;
     padding: 20px 0px;
-    background-color: #f3f2ee;
+    font-family: 'Montserrat';
+}
 
-    p {
-      font-family: 'Montserrat';
-      margin-bottom: 0px;
-      font-size: medium;
-    }
-  }
-
-  .search-row {
+.search-row {
     min-height: 70px;
     padding: 20px 0px;
     display: flex;
@@ -54,19 +34,20 @@ body {
         }
     }
 }
-}
-
-
 
 .alert-card {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    gap: 60px;
-    // margin: 50px 0;
+    gap: 12px;
+    padding: 12px 16px;
+    margin: 8px 0;
     padding: 15px 50px;
   }
-    
+  
+  .alert-card .message {
+    flex: 1;
+  }
+  
   .alert-card.success {
     background-color: #e8f5e9; 
     color: #2e7d32;         
