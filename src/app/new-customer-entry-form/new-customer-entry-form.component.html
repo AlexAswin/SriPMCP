@@ -1,4 +1,4 @@
-
+<!-- 
 
 <form [formGroup]="vehicleForm" (ngSubmit)="submitForm()" class="form-container">
 
@@ -9,7 +9,7 @@
                 <label>Vehicle Details</label>
             </div>
             <div>
-                <label>Vehicle Number</label>
+                <label>1. Vehicle Number</label>
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Vehicle Number</mat-label>
                     <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
@@ -19,7 +19,7 @@
                 </mat-form-field>
             </div>
             <div>
-                <label>Vehicle Type</label>
+                <label>2. Vehicle Type</label>
                 <mat-form-field>
                     <mat-label>Vehicle Type</mat-label>
                     <mat-select formControlName="vehicleType">
@@ -36,7 +36,7 @@
                 <label>Customer Details</label>
             </div>
             <div>
-                <label>Customer Name </label>
+                <label>3. Customer Name </label>
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Customer Name</mat-label>
                   <input matInput placeholder="Enter customer name" formControlName="customerName" />
@@ -46,7 +46,7 @@
                 </mat-form-field>
             </div>
             <div>
-                <label>Customer Type</label>
+                <label>4. Customer Type</label>
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Customer Type</mat-label>
                   <mat-select formControlName="customerType" (selectionChange)="onCustomerTypeChange($event.value)">
@@ -54,11 +54,21 @@
                   </mat-select>
                 </mat-form-field>
             </div>
+            <div>
+                <label>5. Phone Number</label>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Phone Number</mat-label>
+                  <input matInput placeholder="Phone Number" formControlName="phoneNumber" />
+                  <mat-error *ngIf="vehicleForm.get('PhoneNumber')?.hasError('required')">
+                    Customer Phone Number is required
+                  </mat-error>
+                </mat-form-field>
+            </div>
         </div>
     </mat-grid-tile>
 </mat-grid-list>
 
-<mat-grid-list cols="1" rowHeight="350px" *ngIf="isDailyCustomer && vehicleForm.get('vehicleType')?.value">
+<mat-grid-list cols="1" rowHeight="500px" *ngIf="isDailyCustomer && vehicleForm.get('vehicleType')?.value">
 
     <mat-grid-tile>
         <div class="billing">
@@ -68,23 +78,19 @@
             <div class="billingDetails">
                 <div>
                     <div>
-                        <label>Amount</label>
+                        <label> 6. Amount</label>
                         <mat-form-field appearance="outline" class="full-width">
                           <mat-label>Amount</mat-label>
                           <input matInput placeholder="Enter customer name" formControlName="amount" readonly/>
                         </mat-form-field>
                     </div>
                     <div>
-                        <label>From Date</label>
-                        <mat-form-field class="example-full-width">
-                            <mat-label>Choose a date</mat-label>
-                            <input matInput [matDatepicker]="picker" formControlName="fromDateDaily">
-                            <mat-hint>MM/DD/YYYY</mat-hint>
-                            <mat-datepicker-toggle matIconSuffix [for]="picker">
-                              <mat-icon matDatepickerToggleIcon>calendar_month</mat-icon>
-                            </mat-datepicker-toggle>
-                            <mat-datepicker #picker></mat-datepicker>
-                          </mat-form-field>
+                        <mat-label>Choose a date</mat-label>
+                        <input class="datePicker" type="date" formControlName="fromDateDaily" (change)="onDateChange($event)">
+                    </div>
+                    <div>
+                        <mat-label>Time</mat-label>
+                        <input class="timeIn" placeholder="Enter Time" type="text" formControlName="timeIn">
                     </div>
                     
                 </div>
@@ -135,16 +141,8 @@
                         </mat-form-field>
                     </div>
                     <div>
-                        <label>From Date</label>
-                        <mat-form-field class="example-full-width">
-                            <mat-label>Choose a date</mat-label>
-                            <input matInput [matDatepicker]="picker" formControlName="fromDateMonthly">
-                            <mat-hint>MM/DD/YYYY</mat-hint>
-                            <mat-datepicker-toggle matIconSuffix [for]="picker">
-                              <mat-icon matDatepickerToggleIcon>calendar_month</mat-icon>
-                            </mat-datepicker-toggle>
-                            <mat-datepicker #picker></mat-datepicker>
-                          </mat-form-field>
+                          <mat-label>Choose a date</mat-label>
+                          <input class="datePicker" type="date" formControlName="fromDateMonthly">
                     </div>
                     
                 </div>
@@ -191,6 +189,17 @@
         </div>
     </mat-grid-tile>
 </mat-grid-list>
+<mat-grid-list cols="1" rowHeight="100px" *ngIf="(isDailyCustomer || isMonthlyCustomer) && vehicleForm.get('vehicleType')?.value">
+    <mat-grid-tile >
+        <div class="noteArea">
+            <h3 id="example-radio-group-label">Address</h3>
+              <mat-form-field class="example-full-width">
+                <mat-label>Address</mat-label>
+                <textarea matInput formControlName="address"></textarea>
+              </mat-form-field>
+        </div>
+    </mat-grid-tile>   
+</mat-grid-list>
 
 <mat-grid-list cols="1" rowHeight="100px">
     <mat-grid-tile >
@@ -208,4 +217,129 @@
 </mat-grid-list>
 
 </form>
+   -->
+   <form [formGroup]="vehicleForm" (ngSubmit)="submitForm()" class="form-container">
+
+    <!-- VEHICLE DETAILS -->
+    <div class="section vehicleDetails">
+      <h2>Vehicle Details</h2>
+      <div class="vehicle-info">
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Vehicle Number</mat-label>
+            <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
+            <mat-error *ngIf="vehicleForm.get('vehicleNumber')?.hasError('required')">
+              Vehicle number is required
+            </mat-error>
+          </mat-form-field>
+      
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Vehicle Type</mat-label>
+            <mat-select formControlName="vehicleType">
+              <mat-option *ngFor="let types of vehicleTypes" [value]="types">{{types}}</mat-option>
+            </mat-select>
+          </mat-form-field>
+      </div>
+    </div>
+  
+    <!-- CUSTOMER DETAILS -->
+    <div class="section customerDetails">
+      <h2>Customer Details</h2>
+
+      <div class="customer-info">
+
+        <div>
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Customer Name</mat-label>
+                <input matInput placeholder="Enter customer name" formControlName="customerName" />
+                <mat-error *ngIf="vehicleForm.get('customerName')?.hasError('required')">
+                  Customer name is required
+                </mat-error>
+              </mat-form-field>
+          
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Customer Type</mat-label>
+                <mat-select formControlName="customerType" (selectionChange)="onCustomerTypeChange($event.value)">
+                  <mat-option *ngFor="let customer of customerTypes" [value]="customer">{{customer}}</mat-option>
+                </mat-select>
+              </mat-form-field>
+        </div>
+
+        <div>
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Phone Number</mat-label>
+                <input matInput placeholder="Phone Number" formControlName="phoneNumber" />
+                <mat-error *ngIf="vehicleForm.get('phoneNumber')?.hasError('required')">
+                  Customer Phone Number is required
+                </mat-error>
+              </mat-form-field>
+          
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Address</mat-label>
+                <textarea matInput formControlName="address"></textarea>
+              </mat-form-field>
+        </div>  
+      </div>
+  
+
+    </div>
+  
+    <!-- BILLING SECTION -->
+<!-- BILLING SECTION -->
+<div class="section billing" *ngIf="(isDailyCustomer || isMonthlyCustomer) && vehicleForm.get('vehicleType')?.value">
+
+    <!-- LEFT COLUMN: Billing Details -->
+    <div class="billing-left">
+        <h2>Billing Details</h2>
+  
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Amount</mat-label>
+          <input matInput formControlName="amount" readonly />
+        </mat-form-field>
+    
+        <div class="inline-fields">
+          <input type="date" formControlName="fromDateDaily" *ngIf="isDailyCustomer" (change)="onDateChange($event)" />
+          <input type="date" formControlName="fromDateMonthly" *ngIf="isMonthlyCustomer" />
+          <input type="text" placeholder="Time" formControlName="timeIn" *ngIf="isDailyCustomer" />
+        </div>
+    
+        <mat-form-field appearance="outline" class="full-width" *ngIf="isDailyCustomer">
+          <mat-label>Bill No</mat-label>
+          <input matInput formControlName="billNumber" />
+        </mat-form-field>
+    
+        <mat-radio-group formControlName="status" *ngIf="isDailyCustomer">
+          <mat-label>Status</mat-label>
+          <mat-radio-button *ngFor="let status of status" [value]="status">{{status}}</mat-radio-button>
+        </mat-radio-group>
+    
+        <mat-radio-group formControlName="advance" *ngIf="isMonthlyCustomer">
+          <mat-label>Advance</mat-label>
+          <mat-radio-button *ngFor="let status of advanceStatus" [value]="status">{{status}}</mat-radio-button>
+        </mat-radio-group>
+    
+        <mat-radio-group formControlName="monthlyStatus" *ngIf="isMonthlyCustomer">
+          <mat-label>Status</mat-label>
+          <mat-radio-button *ngFor="let status of monthlyStatus" [value]="status">{{status}}</mat-radio-button>
+        </mat-radio-group>
+    </div>
+  
+    <!-- RIGHT COLUMN: Notes -->
+    <div class="billing-right">
+        <h3>Note</h3>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Leave a comment</mat-label>
+          <textarea matInput formControlName="note"></textarea>
+        </mat-form-field>
+    </div>
+  
+  </div>
+  
+    <div class="form-section form-actions">
+      <app-button label="Save" variant="primary" (clicked)="submitForm()"></app-button>
+      <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()"></app-button>
+    </div>
+  
+  </form>
+  
+  
   

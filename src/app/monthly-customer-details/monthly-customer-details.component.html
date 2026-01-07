@@ -1,0 +1,74 @@
+<div>
+    <h1>Monthly Customer Details</h1>
+</div>
+
+<div class="search-row">
+    <h2 class="search-label">Vehicle Number</h2>
+  
+    <mat-form-field appearance="outline" class="search-input">
+      <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr"/>
+    </mat-form-field>
+  
+    <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary" (click)="checkExistingUser()">
+      
+    </app-button>
+  </div>
+
+  <mat-card class="alert-card" *ngIf="show" [ngClass]="type">
+    <mat-icon>{{ type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
+    <span class="message">{{ message }}</span>
+      <mat-icon (click)="close()">close</mat-icon>
+  </mat-card>
+
+  <app-new-customer-entry-form></app-new-customer-entry-form>
+
+  <!-- <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
+    <mat-grid-list cols="2" rowHeight="350px">
+        <mat-grid-tile>
+            <div class="vehicleDetails">
+                <div>
+                    <label>Vehicle Details</label>
+                </div>
+                <div>
+                    <label>Vehicle Number</label>
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Vehicle Number</mat-label>
+                        <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
+                        <mat-error *ngIf="vehicleDetailsForm.get('vehicleNumber')?.hasError('required')">
+                            Vehicle number is required
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div>
+                    <label>Vehicle Type</label>
+                    <mat-form-field>
+                        <mat-label>Vehicle Type</mat-label>
+                        <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
+                        
+                    </mat-form-field>
+                </div>
+            </div> 
+        </mat-grid-tile>
+    
+        <mat-grid-tile>
+            <div class="customerDetails">
+                <div>
+                    <label>Customer Details</label>
+                </div>
+                <div>
+                    <label>Customer Name </label>
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Customer Name</mat-label>
+                      <input matInput placeholder="Enter customer name" formControlName="customerName" />
+                    </mat-form-field>
+                </div>
+                <div>
+                    <label>Customer Type</label>
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Customer Type</mat-label>
+                    </mat-form-field>
+                </div>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+</form> -->
