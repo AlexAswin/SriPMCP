@@ -312,10 +312,16 @@
           <mat-radio-button *ngFor="let status of status" [value]="status">{{status}}</mat-radio-button>
         </mat-radio-group>
     
-        <mat-radio-group formControlName="advance" *ngIf="isMonthlyCustomer">
+        <!-- <mat-radio-group formControlName="advance" *ngIf="isMonthlyCustomer">
           <mat-label>Advance</mat-label>
           <mat-radio-button *ngFor="let status of advanceStatus" [value]="status">{{status}}</mat-radio-button>
-        </mat-radio-group>
+          <input matInput formControlName="billNumber">
+        </mat-radio-group> -->
+
+        <mat-form-field appearance="outline" class="full-width" *ngIf="isMonthlyCustomer">
+            <mat-label>Advance</mat-label>
+            <input matInput placeholder="Enter Amount" formControlName="advance" readonly />
+          </mat-form-field>
     
         <mat-radio-group formControlName="monthlyStatus" *ngIf="isMonthlyCustomer">
           <mat-label>Status</mat-label>

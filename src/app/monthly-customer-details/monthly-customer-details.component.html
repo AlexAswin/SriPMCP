@@ -4,71 +4,117 @@
 
 <div class="search-row">
     <h2 class="search-label">Vehicle Number</h2>
-  
+
     <mat-form-field appearance="outline" class="search-input">
-      <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr"/>
+        <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr" />
     </mat-form-field>
-  
-    <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary" (click)="checkExistingUser()">
-      
+
+    <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary"
+        (click)="getCustomerDetails()">
+
     </app-button>
-  </div>
+</div>
 
-  <mat-card class="alert-card" *ngIf="show" [ngClass]="type">
-    <mat-icon>{{ type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
-    <span class="message">{{ message }}</span>
-      <mat-icon (click)="close()">close</mat-icon>
-  </mat-card>
+<form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
 
-  <app-new-customer-entry-form></app-new-customer-entry-form>
+    <!-- VEHICLE DETAILS -->
+    <div class="section vehicleDetails">
+        <h2>Vehicle Details</h2>
 
-  <!-- <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
-    <mat-grid-list cols="2" rowHeight="350px">
-        <mat-grid-tile>
-            <div class="vehicleDetails">
-                <div>
-                    <label>Vehicle Details</label>
+        <div class="vehicle-info">
+            <div class="form-group">
+                <label>Vehicle Number</label>
+                <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
+            </div>
+
+            <div class="form-group">
+                <label>Vehicle Type</label>
+                <input type="text" placeholder="Type" formControlName="vehicleType" />
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOMER DETAILS -->
+    <div class="section customerDetails">
+        <h2>Customer Details</h2>
+
+        <div class="customer-info">
+            <div class="form-group">
+                <label>Customer Name</label>
+                <input type="text" placeholder="Enter customer name" formControlName="customerName" />
+            </div>
+
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" placeholder="Phone Number" formControlName="customerPhoneNbr" />
+            </div>
+
+            <div class="form-group full-width">
+                <label>Address</label>
+                <textarea rows="3" formControlName="address"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- BILLING -->
+    <div class="section billing">
+        <div class="billing-left">
+            <h2>Billing Details</h2>
+
+            <div class="billing-details">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="text" formControlName="amount" readonly />
                 </div>
-                <div>
-                    <label>Vehicle Number</label>
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Vehicle Number</mat-label>
-                        <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
-                        <mat-error *ngIf="vehicleDetailsForm.get('vehicleNumber')?.hasError('required')">
-                            Vehicle number is required
-                        </mat-error>
-                    </mat-form-field>
+
+                <div class="form-group">
+                    <!-- <label>Advance</label> -->
+                    <div class="radio-group">
+                        <label>Advance</label>
+                        <input type="text" formControlName="advance" />
+                    </div>
                 </div>
-                <div>
-                    <label>Vehicle Type</label>
-                    <mat-form-field>
-                        <mat-label>Vehicle Type</mat-label>
-                        <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
-                        
-                    </mat-form-field>
-                </div>
-            </div> 
-        </mat-grid-tile>
-    
-        <mat-grid-tile>
-            <div class="customerDetails">
-                <div>
-                    <label>Customer Details</label>
-                </div>
-                <div>
-                    <label>Customer Name </label>
-                    <mat-form-field appearance="outline" class="full-width">
-                      <mat-label>Customer Name</mat-label>
-                      <input matInput placeholder="Enter customer name" formControlName="customerName" />
-                    </mat-form-field>
-                </div>
-                <div>
-                    <label>Customer Type</label>
-                    <mat-form-field appearance="outline" class="full-width">
-                      <mat-label>Customer Type</mat-label>
-                    </mat-form-field>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <div class="radio-group">
+                        <label *ngFor="let status of monthlyStatus">
+                            <input type="radio" [value]="status" formControlName="monthlyStatus" />
+                            {{ status }}
+                        </label>
+                    </div>
                 </div>
             </div>
-        </mat-grid-tile>
-    </mat-grid-list>
-</form> -->
+
+            <div class="billing-details">
+                <div class="form-group">
+                    <label>From Date</label>
+                    <input type="date" formControlName="fromDateMonthly" />
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" formControlName="endDateMonthly" />
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+    <div class="note-textArea">
+        <div class="billing-right">
+            <h3>Note</h3>
+
+            <textarea rows="4" placeholder="Leave a comment" formControlName="note"></textarea>
+        </div>
+    </div>
+
+    <div class="form-section form-actions">
+        <app-button label="Save" variant="primary" (clicked)="submitForm()">
+        </app-button>
+
+        <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()">
+        </app-button>
+    </div>
+
+</form>

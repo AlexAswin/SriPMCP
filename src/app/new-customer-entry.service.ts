@@ -42,7 +42,7 @@ export class NewCustomerEntryService {
     const data = {
       id: docSnap.id,
       ...docSnap.data()
-    };
+    }as any;
 
     // ✅ Store globally
     this.setVehicle(data);
