@@ -8,17 +8,26 @@ import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } 
 import { MonthlyCustomerDetailsService } from '../monthly-customer-details.service';
 import { NewCustomerEntryFormComponent } from '../new-customer-entry-form/new-customer-entry-form.component';
 import { MatGridListModule } from '@angular/material/grid-list';
+import { ExistingCustomerDetailsComponent } from '../existing-customer-details/existing-customer-details.component';
+import { FormsModule} from '@angular/forms';
+import { MatRadioModule} from '@angular/material/radio';
+import { NewCustomerEntryService } from '../new-customer-entry.service';
 
 
 @Component({
   selector: 'app-monthly-customer-details',
   standalone: true,
   imports: [MatFormFieldModule, MatInputModule, MatIconModule, ButtonComponent, CommonModule, ReactiveFormsModule, NewCustomerEntryFormComponent,
-            ReactiveFormsModule, MatGridListModule,],
+            ReactiveFormsModule, MatGridListModule, ExistingCustomerDetailsComponent, MatRadioModule],
   templateUrl: './monthly-customer-details.component.html',
   styleUrl: './monthly-customer-details.component.scss'
 })
 export class MonthlyCustomerDetailsComponent {
+
+  advanceStatus = ['Yes', 'No'];
+  monthlyStatus = ['Active', 'InActive'];
+
+
 
   @Input() type = 'success';
   @Input() message: string = 'New Customer... Get Customer Details';
@@ -30,18 +39,21 @@ export class MonthlyCustomerDetailsComponent {
   show = false;
   existingCustomer: boolean = false;
 
-  constructor ( private monthlyCustomerDetailsService : MonthlyCustomerDetailsService,
+  constructor ( private newCustomerEntryService : NewCustomerEntryService,
                 private fb: FormBuilder) {
                   this.vehicleDetailsForm = this.fb.group({
-                    vehicleNumber: ['', Validators.required],
-                    customerName: ['', Validators.required],
-                    vehicleType: ['', Validators.required],
-                    customerType: ['', Validators.required],
-                    amount: [{ value: '', disabled: false }],
-                    advance: [''],
-                    fromDateMonthly: [null],
-                    monthlyStatus: ['Active', Validators.required],
-                    note: [''],
+                    vehicleNumber: [{ value: '', disabled: true }, Validators.required],
+                    customerName: [{ value: '', disabled: true }, Validators.required],
+                    customerPhoneNbr: [{ value: '', disabled: true }],
+                    vehicleType: [{ value: '', disabled: true }, Validators.required],
+                    customerType: [{ value: '', disabled: true }, Validators.required],
+                    amount: [{ value: '', disabled: true }],
+                    fromDateMonthly: [{ value: null, disabled: true }],
+                    endDateMonthly: [{ value: null, disabled: false }],
+                    monthlyStatus: [{ value: 'Active', disabled: false }, Validators.required],
+                    note: [{ value: '', disabled: true }],
+                    advance: [{ value: '', disabled: true }],
+                    address: [{ value: '', disabled: true }]
                   });
   }
 
@@ -56,7 +68,7 @@ export class MonthlyCustomerDetailsComponent {
       .trim();
   }
 
-  checkExistingUser = async() => {
+  getCustomerDetails = async() => {
 
     const vehicleNumber = this.searchWithVehicleNbr.value?.trim();
 
@@ -67,18 +79,32 @@ export class MonthlyCustomerDetailsComponent {
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber)
 
 
-    const exists = await this.monthlyCustomerDetailsService.getVehicleByNumber(formatedVehicleNbr);
+    const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
 
-  if (exists) {
-    console.log('Vehicle already exists :', exists);
-    this.show = true;
+  if (res) {
+    this.vehicleDetailsForm.patchValue({
+      vehicleNumber: res.vehicleNumber,
+      vehicleType: res.vehicleType,
+      customerName: res.customerName,
+      customerPhoneNbr: res.phoneNumber,
+      customerType: res.customerType,
+      amount: res.amount,
+      fromDateMonthly: res.fromDateMonthly.toLocaleString('en-IN'),
+      note: res.note,
+      monthlyStatus: res.monthlyStatus,
+      advance: res.advance,
+      address: res.address
+    });
   } else {
     console.log('New vehicle');
   }
-  this.message = exists? 'Existing Customer... Please rewiew the customer details': 'New Customer... Please add Customer Details';
   }
 
   submitForm() {
+
+  }
+
+  cancelEntry() {
 
   }
 
