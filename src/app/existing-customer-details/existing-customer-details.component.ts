@@ -2,11 +2,15 @@ import { Component } from '@angular/core';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { NavBarComponent } from '../Common/nav-bar/nav-bar.component';
+import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router';
+
 
 @Component({
   selector: 'app-existing-customer-details',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, NavBarComponent, MatIconModule ],
   templateUrl: './existing-customer-details.component.html',
   styleUrl: './existing-customer-details.component.scss'
 })
@@ -37,7 +41,8 @@ export class ExistingCustomerDetailsComponent {
     this.loadVehicleData();
   }
   constructor ( private newCustomerEntryService : NewCustomerEntryService,
-                private fb : FormBuilder) {
+                private fb : FormBuilder,
+                private router: Router) {
 
   }
 
@@ -97,6 +102,11 @@ export class ExistingCustomerDetailsComponent {
 
   submit() {
 
+  }
+
+  closeForm() {
+    this.vehicleForm.reset();
+    this.router.navigate(['/dashBoard'])
   }
 
 }

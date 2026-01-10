@@ -9,7 +9,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { ExistingCustomerDetailsComponent } from '../existing-customer-details/existing-customer-details.component';
 import { MatCard } from '@angular/material/card';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-entry-form',
@@ -21,7 +21,8 @@ import { RouterModule } from '@angular/router';
 })
 export class EntryFormComponent {
   @Input() type = 'success';
-  @Input() message: string = 'New Customer... Get Customer Details';
+
+  message: string = '';
 
   searchWithVehicleNbr = new FormControl<string | null>('');
   searchWithBillNbr = new FormControl<string | null>('');
@@ -30,7 +31,8 @@ export class EntryFormComponent {
   existingCustomer: boolean = false;
   show = false;
 
-  constructor (private  newCustomerEntryService :  NewCustomerEntryService) {
+  constructor (private  newCustomerEntryService :  NewCustomerEntryService,
+               private router: Router) {
 
   }
 
@@ -50,16 +52,13 @@ export class EntryFormComponent {
     const exists = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
 
   if (exists) {
-    this.existingCustomer = true;
-    this.newCustomer = false;
-    console.log('Vehicle already exists :', exists);
+     this.router.navigate(['/customerDetails']);
+     console.log('Vehicle already exists :', exists);
   } else {
-    this.existingCustomer = false;
-    this.newCustomer = true;
+    this.show = true;
+    this.message = 'New Customer... Please Add Customer Details';
     console.log('New vehicle');
   }
-  this.show = true;
-  this.message = exists? 'Existing Customer... Please rewiew the customer details': 'New Customer... Please Add Customer Details';
   }
 
   private formateVehicleNumber(value: string): string {
