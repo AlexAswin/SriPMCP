@@ -1,4 +1,4 @@
-<div class="searchGroup" *ngIf="!newCustomer && !existingCustomer">
+<div class="searchGroup">
 
   <mat-card class="info-card">
     <p>Enter a Vehicle Number or Billing Number to verify if the customer already exists.</p>
@@ -39,5 +39,5 @@
   <span class="message">{{ message }}</span>
 </mat-card>
 
-<app-new-customer-entry-form *ngIf="newCustomer" (formClosed)="handleFormClose($event)"></app-new-customer-entry-form>
-<app-existing-customer-details *ngIf="existingCustomer"></app-existing-customer-details>
+<!-- <app-new-customer-entry-form *ngIf="newCustomer" (formClosed)="handleFormClose($event)"></app-new-customer-entry-form> -->
+<!-- <app-existing-customer-details *ngIf="existingCustomer"></app-existing-customer-details> -->

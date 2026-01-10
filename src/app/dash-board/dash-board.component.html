@@ -1,5 +1,3 @@
-<app-nav-bar></app-nav-bar>
-  
 <div class="layout">
 
   <aside class="sidebar">
@@ -15,8 +13,9 @@
   </aside>
 
   <main class="content">
-    <app-entry-form *ngIf="!monthlyCustomerForm"></app-entry-form>
-    <app-monthly-customer-details *ngIf="monthlyCustomerForm"></app-monthly-customer-details>
+    <app-entry-form></app-entry-form>
+    <!-- <app-monthly-customer-details *ngIf="monthlyCustomerForm && !dailyCustomerForm"></app-monthly-customer-details>
+    <app-daily-customer-details *ngIf="dailyCustomerForm && !monthlyCustomerForm"></app-daily-customer-details> -->
   </main>
 
 </div>

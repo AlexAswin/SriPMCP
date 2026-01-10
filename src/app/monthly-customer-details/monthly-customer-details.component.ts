@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,17 +12,20 @@ import { ExistingCustomerDetailsComponent } from '../existing-customer-details/e
 import { FormsModule} from '@angular/forms';
 import { MatRadioModule} from '@angular/material/radio';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
+import { Router } from '@angular/router';
+import { VehicleTypeAndpriceDetailsService } from '../vehicle-type-andprice-details.service';
+import { MatSelectModule } from '@angular/material/select';
 
 
 @Component({
   selector: 'app-monthly-customer-details',
   standalone: true,
   imports: [MatFormFieldModule, MatInputModule, MatIconModule, ButtonComponent, CommonModule, ReactiveFormsModule, NewCustomerEntryFormComponent,
-            ReactiveFormsModule, MatGridListModule, ExistingCustomerDetailsComponent, MatRadioModule],
+            ReactiveFormsModule, MatGridListModule, ExistingCustomerDetailsComponent, MatRadioModule, MatSelectModule],
   templateUrl: './monthly-customer-details.component.html',
   styleUrl: './monthly-customer-details.component.scss'
 })
-export class MonthlyCustomerDetailsComponent {
+export class MonthlyCustomerDetailsComponent implements OnInit {
 
   advanceStatus = ['Yes', 'No'];
   monthlyStatus = ['Active', 'InActive'];
@@ -30,35 +33,70 @@ export class MonthlyCustomerDetailsComponent {
 
 
   @Input() type = 'success';
-  @Input() message: string = 'New Customer... Get Customer Details';
+  @Input() message: string = '';
 
   searchWithVehicleNbr = new FormControl<string | null>('');
 
   vehicleDetailsForm!: FormGroup;
 
-  show = false;
+  showAlert = false;
   existingCustomer: boolean = false;
+  vehicleTypes: string[] = [];
+  customerType: string = 'monthly';
+  isNewMonthlyCustomer: boolean = true;
+  isMonthlyActiveCustomer: boolean = false;
+  isMonthlyInActiveCustomer: boolean = false;
+
+
+
+  
+ngOnInit() {
+  this.vehicleTypes = this.vehicleTypeAndpriceDetailsService.getVehicleTypes();
+
+  this.vehicleDetailsForm.valueChanges.subscribe(({ vehicleType, customerType }) => {
+    if (vehicleType && customerType) {
+      const price = this.vehicleTypeAndpriceDetailsService.getPrice(vehicleType, customerType);
+      if (price !== null) {
+        this.vehicleDetailsForm.get('amount')
+          ?.setValue(price, { emitEvent: false });
+      }
+    }
+  });
+
+
+}
 
   constructor ( private newCustomerEntryService : NewCustomerEntryService,
-                private fb: FormBuilder) {
-                  this.vehicleDetailsForm = this.fb.group({
-                    vehicleNumber: [{ value: '', disabled: true }, Validators.required],
-                    customerName: [{ value: '', disabled: true }, Validators.required],
-                    customerPhoneNbr: [{ value: '', disabled: true }],
-                    vehicleType: [{ value: '', disabled: true }, Validators.required],
-                    customerType: [{ value: '', disabled: true }, Validators.required],
-                    amount: [{ value: '', disabled: true }],
-                    fromDateMonthly: [{ value: null, disabled: true }],
-                    endDateMonthly: [{ value: null, disabled: false }],
-                    monthlyStatus: [{ value: 'Active', disabled: false }, Validators.required],
-                    note: [{ value: '', disabled: true }],
-                    advance: [{ value: '', disabled: true }],
-                    address: [{ value: '', disabled: true }]
-                  });
+                private fb: FormBuilder,
+                private router: Router,
+                private vehicleTypeAndpriceDetailsService: VehicleTypeAndpriceDetailsService) {
+
+                  this.vehicleDetails();
   }
 
   close() {
-    this.show = false;
+    this.showAlert = false;
+  }
+
+  vehicleDetails = () => {
+    this.vehicleDetailsForm = this.fb.group({
+      vehicleNumber: [{ value: '', disabled: false }, Validators.required],
+      vehicleType: [{ value: '', disabled: false }, Validators.required],
+
+      customerName: [{ value: '', disabled: false }, Validators.required],
+      customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
+      customerType: [{ value: 'monthly', disabled: false }, Validators.required],
+      address: [{ value: '', disabled: false }],
+
+
+      amount: [{ value: '', disabled: false }],
+      advance: [{ value: '', disabled: false }],
+      monthlyStatus: [{ value: 'Active', disabled: false }, Validators.required],
+      fromDateMonthly: [{ value: null, disabled: false }, Validators.required],
+      note: [{ value: '', disabled: false }],
+      // endDateMonthly: [{ value: null, disabled: false }],
+
+    });
   }
 
   private normalizeVehicleNumber(value: string): string {
@@ -73,34 +111,65 @@ export class MonthlyCustomerDetailsComponent {
     const vehicleNumber = this.searchWithVehicleNbr.value?.trim();
 
     if (!vehicleNumber ) {
-      console.log('No vehicle number entered');
       return;
     }
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber)
-
-
     const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
 
-  if (res) {
-    this.vehicleDetailsForm.patchValue({
-      vehicleNumber: res.vehicleNumber,
-      vehicleType: res.vehicleType,
-      customerName: res.customerName,
-      customerPhoneNbr: res.phoneNumber,
-      customerType: res.customerType,
-      amount: res.amount,
-      fromDateMonthly: res.fromDateMonthly.toLocaleString('en-IN'),
-      note: res.note,
-      monthlyStatus: res.monthlyStatus,
-      advance: res.advance,
-      address: res.address
-    });
-  } else {
-    console.log('New vehicle');
-  }
-  }
+    if (res && res.monthlyStatus === 'Active') {
+      this.vehicleDetailsForm.patchValue({
+        vehicleNumber: res.vehicleNumber,
+        vehicleType: res.vehicleType,
 
-  submitForm() {
+        customerName: res.customerName,
+        customerPhoneNbr: res.customerPhoneNbr,
+        customerType: res.customerType,
+        address: res.address,
+
+        amount: res.amount,
+        advance: res.advance,
+        monthlyStatus: res.monthlyStatus,
+        fromDateMonthly: res.fromDateMonthly.toLocaleString('en-IN'),
+        note: res.note,
+      });
+    } else if (res && res.monthlyStatus === 'InActive') {
+      this.isMonthlyInActiveCustomer = true;
+      console.log(res);
+    } else {
+      console.log('Customer Not Found')
+    }
+  }    
+
+  submitForm = async() => {
+    if (this.vehicleDetailsForm.invalid) {
+      this.vehicleDetailsForm.markAllAsTouched();
+      return;
+    }
+
+    const payload: any = { ...this.vehicleDetailsForm.value };
+    if (payload.vehicleNumber) {
+      payload.vehicleNumber = this.normalizeVehicleNumber(payload.vehicleNumber);
+    }
+
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
+        delete payload[key];
+      }
+    });
+
+    if (this.isNewMonthlyCustomer) {  
+      try {
+        const res = await this.newCustomerEntryService.addNewCustomerEntry(payload);
+        this.vehicleDetailsForm.reset();
+        this.showAlert = true;
+        this.message = 'Customer Added SuccessFully...'
+        console.log('Customer added:', res);
+      } catch (error) {
+        this.showAlert = true;
+        this.message = 'Error Adding Customer... Please Try Again...'
+        console.error('Error adding customer:', error);
+      }
+    }
 
   }
 
@@ -108,4 +177,13 @@ export class MonthlyCustomerDetailsComponent {
 
   }
 
+  closeForm() {
+    this.vehicleDetailsForm.reset();
+    this.router.navigate(['/dashBoard'])
+  }
+
 }
+function elseIf(arg0: any) {
+  throw new Error('Function not implemented.');
+}
+

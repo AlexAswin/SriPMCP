@@ -9,12 +9,14 @@ import { EntryFormComponent } from '../entry-form/entry-form.component';
 import { MonthlyCustomerDetailsComponent } from '../monthly-customer-details/monthly-customer-details.component';
 import { CommonModule } from '@angular/common';
 import { MatGridListModule } from '@angular/material/grid-list';
+import { DailyCustomerDetailsComponent } from '../daily-customer-details/daily-customer-details.component';
+import { Route, Router } from '@angular/router';
 
 @Component({
   selector: 'app-dash-board',
   standalone: true,
   imports: [NavBarComponent, MatSidenavModule, MatButtonModule, MatIconModule, MatListModule, MatToolbarModule, EntryFormComponent,
-    MonthlyCustomerDetailsComponent, CommonModule, MatGridListModule],
+    MonthlyCustomerDetailsComponent, CommonModule, MatGridListModule, DailyCustomerDetailsComponent],
   templateUrl: './dash-board.component.html',
   styleUrl: './dash-board.component.scss'
 })
@@ -22,13 +24,19 @@ export class DashBoardComponent {
   showFiller = false;
 
   monthlyCustomerForm: boolean = false;
+  dailyCustomerForm: boolean = false;
+
+  constructor (private router: Router) {
+
+  }
+
 
   openMonthlyCustomerForm() {
-    this.monthlyCustomerForm = true;
+      this.router.navigate(['/monthlyCustomer']);
   }
 
   openDailyCustomerForm() {
-    
+    this.router.navigate(['/dailyCustomer']);    
   }
 
 }
