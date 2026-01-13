@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { addDoc } from '@angular/fire/firestore';
+import { addDoc, doc, updateDoc } from '@angular/fire/firestore';
 import { Firestore, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { BehaviorSubject } from 'rxjs';
 
@@ -58,6 +58,39 @@ export class NewCustomerEntryService {
   // 📤 Get latest value (sync)
    getVehicle() {
     return this.vehicleSource.value;
+  }
+
+  async updateCustomerByVehicleNumber(
+    vehicleNumber: string,
+    updateData: any,
+    historyPayload: any
+  ) {
+    const ref = collection(this.firestore, 'NewCustomerEntry');
+  
+    const q = query(ref, where('vehicleNumber', '==', vehicleNumber));
+    const snapshot = await getDocs(q);
+  
+    if (snapshot.empty) {
+      throw new Error('Customer not found');
+    }
+  
+    // Assuming vehicleNumber is UNIQUE
+    const docSnap = snapshot.docs[0];
+    const customerDocId = docSnap.id;
+    const docRef = doc(this.firestore, 'NewCustomerEntry', docSnap.id);
+  
+    await updateDoc(docRef, updateData);
+
+    const historyRef = collection(
+      this.firestore,
+      'NewCustomerEntry',
+      customerDocId,
+      'statusHistory'
+    );
+  
+    await addDoc(historyRef, historyPayload);
+  
+    return docSnap.id;
   }
 
 }

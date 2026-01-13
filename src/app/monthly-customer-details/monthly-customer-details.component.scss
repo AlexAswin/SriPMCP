@@ -11,11 +11,13 @@ h1 {
 }
 
 .search-row {
+    max-width: 1100px;
+    margin: 0 auto;
     min-height: 70px;
     padding: 10px 0px;
     display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: space-between;;
 
     h2 {
         margin-bottom: 0px;
@@ -118,6 +120,10 @@ h1 {
     font-weight: bolder;
     color: #444;
     white-space: nowrap;
+  }
+
+  mat-select {
+    border-bottom: 1px solid  grey;
   }
 
   /* Inputs & textarea */
