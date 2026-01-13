@@ -76,22 +76,22 @@
             <div class="billing-details">
                 <div class="form-group">
                     <label>Amount</label>
-                    <input type="text" formControlName="amount" readonly />
+                    <input type="text" formControlName="amount"/>
                 </div>
 
                 <div class="form-group">
                     <!-- <label>Advance</label> -->
                     <div class="radio-group">
                         <label>Advance</label>
-                        <input type="text" formControlName="advance" />
+                        <input type="text" [formControl]="advance"/>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Status</label>
                     <div class="radio-group">
-                        <label *ngFor="let status of monthlyStatus">
-                            <input type="radio" [value]="status" formControlName="monthlyStatus" />
+                        <label *ngFor="let status of monthlyStatuses">
+                            <input type="radio" [value]="status" [formControl]="monthlyStatus" />
                             {{ status }}
                         </label>
                     </div>
@@ -101,11 +101,11 @@
             <div class="billing-details">
                 <div class="form-group">
                     <label>From Date</label>
-                    <input type="date" formControlName="fromDateMonthly" />
+                    <input type="date" [formControl]="fromDateMonthly" [readOnly]="isMonthlyInActiveCustomer" />
                 </div>
-                <div class="form-group" *ngIf="isMonthlyActiveCustomer">
+                <div class="form-group" *ngIf="isStatusInActive">
                     <label>End Date</label>
-                    <input type="date" formControlName="endDateMonthly" />
+                    <input type="date" [formControl]="endDateMonthly" />
                 </div>
             </div>
 
@@ -117,7 +117,7 @@
         <div class="billing-right">
             <h3>Note</h3>
 
-            <textarea rows="4" placeholder="Leave a comment" formControlName="note"></textarea>
+            <textarea rows="4" placeholder="Leave a comment" [formControl]="note"></textarea>
         </div>
     </div>
 

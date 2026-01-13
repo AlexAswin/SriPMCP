@@ -27,8 +27,7 @@ import { MatSelectModule } from '@angular/material/select';
 })
 export class MonthlyCustomerDetailsComponent implements OnInit {
 
-  advanceStatus = ['Yes', 'No'];
-  monthlyStatus = ['Active', 'InActive'];
+  monthlyStatuses = ['Active', 'InActive'];
 
 
 
@@ -40,12 +39,24 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
   vehicleDetailsForm!: FormGroup;
 
   showAlert = false;
-  existingCustomer: boolean = false;
+  // existingCustomer: boolean = false;
   vehicleTypes: string[] = [];
-  customerType: string = 'monthly';
+
+  advance= new FormControl<string>('');
+  monthlyStatus= new FormControl<string>('');
+  fromDateMonthly= new FormControl<string>('');
+  endDateMonthly= new FormControl<string>('');
+  note = new FormControl<string>('');
+
+  isStatusInActive: boolean = false;
+
   isNewMonthlyCustomer: boolean = true;
   isMonthlyActiveCustomer: boolean = false;
   isMonthlyInActiveCustomer: boolean = false;
+  isDailyPaidCustomer: boolean = false;
+
+  currentCustomer: string ='';
+  dailyToMonthlyCustomer: boolean = false;
 
 
 
@@ -63,6 +74,10 @@ ngOnInit() {
     }
   });
 
+  this.monthlyStatus.valueChanges.subscribe(status => {
+    this.onMonthlyStatusChange(status);
+  });
+
 
 }
 
@@ -71,7 +86,7 @@ ngOnInit() {
                 private router: Router,
                 private vehicleTypeAndpriceDetailsService: VehicleTypeAndpriceDetailsService) {
 
-                  this.vehicleDetails();
+                this.vehicleDetails();
   }
 
   close() {
@@ -85,18 +100,24 @@ ngOnInit() {
 
       customerName: [{ value: '', disabled: false }, Validators.required],
       customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
-      customerType: [{ value: 'monthly', disabled: false }, Validators.required],
+      customerType: [{value:'monthly'}],
       address: [{ value: '', disabled: false }],
-
-
-      amount: [{ value: '', disabled: false }],
-      advance: [{ value: '', disabled: false }],
-      monthlyStatus: [{ value: 'Active', disabled: false }, Validators.required],
-      fromDateMonthly: [{ value: null, disabled: false }, Validators.required],
-      note: [{ value: '', disabled: false }],
-      // endDateMonthly: [{ value: null, disabled: false }],
+      amount: [{ value: '', disabled: true }],
 
     });
+  }
+
+  onMonthlyStatusChange(status: string | null) {  
+    if (status === 'Active') {
+      this.isStatusInActive = false;
+      this.isMonthlyActiveCustomer = true;
+      this.dailyToMonthlyCustomer = true;
+      this.isMonthlyInActiveCustomer = false
+    } else if (status === 'InActive') {
+      this.isStatusInActive = true;
+      this.isMonthlyActiveCustomer = false;
+      this.isMonthlyInActiveCustomer = true
+    }
   }
 
   private normalizeVehicleNumber(value: string): string {
@@ -115,8 +136,33 @@ ngOnInit() {
     }
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber)
     const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
+    this.currentCustomer = res.vehicleNumber;
 
     if (res && res.monthlyStatus === 'Active') {
+      this.isStatusInActive = false;
+      this.isMonthlyActiveCustomer = true;
+      this.isNewMonthlyCustomer = false
+      this.endDateMonthly.reset();
+
+      this.vehicleDetailsForm.patchValue({
+        vehicleNumber: res.vehicleNumber,
+        vehicleType: res.vehicleType,
+
+        customerName: res.customerName,
+        customerPhoneNbr: res.customerPhoneNbr,
+        customerType: res.customerType,
+        address: res.address,
+        amount: res.amount,  
+      });
+      this.advance.setValue(res.advance);
+      this.monthlyStatus.setValue(res.monthlyStatus);
+      this.fromDateMonthly.setValue(res.fromDateMonthly),
+      this.note.setValue(res.note);
+
+    } else if (res && res.monthlyStatus === 'InActive') {
+      this.isStatusInActive = true;
+      this.isMonthlyInActiveCustomer = true;
+      this.isNewMonthlyCustomer = false;
       this.vehicleDetailsForm.patchValue({
         vehicleNumber: res.vehicleNumber,
         vehicleType: res.vehicleType,
@@ -126,17 +172,30 @@ ngOnInit() {
         customerType: res.customerType,
         address: res.address,
 
-        amount: res.amount,
-        advance: res.advance,
-        monthlyStatus: res.monthlyStatus,
-        fromDateMonthly: res.fromDateMonthly.toLocaleString('en-IN'),
-        note: res.note,
+        amount: res.amount,  
       });
-    } else if (res && res.monthlyStatus === 'InActive') {
-      this.isMonthlyInActiveCustomer = true;
+      this.advance.setValue(res.advance);
+      this.monthlyStatus.setValue(res.monthlyStatus);
+      this.fromDateMonthly.setValue(res.fromDateMonthly);
+      this.endDateMonthly.setValue(res.endDateMonthly);
+      this.note.setValue(res.note);
+
       console.log(res);
-    } else {
-      console.log('Customer Not Found')
+    } else if (res && res.status === 'paid'){
+      this.dailyToMonthlyCustomer = true
+      this.isMonthlyActiveCustomer = false;
+      this.isMonthlyInActiveCustomer = false;
+      this.isNewMonthlyCustomer = false;
+      console.log('Customer daily to monthly')
+      this.vehicleDetailsForm.patchValue({
+        vehicleNumber: res.vehicleNumber,
+        vehicleType: res.vehicleType,
+
+        customerName: res.customerName,
+        customerPhoneNbr: res.customerPhoneNbr,
+        address: res.address,
+        status: res.status,
+      });
     }
   }    
 
@@ -146,20 +205,22 @@ ngOnInit() {
       return;
     }
 
-    const payload: any = { ...this.vehicleDetailsForm.value };
+    if (this.isNewMonthlyCustomer && !this.dailyToMonthlyCustomer) {  
+      const payload: any = { ...this.vehicleDetailsForm.value };
+
     if (payload.vehicleNumber) {
       payload.vehicleNumber = this.normalizeVehicleNumber(payload.vehicleNumber);
     }
 
-    Object.keys(payload).forEach(key => {
-      if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
-        delete payload[key];
-      }
-    });
-
-    if (this.isNewMonthlyCustomer) {  
+    const customerDetails = {
+      ...payload,
+      advance: this.advance.value,
+      monthlyStatus: this.monthlyStatus.value,
+      fromDateMonthly: this.fromDateMonthly.value,
+      note: this.note.value
+    };
       try {
-        const res = await this.newCustomerEntryService.addNewCustomerEntry(payload);
+        const res = await this.newCustomerEntryService.addNewCustomerEntry(customerDetails);
         this.vehicleDetailsForm.reset();
         this.showAlert = true;
         this.message = 'Customer Added SuccessFully...'
@@ -169,8 +230,107 @@ ngOnInit() {
         this.message = 'Error Adding Customer... Please Try Again...'
         console.error('Error adding customer:', error);
       }
-    }
+    } else if (this.isMonthlyInActiveCustomer) {
+      try {
+        const updatePayload: any = {
+          monthlyStatus: this.monthlyStatus.value
+        };
+  
+        if (this.monthlyStatus.value === 'InActive') {
+          updatePayload.endDateMonthly = this.endDateMonthly.value
+        }
 
+        const historyPayload: any = {
+          fromStatus: 'Active',
+          toStatus: 'InActive',
+          startDate: this.fromDateMonthly.value,
+          endDate: this.endDateMonthly.value,
+        };
+
+        const res = await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, updatePayload, historyPayload );
+        console.log(res)
+
+        this.endDateMonthly.reset();
+        this.showAlert = true;
+        this.message = 'Customer Updated Successfully...';
+      } catch (error) {
+        this.showAlert = true;
+        this.message = 'Error Updating Customer...';
+        console.error(error);
+      }
+    } else if (this.isMonthlyActiveCustomer && !this.dailyToMonthlyCustomer) {
+      try {
+        const updatePayload: any = {
+          monthlyStatus: this.monthlyStatus.value
+        };
+  
+        if (this.monthlyStatus.value === 'Active') {
+          updatePayload.fromDateMonthly = this.fromDateMonthly.value,
+          updatePayload.endDateMonthly = null
+        }
+
+        const historyPayload: any = {
+          fromStatus: 'InActive',
+          toStatus: 'Active',
+          startDate: this.fromDateMonthly.value,
+          endDate: null,
+        };
+
+        const res = await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, updatePayload, historyPayload );
+        console.log(res)
+
+        this.endDateMonthly.reset();
+        this.showAlert = true;
+        this.message = 'Customer Updated Successfully...';
+      } catch (error) {
+        this.showAlert = true;
+        this.message = 'Error Updating Customer...';
+        console.error(error);
+      }
+
+    } else if (this.dailyToMonthlyCustomer) {
+
+      const updatePayload: any = { ...this.vehicleDetailsForm.value };
+
+      if (updatePayload.vehicleNumber) {
+        updatePayload.vehicleNumber = this.normalizeVehicleNumber(updatePayload.vehicleNumber);
+      }
+
+      const customerDetails = {
+        ...updatePayload,
+        advance: this.advance.value,
+        monthlyStatus: this.monthlyStatus.value,
+        fromDateMonthly: this.fromDateMonthly.value,
+        endDateMonthly: null,
+        note: this.note.value,
+      };
+      const historyPayload: any = {
+        fromStatus: 'Daily paid',
+        toStatus: 'Monthly Active',
+        startDate: this.fromDateMonthly.value,
+        endDate: null,
+      };
+      
+      try {
+        const res = await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, customerDetails, historyPayload );
+        this.vehicleDetailsForm.reset();
+        this.showAlert = true;
+        this.message = 'Customer Added SuccessFully...'
+        console.log('Customer added:', res);
+      } catch (error) {
+        this.showAlert = true;
+        this.message = 'Error Adding Customer... Please Try Again...'
+        console.error('Error adding customer:', error);
+      }
+
+      
+
+    }
+      this.advance.setValue('');
+      this.monthlyStatus.setValue('');
+      this.fromDateMonthly.setValue('');
+      this.endDateMonthly.setValue('');
+      this.note.setValue('');
   }
 
   cancelEntry() {
@@ -182,8 +342,5 @@ ngOnInit() {
     this.router.navigate(['/dashBoard'])
   }
 
-}
-function elseIf(arg0: any) {
-  throw new Error('Function not implemented.');
 }
 
