@@ -181,18 +181,9 @@ h1 {
     margin-top: 16px;
   }
 
-  .alert-card {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 60px;
-    padding: 15px 50px;
-  }
-    
-  .alert-card.success {
-    background-color: #e8f5e9; 
-    color: #2e7d32;         
-  }
+  
+  
+  
 
   /* Responsive */
   @media (max-width: 768px) {
@@ -220,5 +211,72 @@ h1 {
       flex-direction: column;
     }
   }
+
+
+.alert-card {
+  gap: 12px;
+  max-width: 1100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 18px;
+  margin: 12px 0;
+
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  animation: slideFadeIn 0.3s ease-in-out;
+
+  mat-icon {
+    font-size: 24px;
+  }
+
+  // .message {
+  //   flex: 1;
+  // }
+
+  &.success {
+    background-color: #a7f4ae;
+    color: #2e7d32;
+    border-left: 5px solid #2e7d32;
+
+    mat-icon {
+      color: #2e7d32;
+    }
+  }
+
+  &.error {
+    background-color: #fdecea;
+    color: #c62828;
+    border-left: 5px solid #c62828;
+
+    mat-icon {
+      color: #c62828;
+    }
+  }
+
+  &.warning {
+    background-color: #fff8e1;
+    color: #ef6c00;
+    border-left: 5px solid #ef6c00;
+
+    mat-icon {
+      color: #ef6c00;
+    }
+  }
 }
 
+/* ANIMATION */
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+}
