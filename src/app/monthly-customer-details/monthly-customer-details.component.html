@@ -2,12 +2,6 @@
     <mat-icon>arrow_back</mat-icon>
 </button>
 
-<mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
-    <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
-    <span class="message">{{ message }}</span>
-</mat-card>
-
-
 <div>
     <h1>Monthly Customer Details</h1>
 </div>
@@ -26,107 +20,114 @@
 </div>
 
 <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
+    <mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
+        <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
+        <span class="message">{{ message }}</span>
+    </mat-card>
 
-    <!-- VEHICLE DETAILS -->
-    <div class="section vehicleDetails">
-        <h2>Vehicle Details</h2>
+<div *ngIf="!dailyCustomerUnpaid">
+   <!-- VEHICLE DETAILS -->
+   <div class="section vehicleDetails">
+    <h2>Vehicle Details</h2>
 
-        <div class="vehicle-info">
-            <div class="form-group">
-                <label>Vehicle Number</label>
-                <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
-            </div>
-
-            <div class="form-group">
-                <label>Vehicle Type</label>
-                <mat-select placeholder="select Vehicle" formControlName="vehicleType">
-                    <mat-option *ngFor="let types of vehicleTypes" [value]="types">{{types}}</mat-option>
-                </mat-select>
-            </div>
-        </div>
-    </div>
-
-    <!-- CUSTOMER DETAILS -->
-    <div class="section customerDetails">
-        <h2>Customer Details</h2>
-
-        <div class="customer-info">
-            <div class="form-group">
-                <label>Customer Name</label>
-                <input type="text" placeholder="Enter customer name" formControlName="customerName" />
-            </div>
-
-            <div class="form-group">
-                <label>Phone Number</label>
-                <input type="text" placeholder="Phone Number" formControlName="customerPhoneNbr" />
-            </div>
-
-            <div class="form-group full-width">
-                <label>Address</label>
-                <textarea rows="3" formControlName="address"></textarea>
-            </div>
-        </div>
-    </div>
-
-    <!-- BILLING -->
-    <div class="section billing">
-        <div class="billing-left">
-            <h2>Billing Details</h2>
-
-            <div class="billing-details">
-                <div class="form-group">
-                    <label>Amount</label>
-                    <input type="text" formControlName="amount"/>
-                </div>
-
-                <div class="form-group">
-                    <!-- <label>Advance</label> -->
-                    <div class="radio-group">
-                        <label>Advance</label>
-                        <input type="text" [formControl]="advance"/>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Status</label>
-                    <div class="radio-group">
-                        <label *ngFor="let status of monthlyStatuses">
-                            <input type="radio" [value]="status" [formControl]="monthlyStatus" />
-                            {{ status }}
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="billing-details">
-                <div class="form-group">
-                    <label>From Date</label>
-                    <input type="date" [formControl]="fromDateMonthly" [readOnly]="isMonthlyInActiveCustomer" />
-                </div>
-                <div class="form-group" *ngIf="isStatusInActive">
-                    <label>End Date</label>
-                    <input type="date" [formControl]="endDateMonthly" />
-                </div>
-            </div>
-
-
+    <div class="vehicle-info">
+        <div class="form-group">
+            <label>Vehicle Number</label>
+            <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
         </div>
 
-    </div>
-    <div class="note-textArea">
-        <div class="billing-right">
-            <h3>Note</h3>
-
-            <textarea rows="4" placeholder="Leave a comment" [formControl]="note"></textarea>
+        <div class="form-group">
+            <label>Vehicle Type</label>
+            <mat-select placeholder="select Vehicle" formControlName="vehicleType">
+                <mat-option *ngFor="let types of vehicleTypes" [value]="types">{{types}}</mat-option>
+            </mat-select>
         </div>
     </div>
+</div>
 
-    <div class="form-section form-actions">
-        <app-button label="Save" variant="primary" (clicked)="submitForm()">
-        </app-button>
+<!-- CUSTOMER DETAILS -->
+<div class="section customerDetails">
+    <h2>Customer Details</h2>
 
-        <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()">
-        </app-button>
+    <div class="customer-info">
+        <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" placeholder="Enter customer name" formControlName="customerName" />
+        </div>
+
+        <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" placeholder="Phone Number" formControlName="customerPhoneNbr" />
+        </div>
+
+        <div class="form-group full-width">
+            <label>Address</label>
+            <textarea rows="3" formControlName="address"></textarea>
+        </div>
     </div>
+</div>
+
+<!-- BILLING -->
+<div class="section billing">
+    <div class="billing-left">
+        <h2>Billing Details</h2>
+
+        <div class="billing-details">
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="text" formControlName="amount"/>
+            </div>
+
+            <div class="form-group">
+                <!-- <label>Advance</label> -->
+                <div class="radio-group">
+                    <label>Advance</label>
+                    <input type="text" [formControl]="advance"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <div class="radio-group">
+                    <label *ngFor="let status of monthlyStatuses">
+                        <input type="radio" [value]="status" [formControl]="monthlyStatus" />
+                        {{ status }}
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="billing-details">
+            <div class="form-group">
+                <label>From Date</label>
+                <input type="date" [formControl]="fromDateMonthly" />
+            </div>
+            <div class="form-group" *ngIf="isStatusInActive">
+                <label>End Date</label>
+                <input type="date" [formControl]="endDateMonthly" />
+            </div>
+        </div>
+
+
+    </div>
+
+</div>
+<div class="note-textArea">
+    <div class="billing-right">
+        <h3>Note</h3>
+
+        <textarea rows="4" placeholder="Leave a comment" [formControl]="note"></textarea>
+    </div>
+</div>
+
+<div class="form-section form-actions">
+    <app-button label="Save" variant="primary" (clicked)="submitForm()">
+    </app-button>
+
+    <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()">
+    </app-button>
+</div>
+</div>
 
 </form>
+

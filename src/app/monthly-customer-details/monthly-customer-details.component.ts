@@ -15,6 +15,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { Router } from '@angular/router';
 import { VehicleTypeAndpriceDetailsService } from '../vehicle-type-andprice-details.service';
 import { MatSelectModule } from '@angular/material/select';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 
 @Component({
@@ -31,8 +32,8 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
 
 
 
-  @Input() type = 'success';
-  @Input() message: string = '';
+  type: 'success' | 'error' | 'warning' = 'success';
+  message: string = '';
 
   searchWithVehicleNbr = new FormControl<string | null>('');
 
@@ -54,13 +55,12 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
   isMonthlyActiveCustomer: boolean = false;
   isMonthlyInActiveCustomer: boolean = false;
   isDailyPaidCustomer: boolean = false;
+  dailyToMonthlyCustomer: boolean = false;
+  dailyCustomerUnpaid: boolean = false;
+
 
   currentCustomer: string ='';
-  dailyToMonthlyCustomer: boolean = false;
 
-
-
-  
 ngOnInit() {
   this.vehicleTypes = this.vehicleTypeAndpriceDetailsService.getVehicleTypes();
 
@@ -73,12 +73,23 @@ ngOnInit() {
       }
     }
   });
+  const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
+  vehicleCtrl?.valueChanges
+    .pipe(
+      debounceTime(500),          
+      distinctUntilChanged()
+    )
+    .subscribe(value => {
+      if (value) {
+        this.getCustomerDetails(value);
+      }
+    });
   this.monthlyStatus.valueChanges.subscribe(status => {
     this.onMonthlyStatusChange(status);
   });
 
-
+  this.isNewMonthlyCustomer = true;
 }
 
   constructor ( private newCustomerEntryService : NewCustomerEntryService,
@@ -110,13 +121,13 @@ ngOnInit() {
   onMonthlyStatusChange(status: string | null) {  
     if (status === 'Active') {
       this.isStatusInActive = false;
-      this.isMonthlyActiveCustomer = true;
-      this.dailyToMonthlyCustomer = true;
-      this.isMonthlyInActiveCustomer = false
+      // this.isMonthlyActiveCustomer = true;
+      // this.dailyToMonthlyCustomer = true;
+      // this.isMonthlyInActiveCustomer = false
     } else if (status === 'InActive') {
       this.isStatusInActive = true;
-      this.isMonthlyActiveCustomer = false;
-      this.isMonthlyInActiveCustomer = true
+      // this.isMonthlyActiveCustomer = false;
+      // this.isMonthlyInActiveCustomer = true
     }
   }
 
@@ -127,21 +138,24 @@ ngOnInit() {
       .trim();
   }
 
-  getCustomerDetails = async() => {
+  getCustomerDetails = async(vehicleNbr?: string) => {
 
-    const vehicleNumber = this.searchWithVehicleNbr.value?.trim();
+    const vehicleNumber = vehicleNbr? vehicleNbr : this.searchWithVehicleNbr.value?.trim();
 
     if (!vehicleNumber ) {
       return;
     }
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber)
     const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
+ 
     this.currentCustomer = res.vehicleNumber;
 
     if (res && res.monthlyStatus === 'Active') {
-      this.isStatusInActive = false;
+      this.isNewMonthlyCustomer = false;
+      this.isMonthlyInActiveCustomer = false;
       this.isMonthlyActiveCustomer = true;
-      this.isNewMonthlyCustomer = false
+
+      this.isStatusInActive = false;
       this.endDateMonthly.reset();
 
       this.vehicleDetailsForm.patchValue({
@@ -160,9 +174,12 @@ ngOnInit() {
       this.note.setValue(res.note);
 
     } else if (res && res.monthlyStatus === 'InActive') {
-      this.isStatusInActive = true;
-      this.isMonthlyInActiveCustomer = true;
       this.isNewMonthlyCustomer = false;
+      this.isMonthlyInActiveCustomer = true;
+      this.isMonthlyActiveCustomer = false;
+
+
+      this.isStatusInActive = true;
       this.vehicleDetailsForm.patchValue({
         vehicleNumber: res.vehicleNumber,
         vehicleType: res.vehicleType,
@@ -182,11 +199,11 @@ ngOnInit() {
 
       console.log(res);
     } else if (res && res.status === 'paid'){
-      this.dailyToMonthlyCustomer = true
+      this.isNewMonthlyCustomer = false;
       this.isMonthlyActiveCustomer = false;
       this.isMonthlyInActiveCustomer = false;
-      this.isNewMonthlyCustomer = false;
-      console.log('Customer daily to monthly')
+      this.dailyToMonthlyCustomer = true;
+
       this.vehicleDetailsForm.patchValue({
         vehicleNumber: res.vehicleNumber,
         vehicleType: res.vehicleType,
@@ -194,144 +211,137 @@ ngOnInit() {
         customerName: res.customerName,
         customerPhoneNbr: res.customerPhoneNbr,
         address: res.address,
-        status: res.status,
       });
+    } else if (res && res.status === 'unPaid') {
+      this.dailyCustomerUnpaid = true;
+      this.showAlert = true;
+      this.type = 'error';
+      this.message = 'Sorry... This customer is an Unpaid Daily Customer...';
+
     }
   }    
 
-  submitForm = async() => {
+  private resetStandaloneControls() {
+    this.advance.reset();
+    this.monthlyStatus.reset();
+    this.fromDateMonthly.reset();
+    this.endDateMonthly.reset();
+    this.note.reset();
+  }
+
+  private buildHistory(Entry: string | null, Exit: string | null, options?: { startDate?: any; endDate?: any;}) {
+
+    const history: any = {
+      Entry,
+      Exit,
+    };
+  
+    return history;
+  }
+
+  private normalizePayload(payload: any) {
+    if (payload.vehicleNumber) {
+      payload.vehicleNumber = this.normalizeVehicleNumber(payload.vehicleNumber);
+    }
+    return payload;
+  }
+  
+  
+  submitForm = async () => {
     if (this.vehicleDetailsForm.invalid) {
       this.vehicleDetailsForm.markAllAsTouched();
       return;
     }
-
-    if (this.isNewMonthlyCustomer && !this.dailyToMonthlyCustomer) {  
-      const payload: any = { ...this.vehicleDetailsForm.value };
-
-    if (payload.vehicleNumber) {
-      payload.vehicleNumber = this.normalizeVehicleNumber(payload.vehicleNumber);
-    }
-
-    const customerDetails = {
-      ...payload,
-      advance: this.advance.value,
-      monthlyStatus: this.monthlyStatus.value,
-      fromDateMonthly: this.fromDateMonthly.value,
-      note: this.note.value
-    };
-      try {
-        const res = await this.newCustomerEntryService.addNewCustomerEntry(customerDetails);
-        this.vehicleDetailsForm.reset();
-        this.showAlert = true;
-        this.message = 'Customer Added SuccessFully...'
-        console.log('Customer added:', res);
-      } catch (error) {
-        this.showAlert = true;
-        this.message = 'Error Adding Customer... Please Try Again...'
-        console.error('Error adding customer:', error);
-      }
-    } else if (this.isMonthlyInActiveCustomer) {
-      try {
-        const updatePayload: any = {
-          monthlyStatus: this.monthlyStatus.value
+  
+    try {
+  
+      if (this.isNewMonthlyCustomer) {
+  
+        let payload = this.normalizePayload({ ...this.vehicleDetailsForm.value });
+  
+        const customerDetails = {
+          ...payload,
+          advance: this.advance.value,
+          monthlyStatus: this.monthlyStatus.value,
+          fromDateMonthly: this.fromDateMonthly.value,
+          note: this.note.value
         };
   
-        if (this.monthlyStatus.value === 'InActive') {
-          updatePayload.endDateMonthly = this.endDateMonthly.value
-        }
+        await this.newCustomerEntryService.addNewCustomerEntry(customerDetails);
 
-        const historyPayload: any = {
-          fromStatus: 'Active',
-          toStatus: 'InActive',
-          startDate: this.fromDateMonthly.value,
-          endDate: this.endDateMonthly.value,
-        };
-
-        const res = await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, updatePayload, historyPayload );
-        console.log(res)
-
-        this.endDateMonthly.reset();
-        this.showAlert = true;
-        this.message = 'Customer Updated Successfully...';
-      } catch (error) {
-        this.showAlert = true;
-        this.message = 'Error Updating Customer...';
-        console.error(error);
+        this.vehicleDetailsForm.reset();
+        this.message = 'Customer Added Successfully...';
       }
-    } else if (this.isMonthlyActiveCustomer && !this.dailyToMonthlyCustomer) {
-      try {
+      else if (this.isMonthlyInActiveCustomer) {
+  
         const updatePayload: any = {
-          monthlyStatus: this.monthlyStatus.value
+          monthlyStatus: 'Active',
+          fromDateMonthly: this.fromDateMonthly.value,
+          endDateMonthly: null,
+          advance: this.advance.value
         };
   
-        if (this.monthlyStatus.value === 'Active') {
-          updatePayload.fromDateMonthly = this.fromDateMonthly.value,
-          updatePayload.endDateMonthly = null
-        }
-
-        const historyPayload: any = {
-          fromStatus: 'InActive',
-          toStatus: 'Active',
-          startDate: this.fromDateMonthly.value,
-          endDate: null,
-        };
-
-        const res = await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, updatePayload, historyPayload );
-        console.log(res)
-
-        this.endDateMonthly.reset();
-        this.showAlert = true;
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+          this.currentCustomer,
+          updatePayload
+        );
+  
         this.message = 'Customer Updated Successfully...';
-      } catch (error) {
-        this.showAlert = true;
-        this.message = 'Error Updating Customer...';
-        console.error(error);
       }
-
-    } else if (this.dailyToMonthlyCustomer) {
-
-      const updatePayload: any = { ...this.vehicleDetailsForm.value };
-
-      if (updatePayload.vehicleNumber) {
-        updatePayload.vehicleNumber = this.normalizeVehicleNumber(updatePayload.vehicleNumber);
+  
+      else if (this.isMonthlyActiveCustomer) {
+  
+        const updatePayload: any = {
+          monthlyStatus: 'InActive',
+          endDateMonthly: this.endDateMonthly.value
+        };
+  
+        const historyPayload = this.buildHistory(
+          this.fromDateMonthly.value,
+          this.endDateMonthly.value,
+        );
+  
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+          this.currentCustomer,
+          updatePayload,
+          historyPayload
+        );
+  
+        this.message = 'Customer Updated Successfully...';
       }
-
-      const customerDetails = {
-        ...updatePayload,
-        advance: this.advance.value,
-        monthlyStatus: this.monthlyStatus.value,
-        fromDateMonthly: this.fromDateMonthly.value,
-        endDateMonthly: null,
-        note: this.note.value,
-      };
-      const historyPayload: any = {
-        fromStatus: 'Daily paid',
-        toStatus: 'Monthly Active',
-        startDate: this.fromDateMonthly.value,
-        endDate: null,
-      };
-      
-      try {
-        const res = await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, customerDetails, historyPayload );
+      else if (this.dailyToMonthlyCustomer) {
+  
+        let payload = this.normalizePayload({ ...this.vehicleDetailsForm.value });
+  
+        const customerDetails = {
+          ...payload,
+          advance: this.advance.value,
+          monthlyStatus: this.monthlyStatus.value,
+          fromDateMonthly: this.fromDateMonthly.value,
+          endDateMonthly: null,
+          note: this.note.value
+        };
+    
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+          this.currentCustomer,
+          customerDetails,
+        );
+  
         this.vehicleDetailsForm.reset();
-        this.showAlert = true;
-        this.message = 'Customer Added SuccessFully...'
-        console.log('Customer added:', res);
-      } catch (error) {
-        this.showAlert = true;
-        this.message = 'Error Adding Customer... Please Try Again...'
-        console.error('Error adding customer:', error);
+        this.message = 'Customer Converted to Monthly Successfully...';
       }
-
-      
-
+  
+      this.showAlert = true;
+  
+    } catch (error) {
+      this.showAlert = true;
+      this.message = 'Something went wrong. Please try again.';
+      console.error(error);
+    } finally {
+      this.resetStandaloneControls();
     }
-      this.advance.setValue('');
-      this.monthlyStatus.setValue('');
-      this.fromDateMonthly.setValue('');
-      this.endDateMonthly.setValue('');
-      this.note.setValue('');
-  }
+  };
+  
 
   cancelEntry() {
 

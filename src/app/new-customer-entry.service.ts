@@ -17,7 +17,7 @@ export class NewCustomerEntryService {
 
   // ➕ Add new customer
   addNewCustomerEntry(customerDetails: any) {
-    const ref = collection(this.firestore, 'NewCustomerEntry');
+    const ref = collection(this.firestore, 'CustomerEntry');
     return addDoc(ref, customerDetails);
   }
 
@@ -25,7 +25,7 @@ export class NewCustomerEntryService {
   async getVehicleByNumber(vehicleNumber: string) {
     if (!vehicleNumber) return null;
 
-    const vehiclesRef = collection(this.firestore, 'NewCustomerEntry');
+    const vehiclesRef = collection(this.firestore, 'CustomerEntry');
     const q = query(
       vehiclesRef,
       where('vehicleNumber', '==', vehicleNumber)
@@ -63,9 +63,9 @@ export class NewCustomerEntryService {
   async updateCustomerByVehicleNumber(
     vehicleNumber: string,
     updateData: any,
-    historyPayload: any
+    historyPayload?: any
   ) {
-    const ref = collection(this.firestore, 'NewCustomerEntry');
+    const ref = collection(this.firestore, 'CustomerEntry');
   
     const q = query(ref, where('vehicleNumber', '==', vehicleNumber));
     const snapshot = await getDocs(q);
@@ -77,20 +77,24 @@ export class NewCustomerEntryService {
     // Assuming vehicleNumber is UNIQUE
     const docSnap = snapshot.docs[0];
     const customerDocId = docSnap.id;
-    const docRef = doc(this.firestore, 'NewCustomerEntry', docSnap.id);
+    const docRef = doc(this.firestore, 'CustomerEntry', docSnap.id);
   
     await updateDoc(docRef, updateData);
 
-    const historyRef = collection(
-      this.firestore,
-      'NewCustomerEntry',
-      customerDocId,
-      'statusHistory'
-    );
-  
-    await addDoc(historyRef, historyPayload);
-  
+
+    if (historyPayload) {
+      const historyRef = collection(
+        this.firestore,
+        'CustomerEntry',
+        customerDocId,
+        'statusHistory'
+      );
+    
+      await addDoc(historyRef, historyPayload);
+    
+    }
     return docSnap.id;
+
   }
 
 }
