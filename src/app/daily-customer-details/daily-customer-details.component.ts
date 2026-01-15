@@ -5,7 +5,7 @@ import { ButtonComponent } from '../Common/button/button.component';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { VehicleTypeAndpriceDetailsService } from '../vehicle-type-andprice-details.service';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -27,8 +27,6 @@ export class DailyCustomerDetailsComponent {
   type: 'success' | 'error' | 'warning' = 'success';
   message: string = '';
   showAlert = false;
-
-  searchWithVehicleNbr = new FormControl<string | null>('');
 
   dailystatus = ['paid', 'Unpaid'];
   vehicleTypes: string[] = [];
@@ -85,12 +83,18 @@ export class DailyCustomerDetailsComponent {
         }
       });
     this.isNewDailyCustomer = true;
+
+    const vehicleNbr = this.route.snapshot.queryParamMap.get('vehicleNbr');
+    if (vehicleNbr) {
+      this.getCustomerDetails(vehicleNbr);
+    }
   }
 
 
   constructor ( private newCustomerEntryService : NewCustomerEntryService,
                 private fb: FormBuilder,
                 private router: Router,
+                private route: ActivatedRoute,
                 private vehicleTypeAndpriceDetailsService: VehicleTypeAndpriceDetailsService) {
                   this.vehicleDetails();
 }
@@ -118,9 +122,9 @@ onDailylyStatusChange(status: string | null) {
 
   }
 }
-getCustomerDetails = async(vehicleNbr?: string) => {
+getCustomerDetails = async(vehicleNbr: string) => {
 
-  const vehicleNumber = vehicleNbr? vehicleNbr : this.searchWithVehicleNbr.value?.trim();
+  const vehicleNumber = vehicleNbr;
 
   if (!vehicleNumber ) {
     return;

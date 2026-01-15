@@ -2,24 +2,10 @@
     <mat-icon>arrow_back</mat-icon>
 </button>
 
-<div>
-    <h1>Monthly Customer Details</h1>
-</div>
-
-<div class="search-row">
-    <h2 class="search-label">Vehicle Number</h2>
-
-    <mat-form-field appearance="outline" class="search-input">
-        <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr" />
-    </mat-form-field>
-
-    <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary"
-        (click)="getCustomerDetails()">
-
-    </app-button>
-</div>
-
 <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
+    <div>
+        <h1>Monthly Customer Details</h1>
+    </div>
     <mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
         <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
         <span class="message">{{ message }}</span>
