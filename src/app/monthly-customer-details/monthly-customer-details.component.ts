@@ -35,8 +35,6 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
   type: 'success' | 'error' | 'warning' = 'success';
   message: string = '';
 
-  searchWithVehicleNbr = new FormControl<string | null>('');
-
   vehicleDetailsForm!: FormGroup;
 
   showAlert = false;
@@ -139,9 +137,9 @@ ngOnInit() {
       .trim();
   }
 
-  getCustomerDetails = async(vehicleNbr?: string) => {
+  getCustomerDetails = async(vehicleNbr: string) => {
 
-    const vehicleNumber = vehicleNbr? vehicleNbr : this.searchWithVehicleNbr.value?.trim();
+    const vehicleNumber = vehicleNbr;
 
     if (!vehicleNumber ) {
       return;

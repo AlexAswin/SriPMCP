@@ -51,8 +51,12 @@ export class EntryFormComponent {
 
     const exists = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
 
-  if (exists) {
-     this.router.navigate(['/customerDetails']);
+  if (exists && exists.customerType === 'Daily') {
+     this.router.navigate(['/dailyCustomer'], {
+      queryParams: {
+        vehicleNbr: this.searchWithVehicleNbr.value
+      }
+      });
      console.log('Vehicle already exists :', exists);
   } else {
     this.show = true;
