@@ -53,6 +53,61 @@ h1 {
     }
   }
 
+  .alert-card {
+    gap: 12px;
+    max-width: 1100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 18px;
+    margin: 12px 0;
+  
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+  
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    animation: slideFadeIn 0.3s ease-in-out;
+  
+    mat-icon {
+      font-size: 24px;
+    }
+  
+    // .message {
+    //   flex: 1;
+    // }
+  
+    &.success {
+      background-color: #a7f4ae;
+      color: #2e7d32;
+      border-left: 5px solid #2e7d32;
+  
+      mat-icon {
+        color: #2e7d32;
+      }
+    }
+  
+    &.error {
+      background-color: #fdecea;
+      color: #c62828;
+      border-left: 5px solid #c62828;
+  
+      mat-icon {
+        color: #c62828;
+      }
+    }
+  
+    &.warning {
+      background-color: #fff8e1;
+      color: #ef6c00;
+      border-left: 5px solid #ef6c00;
+  
+      mat-icon {
+        color: #ef6c00;
+      }
+    }
+  }
+
   /* Flex rows */
   .vehicle-info,
   .customer-info {
@@ -118,6 +173,9 @@ h1 {
     font-weight: bolder;
     color: #444;
     white-space: nowrap;
+  }
+  mat-select {
+    border-bottom: 1px solid  grey;
   }
 
   /* Inputs & textarea */
