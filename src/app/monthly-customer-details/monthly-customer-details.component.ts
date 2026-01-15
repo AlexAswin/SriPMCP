@@ -44,6 +44,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
   vehicleTypes: string[] = [];
 
   advance= new FormControl<string>('');
+  customerType = new FormControl<string>('monthly');
   monthlyStatus= new FormControl<string>('');
   fromDateMonthly= new FormControl<string>('');
   endDateMonthly= new FormControl<string>('');
@@ -111,7 +112,7 @@ ngOnInit() {
 
       customerName: [{ value: '', disabled: false }, Validators.required],
       customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
-      customerType: [{value:'monthly'}],
+      customerType: 'Monthly',
       address: [{ value: '', disabled: false }],
       amount: [{ value: '', disabled: true }],
 
@@ -198,11 +199,14 @@ ngOnInit() {
       this.note.setValue(res.note);
 
       console.log(res);
-    } else if (res && res.status === 'paid'){
+    } else if (res && res.dailyStatus === 'paid'){
       this.isNewMonthlyCustomer = false;
       this.isMonthlyActiveCustomer = false;
       this.isMonthlyInActiveCustomer = false;
       this.dailyToMonthlyCustomer = true;
+      this.showAlert = true;
+      this.type = 'warning';
+      this.message = 'This customer is an paid Daily Customer...';
 
       this.vehicleDetailsForm.patchValue({
         vehicleNumber: res.vehicleNumber,
@@ -212,7 +216,7 @@ ngOnInit() {
         customerPhoneNbr: res.customerPhoneNbr,
         address: res.address,
       });
-    } else if (res && res.status === 'unPaid') {
+    } else if (res && res.dailyStatus === 'Unpaid') {
       this.dailyCustomerUnpaid = true;
       this.showAlert = true;
       this.type = 'error';

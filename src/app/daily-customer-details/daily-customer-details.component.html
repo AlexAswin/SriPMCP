@@ -1,6 +1,6 @@
 <button (click)="closeForm()">
     <mat-icon>arrow_back</mat-icon>
-  </button>
+</button>
 
 <div>
     <h1>Daily Customer Details</h1>
@@ -15,12 +15,16 @@
 
     <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary"
         (click)="getCustomerDetails()">
-
     </app-button>
 </div>
 
-<form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
+<form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container" >
+    <mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
+        <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
+        <span class="message">{{ message }}</span>
+    </mat-card>
 
+    <div *ngIf="!isMonthlyActiveCustomer">
     <!-- VEHICLE DETAILS -->
     <div class="section vehicleDetails">
         <h2>Vehicle Details</h2>
@@ -33,7 +37,9 @@
 
             <div class="form-group">
                 <label>Vehicle Type</label>
-                <input type="text" placeholder="Type" formControlName="vehicleType" />
+                <mat-select placeholder="select Vehicle" formControlName="vehicleType">
+                    <mat-option *ngFor="let types of vehicleTypes" [value]="types">{{types}}</mat-option>
+                </mat-select>
             </div>
         </div>
     </div>
@@ -73,7 +79,7 @@
 
                 <div class="form-group">
                     <label>Bill Number</label>
-                    <input type="text" formControlName="billNo" readonly />
+                    <input type="text" [formControl]="billNbr" />
                 </div>
 
 
@@ -81,8 +87,8 @@
                 <div class="form-group">
                     <label>Status</label>
                     <div class="radio-group">
-                        <label *ngFor="let status of status">
-                            <input type="radio" [value]="status" formControlName="status" />
+                        <label *ngFor="let status of dailystatus">
+                            <input type="radio" [value]="status" [formControl]="dailyStatus" />
                             {{ status }}
                         </label>
                     </div>
@@ -92,28 +98,41 @@
             <div class="billing-details">
                 <div class="form-group">
                     <label>From Date</label>
-                    <input type="date" formControlName="fromDateDaily" />
+                    <input type="date" [formControl]="fromDateDaily" (change)="onEntryDateChange($event)" />
                 </div>
                 <div class="form-group">
-                    <label>End Date</label>
-                    <input type="date" formControlName="endDateDaily" />
+                    <label>Entry Time</label>
+                    <input type="text" [formControl]="entryTime" />
+                </div>
+                <div class="form-group" *ngIf="showPaidDetails">
+                    <label>Bill Amount</label>
+                    <input type="text" [formControl]="billAmount" readonly />
                 </div>
 
-                <div class="form-group">
-                    <label>Actual Cost</label>
-                    <input type="text" placeholder="Cost" formControlName="actualCost" />
+            </div>
+            <div class="billing-details">
+                <div class="form-group" *ngIf="showPaidDetails">
+                    <label>End Date</label>
+                    <input type="date" [formControl]="endDateDaily" (change)="onExitDateChange($event)" />
+                </div>
+                <div class="form-group" *ngIf="showPaidDetails">
+                    <label>Exit Time</label>
+                    <input type="text" [formControl]="exitTime" />
+                </div>
+                <div class="form-group" *ngIf="showPaidDetails">
+                    <label>Settled Amount</label>
+                    <input type="text" placeholder="Cost" [formControl]="actualCost" />
                 </div>
             </div>
-
-
+            <div class="billing-details">
+            </div>
         </div>
-
     </div>
     <div class="note-textArea">
         <div class="billing-right">
             <h3>Note</h3>
 
-            <textarea rows="4" placeholder="Leave a comment" formControlName="note"></textarea>
+            <textarea rows="4" placeholder="Leave a comment" [formControl]="note"></textarea>
         </div>
     </div>
 
@@ -124,5 +143,8 @@
         <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()">
         </app-button>
     </div>
+    </div>
+
+
 
 </form>
