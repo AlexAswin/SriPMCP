@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { NavBarComponent } from '../Common/nav-bar/nav-bar.component';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 
@@ -10,7 +9,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-existing-customer-details',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, NavBarComponent, MatIconModule ],
+  imports: [ReactiveFormsModule, CommonModule, MatIconModule ],
   templateUrl: './existing-customer-details.component.html',
   styleUrl: './existing-customer-details.component.scss'
 })

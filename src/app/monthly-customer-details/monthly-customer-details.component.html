@@ -25,7 +25,7 @@
         <div class="form-group">
             <label>Vehicle Type</label>
             <mat-select placeholder="select Vehicle" formControlName="vehicleType">
-                <mat-option *ngFor="let types of vehicleTypes" [value]="types">{{types}}</mat-option>
+                <mat-option *ngFor="let types of vehicleTypes" [value]="types.vehicleType">{{types.vehicleType}}</mat-option>
             </mat-select>
         </div>
     </div>
