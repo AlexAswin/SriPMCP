@@ -7,7 +7,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { Subject, combineLatest, debounceTime, distinctUntilChanged, startWith, takeUntil } from 'rxjs';
+import { Observable, Subject, combineLatest, debounceTime, distinctUntilChanged, startWith, takeUntil, withLatestFrom } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { AdminService, VehicleType } from '../admin.service';
@@ -37,7 +37,6 @@ export class DailyCustomerDetailsComponent {
   showAlert = false;
 
   dailystatus = ['paid', 'Unpaid'];
-  vehicleTypes: VehicleType[] = [];
   currentCustomer: string = '';
 
   isNewDailyCustomer: boolean = false;
@@ -59,28 +58,21 @@ export class DailyCustomerDetailsComponent {
   appxexitTime: string = '';
   showPaidDetails: boolean = false;
   private destroy$ = new Subject<void>();
+  vehicleTypes$!: Observable<VehicleType[]>;
 
   ngOnInit() {
-    this.getVehicle();
+    this.vehicleTypes$ = this.adminService.getVehicleTypes();
 
-    this.vehicleDetailsForm
-      .get('vehicleType')!
-      .valueChanges.pipe(
-        startWith(this.vehicleDetailsForm.get('vehicleType')!.value),
-        takeUntil(this.destroy$)
-      )
-      .subscribe((selectedType: string) => {
-        if (!selectedType) return;
-
-        const selectedVehicle = this.vehicleTypes.find(
-          (v) => v.vehicleType === selectedType
-        );
-
-        if (!selectedVehicle) return;
-        this.vehicleDetailsForm
-          .get('amount')
-          ?.setValue(selectedVehicle.dailyCost, { emitEvent: false });
-      });
+  this.vehicleDetailsForm.get('vehicleType')?.valueChanges
+  .pipe(
+    withLatestFrom(this.vehicleTypes$),
+  )
+  .subscribe(([selectedType, vehicleTypes]) => {
+    const selectedVehicle = vehicleTypes.find(v => v.vehicleType === selectedType);
+    if (selectedVehicle) {
+      this.vehicleDetailsForm.get('amount')?.setValue(selectedVehicle.dailyCost, { emitEvent: false });
+    }
+  });
 
     const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
@@ -124,13 +116,6 @@ export class DailyCustomerDetailsComponent {
       amount: [{ value: '', disabled: true }],
     });
   };
-
-  getVehicle() {
-    this.adminService.getVehicleTypes().subscribe((data) => {
-      this.vehicleTypes = data;
-      console.log(this.vehicleTypes);
-    });
-  }
 
   onDailylyStatusChange(status: string | null) {
     if (status === 'paid') {
