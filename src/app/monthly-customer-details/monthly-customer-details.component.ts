@@ -1,28 +1,24 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { ButtonComponent } from '../Common/button/button.component';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MonthlyCustomerDetailsService } from '../monthly-customer-details.service';
-import { NewCustomerEntryFormComponent } from '../new-customer-entry-form/new-customer-entry-form.component';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { ExistingCustomerDetailsComponent } from '../existing-customer-details/existing-customer-details.component';
-import { FormsModule} from '@angular/forms';
 import { MatRadioModule} from '@angular/material/radio';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
-import { Router } from '@angular/router';
-import { VehicleTypeAndpriceDetailsService } from '../vehicle-type-andprice-details.service';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
+import { AdminService, VehicleType } from '../admin.service';
 
 
 @Component({
   selector: 'app-monthly-customer-details',
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, MatIconModule, ButtonComponent, CommonModule, ReactiveFormsModule, NewCustomerEntryFormComponent,
-            ReactiveFormsModule, MatGridListModule, ExistingCustomerDetailsComponent, MatRadioModule, MatSelectModule],
+  imports: [MatFormFieldModule, MatInputModule, MatIconModule, ButtonComponent, CommonModule, ReactiveFormsModule,
+            ReactiveFormsModule, MatGridListModule, MatRadioModule, MatSelectModule],
   templateUrl: './monthly-customer-details.component.html',
   styleUrl: './monthly-customer-details.component.scss'
 })
@@ -39,7 +35,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
 
   showAlert = false;
   // existingCustomer: boolean = false;
-  vehicleTypes: string[] = [];
+  vehicleTypes: VehicleType[] = [];
 
   advance= new FormControl<string>('');
   customerType = new FormControl<string>('monthly');
@@ -61,17 +57,22 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
   currentCustomer: string ='';
 
 ngOnInit() {
-  this.vehicleTypes = this.vehicleTypeAndpriceDetailsService.getVehicleTypes();
+  this.getVehicle();
 
-  this.vehicleDetailsForm.valueChanges.subscribe(({ vehicleType, customerType }) => {
-    if (vehicleType && customerType) {
-      const price = this.vehicleTypeAndpriceDetailsService.getPrice(vehicleType, customerType);
-      if (price !== null) {
-        this.vehicleDetailsForm.get('amount')
-          ?.setValue(price, { emitEvent: false });
-      }
-    }
-  });
+  this.vehicleDetailsForm.get('vehicleType')?.valueChanges
+    .pipe(
+      startWith(this.vehicleDetailsForm.get('vehicleType')!.value) // pre-fill if editing
+    )
+    .subscribe((selectedType: string) => {
+      if (!selectedType) return;
+
+      const selectedVehicle = this.vehicleTypes.find(v => v.vehicleType === selectedType);
+      if (!selectedVehicle) return;
+
+      // Always use monthlyCost
+      this.vehicleDetailsForm.get('amount')?.setValue(selectedVehicle.monthlyCost, { emitEvent: false });
+    });
+    
   const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
   vehicleCtrl?.valueChanges
@@ -89,12 +90,18 @@ ngOnInit() {
   });
 
   this.isNewMonthlyCustomer = true;
+
+  const vehicleNbr = this.route.snapshot.queryParamMap.get('vehicleNbr');
+  if (vehicleNbr) {
+    this.getCustomerDetails(vehicleNbr);
+  }
 }
 
   constructor ( private newCustomerEntryService : NewCustomerEntryService,
                 private fb: FormBuilder,
                 private router: Router,
-                private vehicleTypeAndpriceDetailsService: VehicleTypeAndpriceDetailsService) {
+                private route: ActivatedRoute,
+                private adminService: AdminService) {
 
                 this.vehicleDetails();
   }
@@ -114,6 +121,13 @@ ngOnInit() {
       address: [{ value: '', disabled: false }],
       amount: [{ value: '', disabled: true }],
 
+    });
+  }
+
+  getVehicle() {
+    this.adminService.getVehicleTypes().subscribe(data => {
+      this.vehicleTypes = data;
+      console.log(this.vehicleTypes);
     });
   }
 

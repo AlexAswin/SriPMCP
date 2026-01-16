@@ -1,0 +1,122 @@
+<div class="parent-container">
+    <button [routerLink]="['/dashBoard']">
+        <mat-icon>arrow_back</mat-icon>
+    </button>
+
+    <div class="left-container">
+    <h1>Entry Details</h1>
+
+        <mat-accordion class="example-headers-align" multiple>
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    <mat-panel-title> Vehicle Details</mat-panel-title>
+                </mat-expansion-panel-header>
+                <form [formGroup]="vehicleForm" (ngSubmit)="saveVehicle()">
+        
+                    <mat-form-field class="example-full-width" appearance="outline">
+                      <mat-label>Vehicle Type</mat-label>
+                      <input matInput placeholder="Vehicle" formControlName="vehicleType">
+                    </mat-form-field>
+                  
+                    <mat-form-field class="example-full-width">
+                      <mat-label>Monthly Cost</mat-label>
+                      <input matInput type="number" formControlName="monthlyCost">
+                    </mat-form-field>
+                  
+                    <mat-form-field class="example-full-width">
+                      <mat-label>Daily Cost</mat-label>
+                      <input matInput type="number" formControlName="dailyCost">
+                    </mat-form-field>
+                  
+                    <app-button
+                      label="ADD"
+                      variant="primary"
+                      type="submit">
+                    </app-button>
+                  
+                  </form>
+                  
+            </mat-expansion-panel>
+        
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    <mat-panel-title> Expense Catagory </mat-panel-title>
+                </mat-expansion-panel-header>
+                <form [formGroup]="expenseForm" (ngSubmit)="saveExpense()">
+                    <mat-form-field class="example-full-width">
+                        <mat-label>Expense Type</mat-label>
+                        <input matInput placeholder="Expense" formControlName="expenseType">
+                    </mat-form-field>
+                    <app-button label="ADD" variant="primary" type="submit">
+                    </app-button>
+                </form>
+            </mat-expansion-panel>
+        
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    <mat-panel-title> Payment Methods </mat-panel-title>
+                </mat-expansion-panel-header>
+                <form [formGroup]="paymentForm" (ngSubmit)="savePayment()">
+                    <mat-form-field class="example-full-width" appearance="outline">
+                        <mat-label>Payment Methods</mat-label>
+                        <input matInput placeholder="Payment Methods" formControlName="paymentMethod">
+                    </mat-form-field>
+                    <app-button label="ADD" variant="primary" type="submit">
+                    </app-button>
+                </form>
+            </mat-expansion-panel>
+        </mat-accordion>
+    </div>
+     <div class="right-container">
+        <form [formGroup]="vehicleUpdateForm" (ngSubmit)="updateVehicleDetails()">
+            <mat-label>Select Vehicle</mat-label>
+        
+            <mat-form-field>
+                <mat-label>Vehicle Types</mat-label>
+                <mat-select placeholder="select Vehicle" formControlName="vehicleType">
+                    <mat-option *ngFor="let types of vehicleTypes" [value]="types.vehicleType">{{types.vehicleType}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-label>Select Duration</mat-label>
+            <mat-form-field>
+                <mat-label>Duration</mat-label>
+                <mat-select placeholder="Type" formControlName="duration">
+                    <mat-option value="Monthly">Monthly</mat-option>
+                    <mat-option value="Daily">Daily</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-label>Updated Price</mat-label>
+            <mat-form-field class="example-full-width">
+                <mat-label>Price</mat-label>
+                <input matInput formControlName="updatedPrice">
+            </mat-form-field>
+
+            <div class="button-group">
+                <app-button label="Delete Vehicle" variant="secondary" (clicked)="deleteVehicle()" type="button"></app-button>
+                <app-button label="Update Price" variant="primary" type="submit"></app-button>
+              </div>
+        </form>
+
+        <div class="expense-container" *ngIf="expenses$">
+            <div class="expense-list" >
+              <h3>Expense List</h3>
+              <div class="expense-cards">
+                <div class="expense-card" *ngFor="let expense of expenses$ | async">
+                  <span class="expense-name">{{ expense.expenseType }}</span>
+                  <button mat-icon-button color="warn" (click)="deleteExpense(expense.id)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div> 
+</div>
+  
+
+
+
+
+

@@ -10,13 +10,13 @@ import { MonthlyCustomerDetailsComponent } from '../monthly-customer-details/mon
 import { CommonModule } from '@angular/common';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { DailyCustomerDetailsComponent } from '../daily-customer-details/daily-customer-details.component';
-import { Route, Router } from '@angular/router';
+import { Route, Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-dash-board',
   standalone: true,
-  imports: [NavBarComponent, MatSidenavModule, MatButtonModule, MatIconModule, MatListModule, MatToolbarModule, EntryFormComponent,
-    MonthlyCustomerDetailsComponent, CommonModule, MatGridListModule, DailyCustomerDetailsComponent],
+  imports: [MatSidenavModule, MatButtonModule, MatIconModule, MatListModule, MatToolbarModule, EntryFormComponent,
+            CommonModule, MatGridListModule, RouterModule],
   templateUrl: './dash-board.component.html',
   styleUrl: './dash-board.component.scss'
 })

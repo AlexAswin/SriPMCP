@@ -4,6 +4,7 @@ import { DashBoardComponent } from './dash-board/dash-board.component';
 import { ExistingCustomerDetailsComponent } from './existing-customer-details/existing-customer-details.component';
 import { MonthlyCustomerDetailsComponent } from './monthly-customer-details/monthly-customer-details.component';
 import { DailyCustomerDetailsComponent } from './daily-customer-details/daily-customer-details.component';
+import { AdminEntryComponent } from './admin-entry/admin-entry.component';
 
 export const routes: Routes = [
     { path: '', component: LogInComponent }, 
@@ -11,4 +12,6 @@ export const routes: Routes = [
     { path: 'customerDetails', component: ExistingCustomerDetailsComponent },
     { path: 'monthlyCustomer', component: MonthlyCustomerDetailsComponent },
     { path: 'dailyCustomer', component: DailyCustomerDetailsComponent },
+    { path: 'adminEntry', component: AdminEntryComponent },
+
 ];
