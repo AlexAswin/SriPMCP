@@ -10,7 +10,7 @@ import { MatRadioModule} from '@angular/material/radio';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
-import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
+import { Observable, debounceTime, distinctUntilChanged, startWith, take, withLatestFrom } from 'rxjs';
 import { AdminService, VehicleType } from '../admin.service';
 
 
@@ -35,7 +35,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
 
   showAlert = false;
   // existingCustomer: boolean = false;
-  vehicleTypes: VehicleType[] = [];
+  // vehicleTypes: VehicleType[] = [];
 
   advance= new FormControl<string>('');
   customerType = new FormControl<string>('monthly');
@@ -53,25 +53,25 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
   dailyToMonthlyCustomer: boolean = false;
   dailyCustomerUnpaid: boolean = false;
 
+  vehicleTypes$!: Observable<VehicleType[]>;
+
+
 
   currentCustomer: string ='';
 
 ngOnInit() {
-  this.getVehicle();
+  this.vehicleTypes$ = this.adminService.getVehicleTypes();
 
   this.vehicleDetailsForm.get('vehicleType')?.valueChanges
-    .pipe(
-      startWith(this.vehicleDetailsForm.get('vehicleType')!.value) // pre-fill if editing
-    )
-    .subscribe((selectedType: string) => {
-      if (!selectedType) return;
-
-      const selectedVehicle = this.vehicleTypes.find(v => v.vehicleType === selectedType);
-      if (!selectedVehicle) return;
-
-      // Always use monthlyCost
+  .pipe(
+    withLatestFrom(this.vehicleTypes$),
+  )
+  .subscribe(([selectedType, vehicleTypes]) => {
+    const selectedVehicle = vehicleTypes.find(v => v.vehicleType === selectedType);
+    if (selectedVehicle) {
       this.vehicleDetailsForm.get('amount')?.setValue(selectedVehicle.monthlyCost, { emitEvent: false });
-    });
+    }
+  });
     
   const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
@@ -121,13 +121,6 @@ ngOnInit() {
       address: [{ value: '', disabled: false }],
       amount: [{ value: '', disabled: true }],
 
-    });
-  }
-
-  getVehicle() {
-    this.adminService.getVehicleTypes().subscribe(data => {
-      this.vehicleTypes = data;
-      console.log(this.vehicleTypes);
     });
   }
 
