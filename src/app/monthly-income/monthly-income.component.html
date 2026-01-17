@@ -1,0 +1,64 @@
+<mat-card>
+    <mat-card-title>Monthly Customers</mat-card-title>
+  
+    <table mat-table *ngIf="activeCustomers$" [dataSource]="(activeCustomers$ | async) ?? []" class="full-width">
+  
+      <!-- Vehicle -->
+      <ng-container matColumnDef="vehicle">
+        <th mat-header-cell *matHeaderCellDef>Vehicle</th>
+        <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.vehicleNumber }}</td>
+      </ng-container>
+  
+      <!-- Name -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.customerName }}</td>
+      </ng-container>
+  
+      <!-- Monthly -->
+      <ng-container matColumnDef="monthly">
+        <th mat-header-cell *matHeaderCellDef>Monthly</th>
+        <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.monthlyAmount }}</td>
+      </ng-container>
+  
+      <!-- Balance -->
+      <ng-container matColumnDef="balance">
+        <th mat-header-cell *matHeaderCellDef>Balance</th>
+        <td mat-cell *matCellDef="let c">
+          <span [ngClass]="c.balance > 0 ? 'due' : 'paid'">
+            ₹{{ c.balance }}
+          </span>
+        </td>
+      </ng-container>
+  
+      <!-- Status -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let c">
+            <mat-chip
+            [color]="c.balance > 0 ? 'warn' : 'primary'"
+            selected>
+            {{ c.balance > 0 ? 'Due' : 'Paid' }}
+          </mat-chip>
+        </td>
+      </ng-container>
+  
+      <!-- Action -->
+      <ng-container matColumnDef="action">
+        <th mat-header-cell *matHeaderCellDef>Action</th>
+        <td mat-cell *matCellDef="let c">
+          <button mat-button color="primary" (click)="viewLedger(c)">
+            View
+          </button>
+          <button mat-button color="accent" *ngIf="c.balance > 0"
+            (click)="openPayment(c)">
+            Pay
+          </button>
+        </td>
+      </ng-container>
+  
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </mat-card>
+  

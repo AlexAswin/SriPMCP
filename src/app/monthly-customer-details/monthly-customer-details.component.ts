@@ -69,7 +69,7 @@ ngOnInit() {
   .subscribe(([selectedType, vehicleTypes]) => {
     const selectedVehicle = vehicleTypes.find(v => v.vehicleType === selectedType);
     if (selectedVehicle) {
-      this.vehicleDetailsForm.get('amount')?.setValue(selectedVehicle.monthlyCost, { emitEvent: false });
+      this.vehicleDetailsForm.get('amount')?.setValue(selectedVehicle.monthlyCost, { emitEvent: true });
     }
   });
     
@@ -119,7 +119,7 @@ ngOnInit() {
       customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
       customerType: 'Monthly',
       address: [{ value: '', disabled: false }],
-      amount: [{ value: '', disabled: true }],
+      amount: [{ value: '', disabled: false }],
 
     });
   }
@@ -154,7 +154,7 @@ ngOnInit() {
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber)
     const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
  
-    this.currentCustomer = res.vehicleNumber;
+    this.currentCustomer = res?.vehicleNumber;
 
     if (res && res.monthlyStatus === 'Active') {
       this.isNewMonthlyCustomer = false;
@@ -278,7 +278,9 @@ ngOnInit() {
   
         await this.newCustomerEntryService.addNewCustomerEntry(customerDetails);
 
-        this.vehicleDetailsForm.reset();
+        this.vehicleDetailsForm.reset({
+          customerType: 'Monthly'
+        });
         this.message = 'Customer Added Successfully...';
       }
       else if (this.isMonthlyInActiveCustomer) {
@@ -302,7 +304,8 @@ ngOnInit() {
   
         const updatePayload: any = {
           monthlyStatus: 'InActive',
-          endDateMonthly: this.endDateMonthly.value
+          endDateMonthly: this.endDateMonthly.value,
+          note: this.note.value
         };
   
         const historyPayload = this.buildHistory(
@@ -315,6 +318,9 @@ ngOnInit() {
           updatePayload,
           historyPayload
         );
+        this.vehicleDetailsForm.reset({
+          customerType: 'Monthly'
+        });
   
         this.message = 'Customer Updated Successfully...';
       }
@@ -336,7 +342,9 @@ ngOnInit() {
           customerDetails,
         );
   
-        this.vehicleDetailsForm.reset();
+        this.vehicleDetailsForm.reset({
+          customerType: 'Monthly'
+        });
         this.message = 'Customer Converted to Monthly Successfully...';
       }
   

@@ -1,0 +1,10 @@
+<div class="dialog-container">
+    <h2 mat-dialog-title>Confirm Transaction</h2>
+      <mat-dialog-content>
+        <p>Are you sure you want to proceed with the transaction for<strong>{{ data.customer }}</strong>with amount<strong>₹{{ data.amount }}</strong>?</p>
+      </mat-dialog-content>
+      <mat-dialog-actions>
+          <app-button label="Cancel" width="180px" variant="secondary" (clicked)="onCancel()"></app-button>
+          <app-button label="Confirm" width="180px" variant="primary" (clicked)="onConfirm()"></app-button>
+      </mat-dialog-actions>
+    </div>

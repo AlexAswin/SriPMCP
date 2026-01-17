@@ -112,8 +112,8 @@ export class DailyCustomerDetailsComponent {
       customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
       address: [{ value: '', disabled: false }],
 
-      customerType: 'daily',
-      amount: [{ value: '', disabled: true }],
+      customerType: 'Daily',
+      amount: [{ value: '', disabled: false }],
     });
   };
 
@@ -399,7 +399,10 @@ export class DailyCustomerDetailsComponent {
 
         await this.newCustomerEntryService.addNewCustomerEntry(customerDetails);
 
-        this.vehicleDetailsForm.reset();
+        this.vehicleDetailsForm.reset({
+          customerType: 'Daily'
+        });
+        this.entryTime.setValue('');
         this.message = 'Customer Added Successfully...';
       } else if (this.isDailyUnpaidCustomer) {
         const updatePayload: any = {
@@ -419,6 +422,9 @@ export class DailyCustomerDetailsComponent {
           updatePayload,
           historyPayload
         );
+        this.vehicleDetailsForm.reset({
+          customerType: 'Daily'
+        });
         this.message = 'Customer Updated Successfully...';
       } else if (this.isMonthlyInActiveCustomer) {
         const updatePayload: any = {
@@ -433,7 +439,9 @@ export class DailyCustomerDetailsComponent {
           updatePayload
         );
 
-        this.vehicleDetailsForm.reset();
+        this.vehicleDetailsForm.reset({
+          customerType: 'Daily'
+        });
         this.message = 'Customer Successfully Converted to Daily... ';
       }
 
