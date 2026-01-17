@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { addDoc, doc, updateDoc } from '@angular/fire/firestore';
+import { addDoc, collectionData, doc, setDoc, updateDoc } from '@angular/fire/firestore';
 import { Firestore, collection, getDocs, query, where } from '@angular/fire/firestore';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 
 
@@ -15,13 +15,12 @@ export class NewCustomerEntryService {
 
   constructor(private firestore: Firestore) {}
 
-  // ➕ Add new customer
-  addNewCustomerEntry(customerDetails: any) {
-    const ref = collection(this.firestore, 'CustomerEntry');
-    return addDoc(ref, customerDetails);
+  addNewCustomerEntry(customerDetails: any) {  
+    const docRef = doc(this.firestore, 'CustomerEntry', customerDetails.vehicleNumber);
+  
+    return setDoc(docRef, customerDetails);
   }
 
-  // 🔍 Get vehicle by number
   async getVehicleByNumber(vehicleNumber: string) {
     if (!vehicleNumber) return null;
 
@@ -44,18 +43,15 @@ export class NewCustomerEntryService {
       ...docSnap.data()
     }as any;
 
-    // ✅ Store globally
     this.setVehicle(data);
 
     return data;
   }
 
-  // 📦 Store data
   setVehicle(data: any) {
     this.vehicleSource.next(data);
   }
 
-  // 📤 Get latest value (sync)
    getVehicle() {
     return this.vehicleSource.value;
   }
@@ -74,7 +70,6 @@ export class NewCustomerEntryService {
       throw new Error('Customer not found');
     }
   
-    // Assuming vehicleNumber is UNIQUE
     const docSnap = snapshot.docs[0];
     const customerDocId = docSnap.id;
     const docRef = doc(this.firestore, 'CustomerEntry', docSnap.id);
@@ -83,18 +78,21 @@ export class NewCustomerEntryService {
 
 
     if (historyPayload) {
-      const historyRef = collection(
-        this.firestore,
-        'CustomerEntry',
-        customerDocId,
-        'statusHistory'
-      );
-    
+      const historyRef = collection(this.firestore, 'CustomerEntry', customerDocId, 'statusHistory' );
       await addDoc(historyRef, historyPayload);
-    
     }
     return docSnap.id;
+  }
 
+  getActiveMonthlyCustomers(): Observable<any[]> {
+    const ref = collection(this.firestore, 'CustomerEntry');
+  
+    const q = query(
+      ref,
+      where('monthlyStatus', '==', 'Active')
+    );
+  
+    return collectionData(q);
   }
 
 }

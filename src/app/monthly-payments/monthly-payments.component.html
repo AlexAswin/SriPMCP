@@ -1,0 +1,65 @@
+<div class="searchGroup">
+    <div>
+      <h1>Monthly Payments</h1>
+    </div>
+  
+    <div class="search-row">
+      <h2 class="search-label">Vehicle Number</h2>
+  
+      <mat-form-field appearance="outline" class="search-input">
+        <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr" />
+      </mat-form-field>
+  
+      <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary"
+        (click)="checkExistingUser()">
+  
+      </app-button>
+    </div>
+
+  </div>
+
+  <form action="" [formGroup]="monthlyPaymentForm">
+    <div class="section vehicleDetails">
+        <h2>Payment Details</h2>
+    
+        <div class="vehicle-info">
+            <div class="form-group">
+                <label>Vehicle Number</label>
+                <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" readonly/>
+            </div>
+
+            <div class="form-group">
+                <label>Customer Name</label>
+                <input type="text" placeholder="Enter customer name" formControlName="customerName" readonly/>
+            </div>
+    
+            <div class="form-group">
+                <label>Vehicle Type</label>
+                <input type="text" placeholder="Vehicle Type" formControlName="vehicleType" readonly/>
+            </div>
+            
+            <div class="form-group">
+                <label>Amount To Pay</label>
+                <input type="text" placeholder="Amount" formControlName="amount" readonly/>
+            </div>
+            <div>
+
+            </div>
+            <div class="form-group">
+                    <label>Advance Paid</label>
+                    <input type="text" placeholder="Advance" formControlName="advance" readonly/>
+            </div>
+        </div>
+        <div class="transactionDate">
+            <label>Transaction Date</label>
+            <input type="date" [formControl]="transactionDate" />
+        </div>
+        <div class="paymentInput">
+                <label>Amount</label>
+                <input type="number" placeholder="Paying Amount" [formControl]="payingAmount" />
+        </div>
+        <div class="button-group">
+                <app-button label="Proceed Transaction" width="180px" variant="primary" type="submit" (click)="openDialog()"></app-button>
+        </div>
+    </div>
+  </form>

@@ -1,0 +1,25 @@
+.dialog-container {
+    padding: 20px;
+  }
+  .dialog-title {
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .dialog-content {
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 10px 0;
+
+    strong {
+      margin: 0 4px;
+      color: #1976d2;
+    }
+  }
+
+  mat-dialog-actions  {
+    display: flex;
+    justify-content: space-between;
+  }
