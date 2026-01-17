@@ -5,6 +5,8 @@ import { ExistingCustomerDetailsComponent } from './existing-customer-details/ex
 import { MonthlyCustomerDetailsComponent } from './monthly-customer-details/monthly-customer-details.component';
 import { DailyCustomerDetailsComponent } from './daily-customer-details/daily-customer-details.component';
 import { AdminEntryComponent } from './admin-entry/admin-entry.component';
+import { MonthlyIncomeComponent } from './monthly-income/monthly-income.component';
+import { MonthlyPaymentsComponent } from './monthly-payments/monthly-payments.component';
 
 export const routes: Routes = [
     { path: '', component: LogInComponent }, 
@@ -13,5 +15,6 @@ export const routes: Routes = [
     { path: 'monthlyCustomer', component: MonthlyCustomerDetailsComponent },
     { path: 'dailyCustomer', component: DailyCustomerDetailsComponent },
     { path: 'adminEntry', component: AdminEntryComponent },
+    { path: 'monthlyPayments', component: MonthlyPaymentsComponent },
 
 ];
