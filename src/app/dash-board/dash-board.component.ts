@@ -22,6 +22,7 @@ import { Route, Router, RouterModule } from '@angular/router';
 })
 export class DashBoardComponent {
   showFiller = false;
+  showReports = false;
 
   monthlyCustomerForm: boolean = false;
   dailyCustomerForm: boolean = false;
@@ -37,6 +38,10 @@ export class DashBoardComponent {
 
   openDailyCustomerForm() {
     this.router.navigate(['/dailyCustomer']);    
+  }
+
+  toggleReports() {
+    this.showReports = !this.showReports;
   }
 
 }

@@ -7,14 +7,16 @@ import { DailyCustomerDetailsComponent } from './daily-customer-details/daily-cu
 import { AdminEntryComponent } from './admin-entry/admin-entry.component';
 import { MonthlyIncomeComponent } from './monthly-income/monthly-income.component';
 import { MonthlyPaymentsComponent } from './monthly-payments/monthly-payments.component';
+import { ExpenseDetailsComponent } from './expense-details/expense-details.component';
 
 export const routes: Routes = [
-    { path: '', component: LogInComponent }, 
-    { path: 'dashBoard', component: DashBoardComponent },
-    { path: 'customerDetails', component: ExistingCustomerDetailsComponent },
-    { path: 'monthlyCustomer', component: MonthlyCustomerDetailsComponent },
-    { path: 'dailyCustomer', component: DailyCustomerDetailsComponent },
-    { path: 'adminEntry', component: AdminEntryComponent },
-    { path: 'monthlyPayments', component: MonthlyPaymentsComponent },
-
+  { path: '', component: LogInComponent },
+  { path: 'dashBoard', component: DashBoardComponent },
+  { path: 'customerDetails', component: ExistingCustomerDetailsComponent },
+  { path: 'monthlyCustomer', component: MonthlyCustomerDetailsComponent },
+  { path: 'dailyCustomer', component: DailyCustomerDetailsComponent },
+  { path: 'adminEntry', component: AdminEntryComponent },
+  { path: 'monthlyPayments', component: MonthlyPaymentsComponent },
+  { path: 'reports/monthlyIncome', component: MonthlyIncomeComponent },
+  { path: 'reports/expense', component: ExpenseDetailsComponent },
 ];
