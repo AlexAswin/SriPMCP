@@ -50,7 +50,6 @@ export class MonthlyPaymentsComponent implements OnInit{
     const vehicleNumber = this.searchWithVehicleNbr.value?.trim();
 
     if (!vehicleNumber) {
-      console.log('No vehicle number entered');
       return;
     }
     const formatedVehicleNbr = this.formateVehicleNumber(vehicleNumber);
@@ -94,7 +93,6 @@ export class MonthlyPaymentsComponent implements OnInit{
   }
 
   proceedTransaction = async() => {
-    console.log('Transaction processing...');
     const customer = this.searchWithVehicleNbr.value;
 
     const transactionData = {

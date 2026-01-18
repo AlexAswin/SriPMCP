@@ -15,6 +15,22 @@
       <a mat-list-item [routerLink]="['/monthlyPayments']">
         Monthly Payments
       </a>
+      <a mat-list-item (click)="toggleReports()">
+        Reports
+        <!-- <mat-icon class="ml-auto">
+          {{ showReports ? 'expand_less' : 'expand_more' }}
+        </mat-icon> -->
+      </a>
+
+      <div *ngIf="showReports" class="nested-menu">
+        <a mat-list-item routerLink="/reports/monthlyIncome">
+          Monthly Income
+        </a>
+    
+        <a mat-list-item routerLink="/reports/expense">
+          Expense Report
+        </a>
+      </div>
     </mat-nav-list>
   </aside>
 

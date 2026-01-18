@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { addDoc, collectionData, doc, setDoc, updateDoc } from '@angular/fire/firestore';
 import { Firestore, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { TransactionService } from './transaction.service';
 
 
 
@@ -13,12 +14,14 @@ export class NewCustomerEntryService {
   private vehicleSource = new BehaviorSubject<any>(null);
   vehicle$ = this.vehicleSource.asObservable();
 
-  constructor(private firestore: Firestore) {}
+  constructor(private firestore: Firestore,
+              private transactionService: TransactionService) {}
 
-  addNewCustomerEntry(customerDetails: any) {  
+  async addNewCustomerEntry(customerDetails: any) {  
     const docRef = doc(this.firestore, 'CustomerEntry', customerDetails.vehicleNumber);
   
-    return setDoc(docRef, customerDetails);
+    await setDoc(docRef, customerDetails);
+    await this.transactionService.createNewMonthlyCustomerTransaction(customerDetails);
   }
 
   async getVehicleByNumber(vehicleNumber: string) {

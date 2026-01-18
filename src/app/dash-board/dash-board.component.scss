@@ -29,6 +29,17 @@
     flex-direction: column;
     margin: 20px;
   }
+
+  .nested-menu {
+    padding-left: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  
+    a {
+      font-size: 14px;
+    }
+  }
   
   @media (max-width: 768px) {
     .layout {
