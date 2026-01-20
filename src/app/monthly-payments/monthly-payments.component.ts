@@ -9,30 +9,42 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { MatDialog } from '@angular/material/dialog';
 import { PaymentConfirmationComponent } from '../payment-confirmation/payment-confirmation.component';
 import { TransactionService } from '../transaction.service';
+import { Observable } from 'rxjs';
+import { MatSelect, MatSelectModule } from '@angular/material/select';
+import { AdminService } from '../admin.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-monthly-payments',
   standalone: true,
-  imports: [MatFormFieldModule, CommonModule, ReactiveFormsModule, ButtonComponent, MatInputModule, MatOptionModule],
+  imports: [MatFormFieldModule, CommonModule, ReactiveFormsModule, ButtonComponent, MatInputModule, MatOptionModule, MatSelectModule,
+            MatSnackBarModule],
   templateUrl: './monthly-payments.component.html',
   styleUrl: './monthly-payments.component.scss'
 })
 export class MonthlyPaymentsComponent implements OnInit{
 
   monthlyPaymentForm!: FormGroup;
+
   searchWithVehicleNbr = new FormControl<string | null>('');
   payingAmount = new FormControl<number | null>(null);
   transactionDate = new FormControl<string | null>(null);
+
   readonly dialog = inject(MatDialog);
+
+  paymentMethods$!: Observable<any[]>;
   
 
   ngOnInit() {
     this.monthlyPaymentFormDetails();
+    this.paymentMethods$ = this.adminService.getPaymentMethods();
   }
 
   constructor (private fb: FormBuilder,
                 private newCustomerEntryService: NewCustomerEntryService,
-                private transactionService: TransactionService) { }
+                private transactionService: TransactionService,
+                private adminService: AdminService,
+                private snackBar: MatSnackBar) { }
 
   monthlyPaymentFormDetails = () => {
     this.monthlyPaymentForm = this.fb.group({
@@ -42,6 +54,7 @@ export class MonthlyPaymentsComponent implements OnInit{
       amount: [{ value: '', disabled: false }, Validators.required],
       advance: [{ value: '', disabled: false }, Validators.required],
       transactionDate: [{ value: '', disabled: false }, Validators.required],
+      paymentMethod: [{ value: '', disabled: false }, Validators.required],
       payingAmount: [{ value: '', disabled: false }, Validators.required],
     })
   }
@@ -93,16 +106,38 @@ export class MonthlyPaymentsComponent implements OnInit{
   }
 
   proceedTransaction = async() => {
-    const customer = this.searchWithVehicleNbr.value;
+    try {
+      const customer = this.searchWithVehicleNbr.value;
 
-    const transactionData = {
-      monthlyCost: this.monthlyPaymentForm.get('amount')?.value,
-      advance: this.monthlyPaymentForm.get('advance')?.value,
-      transactionAmount: this.payingAmount.value,
-      transactionDate: this.transactionDate.value 
+      const transactionData = {
+        monthlyCost: this.monthlyPaymentForm.get('amount')?.value,
+        advance: this.monthlyPaymentForm.get('advance')?.value,
+        paymentMethod: this.monthlyPaymentForm.get('paymentMethod')?.value,
+        transactionAmount: this.payingAmount.value,
+        transactionDate: this.transactionDate.value 
+      }
+  
+      await this.transactionService.customerMonthlyTransactionDetails(customer, transactionData);
+      this.monthlyPaymentForm.reset();
+      this.payingAmount.setValue(0);
+      this.transactionDate.setValue('');
+      this.searchWithVehicleNbr.setValue('');
+      this.snackBar.open('Transaction successfull!', 'Close', {
+        duration: 4000,     
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['snackbar-success'],
+      });
+    } catch (error) {
+      this.snackBar.open('Transaction Failed. Try again!', 'Close', {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['snackbar-error'],
+      });
+
     }
-
-    await this.transactionService.customerMonthlyTransactionDetails(customer, transactionData)
+    
 
   }
 

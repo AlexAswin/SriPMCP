@@ -1,5 +1,5 @@
 <mat-card>
-    <mat-card-title>Monthly Customers</mat-card-title>
+    <mat-card-title>Monthly Income Details - {{currentMonth}}</mat-card-title>
   
     <table mat-table *ngIf="activeCustomersWithLedger$" [dataSource]="(activeCustomersWithLedger$ | async) ?? []" class="full-width">
   
@@ -40,13 +40,24 @@
 
       <ng-container matColumnDef="payMethod">
         <th mat-header-cell *matHeaderCellDef>Payment Type</th>
-        <td mat-cell *matCellDef="let activeCustomers">{{ 'Cash'}}</td>
+        <td mat-cell *matCellDef="let activeCustomers">
+          <span class="payment-method">
+          {{ activeCustomers.Transactions.paymentMethod? activeCustomers.Transactions.paymentMethod : 'Not Done' }}
+          </span>
+        </td>
       </ng-container>
   
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
   </mat-card>
+
+  <button
+  mat-raised-button
+  color="primary"
+  (click)="createLedgerForNewMonth()">
+  Create New Month Ledger
+</button>
 
   <pre>{{ activeCustomersWithLedger$ | async | json }}</pre>
   
