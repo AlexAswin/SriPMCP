@@ -17,6 +17,7 @@ import { TransactionService } from '../transaction.service';
 export class MonthlyIncomeComponent implements OnInit{
 
   activeCustomersWithLedger$!: Observable<any[]>;
+  currentMonth: string = '';
 
   displayedColumns = [
     'vehicle',
@@ -38,8 +39,13 @@ export class MonthlyIncomeComponent implements OnInit{
   }
 
   getActiveMonthlyUsers = () => {
+    this.currentMonth = new Date().toLocaleString('default', { month: 'long' });
     this.activeCustomersWithLedger$ = this.transactionService.getActiveCustomersWithCurrentMonthLedger();
-    console.log(this.activeCustomersWithLedger$);
   }
 
+  createLedgerForNewMonth() {
+    this.transactionService.createNewMonthLedgerForActiveCustomers('2026-02-01')
+      .then(() => console.log('New month ledger created'))
+      .catch(err => console.error(err));
+  }
 }

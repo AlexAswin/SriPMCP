@@ -115,7 +115,7 @@ form {
             color: #555;
           }
   
-          input {
+          input, mat-select {
             padding: 10px 12px;
             border: 1px solid #ccc;
             border-radius: 8px;
@@ -137,6 +137,9 @@ form {
               color: #aaa;
             }
           }
+          mat-select {
+            width: 97%;
+          }
       }
       .button-group {
         display: flex;
@@ -153,6 +156,17 @@ form {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   }
 }
+
+.snackbar-success {
+  background-color: #4caf50; 
+  color: white;
+}
+
+.snackbar-error {
+  background-color: #f44336;
+  color: white;
+}
+
 
 @media (max-width: 900px) {
   .vehicle-info {

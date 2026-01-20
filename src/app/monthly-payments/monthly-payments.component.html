@@ -42,17 +42,21 @@
                 <label>Amount To Pay</label>
                 <input type="text" placeholder="Amount" formControlName="amount" readonly/>
             </div>
-            <div>
 
-            </div>
             <div class="form-group">
                     <label>Advance Paid</label>
                     <input type="text" placeholder="Advance" formControlName="advance" readonly/>
             </div>
+            <div class="form-group">
+              <label>Transaction Date</label>
+              <input type="date" [formControl]="transactionDate" />
+          </div>
         </div>
         <div class="transactionDate">
-            <label>Transaction Date</label>
-            <input type="date" [formControl]="transactionDate" />
+          <label>Payment Methods</label>
+            <mat-select placeholder="Payment Methods" formControlName="paymentMethod">
+                <mat-option *ngFor="let types of paymentMethods$ | async" [value]="types.paymentMethod">{{types.paymentMethod}}</mat-option>
+            </mat-select>
         </div>
         <div class="paymentInput">
                 <label>Amount</label>
@@ -63,3 +67,5 @@
         </div>
     </div>
   </form>
+
+  <pre>{{ paymentMethods$ | async | json }}</pre>

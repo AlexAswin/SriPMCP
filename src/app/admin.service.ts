@@ -32,6 +32,11 @@ export class AdminService {
     return addDoc(ref, data);
   }
 
+  getPaymentMethods(): Observable<any[]> {
+    const ref = collection(this.firestore, 'paymentMethods');
+    return collectionData(ref, { idField: 'id' });
+  }
+
   getVehicleTypes(): Observable<VehicleType[]> {
     const ref = collection(this.firestore, 'vehicles');
     return collectionData(ref, { idField: 'id' }) as Observable<VehicleType[]>;

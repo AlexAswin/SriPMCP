@@ -1,13 +1,89 @@
+// Container and Card styling
+mat-card {
+  margin: 20px;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  background-color: #ffffff;
+
+  mat-card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 24px;
+    border-left: 4px solid #3f51b5; // Accent border
+    padding-left: 12px;
+  }
+}
+
+// Table Styling
 .full-width {
-    width: 100%;
+  width: 100%;
+  border-collapse: collapse;
+
+  // Header styling
+  th.mat-header-cell {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #5f6368;
+    letter-spacing: 0.5px;
+    padding: 16px;
+    border-bottom: 2px solid #e0e0e0;
   }
-  
-  .due {
-    color: red;
-    font-weight: bold;
+
+  // Row and Cell styling
+  td.mat-cell {
+    padding: 16px;
+    font-size: 0.9rem;
+    color: #3c4043;
+    border-bottom: 1px solid #f1f3f4;
   }
-  
-  .paid {
-    color: green;
+
+  tr.mat-row {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f8f9fa;
+    }
   }
-  
+
+  // Specific column alignments for financial data
+  .mat-column-Advance,
+  .mat-column-monthlyCost,
+  .mat-column-paid,
+  .mat-column-balance {
+    text-align: right;
+    font-family: 'Roboto Mono', monospace; // Optional: Monospace for numbers
+    font-weight: 500;
+  }
+
+  // Balance highlights
+  .mat-column-balance {
+    color: #d93025; // Red for balance/debt
+  }
+
+  // Payment Method Chip
+  .payment-method {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: #e8f0fe;
+    color: #1967d2;
+    text-transform: capitalize;
+  }
+}
+
+// Debug area styling (the <pre> tag)
+pre {
+  margin: 20px;
+  padding: 15px;
+  background: #272c34;
+  color: #abb2bf;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  max-height: 300px;
+}
