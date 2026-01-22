@@ -14,8 +14,8 @@
       <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr" />
     </mat-form-field>
 
-    <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary"
-      (click)="checkExistingUser()">
+    <app-button variant="primary" label="Search" width="20%" style="min-height: 50px;" mat-raised-button color="primary"
+      (click)="checkExistingUser('vehicleNbr')">
 
     </app-button>
   </div>
@@ -23,11 +23,11 @@
     <h2 class="search-label">Billing Number</h2>
 
     <mat-form-field appearance="outline" class="search-input">
-      <input matInput placeholder="Enter Bill Number" [formControl]="searchWithVehicleNbr" />
+      <input matInput placeholder="Enter Bill Number" [formControl]="searchWithBillingNbr" />
     </mat-form-field>
 
     <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary"
-      (click)="checkExistingUser()">
+      (click)="checkExistingUser('billingNbr')">
 
     </app-button>
   </div>

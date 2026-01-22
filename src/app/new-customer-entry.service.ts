@@ -24,15 +24,23 @@ export class NewCustomerEntryService {
     await this.transactionService.createNewMonthlyCustomerTransaction(customerDetails);
   }
 
-  async getVehicleByNumber(vehicleNumber: string) {
+  async getVehicleByNumber(vehicleNumber: string, identifier: string) {
     if (!vehicleNumber) return null;
 
     const vehiclesRef = collection(this.firestore, 'CustomerEntry');
-    const q = query(
-      vehiclesRef,
-      where('vehicleNumber', '==', vehicleNumber)
-    );
-
+    let q
+    if (identifier === 'vehicleNbr') {
+       q = query(
+        vehiclesRef,
+        where('vehicleNumber', '==', vehicleNumber)
+      );
+    } else {
+       q = query(
+        vehiclesRef,
+        where('billNumber', '==', vehicleNumber)
+      );
+    }
+    
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {

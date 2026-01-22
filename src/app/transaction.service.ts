@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Firestore, addDoc, collection, collectionData, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from '@angular/fire/firestore';
-import { Observable, combineLatest, firstValueFrom, map, of, switchMap } from 'rxjs';
+import { Firestore, collection, collectionData, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
+import { Observable, combineLatest, map, of, switchMap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +35,7 @@ export class TransactionService {
         monthlyCost: customerDetails.amount,
         currentPending: customerDetails.amount,
         transactionAmount: 0,
-        transactionDate: customerDetails.fromDateMonthly
+        transactionDate: 'NO TRANSACTION'
       }
   
       if (!monthlyTransactionDetails.exists()) {
@@ -112,7 +112,7 @@ export class TransactionService {
 
   getPreviousMonthId(currentMonth: string): string {
     const [year, month] = currentMonth.split('-').map(Number);
-    const prevDate = new Date(year, month - 2, 1); // JS months 0-based
+    const prevDate = new Date(year, month - 2, 1);
     const prevMonthId = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
     return prevMonthId;
   }
@@ -120,35 +120,40 @@ export class TransactionService {
   getActiveCustomersWithCurrentMonthLedger(): Observable<any[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
     const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
-
-    return collectionData(q).pipe(
+  
+    return collectionData(q, { idField: 'id' }).pipe(
       switchMap((customers: any[]) => {
         if (!customers.length) return of([]);
-
+  
         const currentMonth = this.getCurrentMonth();
-
+  
         const details = customers.map(customer => {
           const ledgerRef = doc(
             this.firestore,
-            `CustomerEntry/${customer.vehicleNumber}/Transactions/${currentMonth}`
+            `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
           );
-
+  
           return docData(ledgerRef).pipe(
-            map(Transactions => ({
-              ...customer,
-              Transactions: Transactions || null
-            }))
+            map(ledger => {
+              if (!ledger) {
+                this.createNewMonthLedgerForActiveCustomers(currentMonth);
+              }
+              return {
+                ...customer,
+                Transactions: ledger,
+              };
+            })
           );
         });
-
+  
         return combineLatest(details);
       })
     );
   }
+  
 
   private getCurrentMonth(): string {
     const d = new Date();
-    // const d = new Date(2026, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
   
@@ -162,12 +167,14 @@ export class TransactionService {
     const now = new Date();
   
     const currentMonth = this.getMonthIdFromDate(date)
+
+
   
-    // const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    // const prevMonth = `${prevMonthDate.getFullYear()}-${String(
-    //   prevMonthDate.getMonth() + 1
-    // ).padStart(2, '0')}`;
-    const prevMonth = '2026-01'
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = `${prevMonthDate.getFullYear()}-${String(
+      prevMonthDate.getMonth() + 1
+    ).padStart(2, '0')}`;
+
   
     for (const customer of customersSnap.docs) {
       const customerId = customer.id;
@@ -178,7 +185,6 @@ export class TransactionService {
         `CustomerEntry/${customerId}/Transactions`
       );
   
-      // 🔹 previous month ledger
       const prevLedgerRef = doc(transactionsRef, prevMonth);
       const prevSnap = await getDoc(prevLedgerRef);
   
@@ -197,8 +203,6 @@ export class TransactionService {
 
   
       const newPending = prevPending + monthlyCost;
-  
-      // 🔹 prevent duplicate creation
       const newLedgerRef = doc(transactionsRef, currentMonth);
       const existingSnap = await getDoc(newLedgerRef);
       if (existingSnap.exists()) continue;
@@ -208,8 +212,8 @@ export class TransactionService {
         currentPending: newPending,
         monthlyCost: monthlyCost,
         transactionAmount: 0,
-        transactionDate: transactionDate,
-        paymentMethod: paymentMethod
+        transactionDate: 'NO TRANSACTION',
+        paymentMethod: 'NOT PAID'
       });
     }
   }
@@ -218,8 +222,4 @@ export class TransactionService {
     const [y, m] = dateStr.split('-').map(Number);
     return `${y}-${String(m).padStart(2, '0')}`;
   }
-  
-  
-  
-
 }

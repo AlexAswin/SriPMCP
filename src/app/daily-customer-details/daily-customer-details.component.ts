@@ -7,7 +7,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, combineLatest, debounceTime, distinctUntilChanged, startWith, takeUntil, withLatestFrom } from 'rxjs';
+import { Observable, Subject, combineLatest, debounceTime, distinctUntilChanged, filter, startWith, takeUntil, withLatestFrom } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { AdminService, VehicleType } from '../admin.service';
@@ -77,7 +77,7 @@ export class DailyCustomerDetailsComponent {
     const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
     vehicleCtrl?.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
+      .pipe(debounceTime(500), distinctUntilChanged(), filter(value => value?.length >= 9 ), takeUntil(this.destroy$))
       .subscribe((value) => {
         if (value) {
           this.getCustomerDetails(value);
@@ -131,9 +131,7 @@ export class DailyCustomerDetailsComponent {
       return;
     }
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber);
-    const res = await this.newCustomerEntryService.getVehicleByNumber(
-      formatedVehicleNbr
-    );
+    const res = await this.newCustomerEntryService.getVehicleByNumber( formatedVehicleNbr, 'vehicleNbr' );
 
     this.currentCustomer = res.vehicleNumber;
     if (res && res.dailyStatus === 'Unpaid') {

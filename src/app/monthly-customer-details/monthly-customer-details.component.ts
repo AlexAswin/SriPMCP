@@ -10,7 +10,7 @@ import { MatRadioModule} from '@angular/material/radio';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
-import { Observable, debounceTime, distinctUntilChanged, startWith, take, withLatestFrom } from 'rxjs';
+import { Observable, Subject, debounceTime, distinctUntilChanged, filter, startWith, take, takeUntil, withLatestFrom } from 'rxjs';
 import { AdminService, VehicleType } from '../admin.service';
 
 
@@ -54,6 +54,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit {
   dailyCustomerUnpaid: boolean = false;
 
   vehicleTypes$!: Observable<VehicleType[]>;
+  private destroy$ = new Subject<void>();
 
 
 
@@ -78,7 +79,9 @@ ngOnInit() {
   vehicleCtrl?.valueChanges
     .pipe(
       debounceTime(500),          
-      distinctUntilChanged()
+      distinctUntilChanged(),
+      filter(value => value?.length >= 9 ),
+      takeUntil(this.destroy$)
     )
     .subscribe(value => {
       if (value) {
@@ -144,6 +147,34 @@ ngOnInit() {
       .trim();
   }
 
+  onVehicleNumberInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    let value = input.value.toUpperCase(); // always uppercase
+  
+    // Remove all non-alphanumeric characters (just in case)
+    value = value.replace(/[^A-Z0-9]/g, '');
+  
+    // Regex: 2 letters, 2 digits, 1-2 letters, 4 digits
+    const match = value.match(/^([A-Z]{0,2})(\d{0,2})([A-Z]{0,2})(\d{0,4})$/);
+  
+    if (match) {
+      const [, state, district, series, number] = match;
+      let formatted = state;
+      if (district) formatted += ' ' + district;
+      if (series) formatted += ' ' + series;
+      if (number) formatted += ' ' + number;
+  
+      // Update input value (UI)
+      input.value = formatted;
+  
+      this.vehicleDetailsForm.get('vehicleNumber')?.setValue(
+        input.value, // store raw value without spaces
+        { emitEvent: false } 
+      );
+    }
+  }
+  
+
   getCustomerDetails = async(vehicleNbr: string) => {
 
     const vehicleNumber = vehicleNbr;
@@ -152,7 +183,7 @@ ngOnInit() {
       return;
     }
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber)
-    const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
+    const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
  
     this.currentCustomer = res?.vehicleNumber;
 
@@ -368,6 +399,12 @@ ngOnInit() {
     this.vehicleDetailsForm.reset();
     this.router.navigate(['/dashBoard'])
   }
+
+
+ngOnDestroy() {
+  this.destroy$.next();
+  this.destroy$.complete();
+}
 
 }
 

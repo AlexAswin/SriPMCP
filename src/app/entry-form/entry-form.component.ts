@@ -23,7 +23,7 @@ export class EntryFormComponent {
   message: string = '';
 
   searchWithVehicleNbr = new FormControl<string | null>('');
-  searchWithBillNbr = new FormControl<string | null>('');
+  searchWithBillingNbr = new FormControl<string | null>('');
   
   newCustomer: boolean = false;
   existingCustomer: boolean = false;
@@ -38,40 +38,31 @@ export class EntryFormComponent {
     this.show = false;
   }
 
-  async checkExistingUser() {
-    const vehicleNumber = this.searchWithVehicleNbr.value?.trim();
+  async checkExistingUser(identifier: 'vehicleNbr' | 'billingNbr') {
+    let inputValue: string | undefined;
+  if (identifier === 'vehicleNbr') {
+    inputValue = this.searchWithVehicleNbr.value?.trim();
+  } else if (identifier === 'billingNbr') {
+    inputValue = this.searchWithBillingNbr.value?.trim();
+  }
 
-    if (!vehicleNumber) {
-      console.log('No vehicle number entered');
-      return;
-    }
-    const formatedVehicleNbr = this.formateVehicleNumber(vehicleNumber);
+  if (!inputValue) {
+    console.log(`No ${identifier} number entered`);
+    return;
+  }
+    const formatedVehicleNbr = this.formateVehicleNumber(inputValue);
 
-    const exists = await this.newCustomerEntryService.getVehicleByNumber(
-      formatedVehicleNbr
-    );
+    const exists = await this.newCustomerEntryService.getVehicleByNumber( formatedVehicleNbr, identifier );
 
-    if (
-      exists &&
-      (
-        exists.customerType.value === 'Daily' ||
-        exists.customerType.value === 'daily'
-      )
-    ) {
+    if ( exists && exists.customerType === 'Daily' ) {
       this.router.navigate(['/dailyCustomer'], {
         queryParams: {
-          vehicleNbr: this.searchWithVehicleNbr.value,
+          vehicleNbr: exists.vehicleNumber,
         },
       });
       console.log('Vehicle already exists :', exists);
     
-    } else if (
-      exists &&
-      (
-        exists.customerType.value === 'Monthly' ||
-        exists.customerType.value === 'monthly'
-      )
-    ) {
+    } else if ( exists && exists.customerType === 'Monthly') {
       this.router.navigate(['/monthlyCustomer'], {
         queryParams: {
           vehicleNbr: this.searchWithVehicleNbr.value,
