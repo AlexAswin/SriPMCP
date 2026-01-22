@@ -13,12 +13,14 @@ import { Observable } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { AdminService } from '../admin.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-monthly-payments',
   standalone: true,
   imports: [MatFormFieldModule, CommonModule, ReactiveFormsModule, ButtonComponent, MatInputModule, MatOptionModule, MatSelectModule,
-            MatSnackBarModule],
+            MatSnackBarModule, MatIconModule],
   templateUrl: './monthly-payments.component.html',
   styleUrl: './monthly-payments.component.scss'
 })
@@ -44,7 +46,8 @@ export class MonthlyPaymentsComponent implements OnInit{
                 private newCustomerEntryService: NewCustomerEntryService,
                 private transactionService: TransactionService,
                 private adminService: AdminService,
-                private snackBar: MatSnackBar) { }
+                private snackBar: MatSnackBar,
+                private router: Router) { }
 
   monthlyPaymentFormDetails = () => {
     this.monthlyPaymentForm = this.fb.group({
@@ -67,7 +70,7 @@ export class MonthlyPaymentsComponent implements OnInit{
     }
     const formatedVehicleNbr = this.formateVehicleNumber(vehicleNumber);
 
-    const customerDetails = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr);
+    const customerDetails = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
     if(customerDetails && customerDetails.customerType === 'Monthly') {
       this.monthlyPaymentForm.patchValue({
         vehicleNumber: customerDetails.vehicleNumber,
@@ -135,10 +138,11 @@ export class MonthlyPaymentsComponent implements OnInit{
         verticalPosition: 'bottom',
         panelClass: ['snackbar-error'],
       });
-
     }
-    
+  }
 
+  closeForm() {
+    this.router.navigate(['/dashBoard']);
   }
 
 }

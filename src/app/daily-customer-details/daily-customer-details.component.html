@@ -1,137 +1,140 @@
-<button (click)="closeForm()">
-    <mat-icon>arrow_back</mat-icon>
-</button>
-
-<form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container" >
-    <div>
-        <h1>Daily Customer Details</h1>
-    </div>
-    <mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
-        <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
-        <span class="message">{{ message }}</span>
-    </mat-card>
-
-    <div *ngIf="!isMonthlyActiveCustomer">
-    <!-- VEHICLE DETAILS -->
-    <div class="section vehicleDetails">
-        <h2>Vehicle Details</h2>
-
-        <div class="vehicle-info">
-            <div class="form-group">
-                <label>Vehicle Number</label>
-                <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
-            </div>
-
-            <div class="form-group">
-                <label>Vehicle Type</label>
-                <mat-select placeholder="select Vehicle" formControlName="vehicleType">
-                    <mat-option *ngFor="let types of vehicleTypes$ | async" [value]="types.vehicleType">{{types.vehicleType}}</mat-option>
-                </mat-select>
+<div class="parent-container">
+    <button (click)="closeForm()">
+        <mat-icon>arrow_back</mat-icon>
+    </button>
+    
+    <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container" >
+        <div>
+            <h1>Daily Customer Details</h1>
+        </div>
+        <mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
+            <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
+            <span class="message">{{ message }}</span>
+        </mat-card>
+    
+        <div *ngIf="!isMonthlyActiveCustomer">
+        <!-- VEHICLE DETAILS -->
+        <div class="section vehicleDetails">
+            <h2>Vehicle Details</h2>
+    
+            <div class="vehicle-info">
+                <div class="form-group">
+                    <label>Vehicle Number</label>
+                    <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
+                </div>
+    
+                <div class="form-group">
+                    <label>Vehicle Type</label>
+                    <mat-select placeholder="select Vehicle" formControlName="vehicleType">
+                        <mat-option *ngFor="let types of vehicleTypes$ | async" [value]="types.vehicleType">{{types.vehicleType}}</mat-option>
+                    </mat-select>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- CUSTOMER DETAILS -->
-    <div class="section customerDetails">
-        <h2>Customer Details</h2>
-
-        <div class="customer-info">
-            <div class="form-group">
-                <label>Customer Name</label>
-                <input type="text" placeholder="Enter customer name" formControlName="customerName" />
-            </div>
-
-            <div class="form-group">
-                <label>Phone Number</label>
-                <input type="text" placeholder="Phone Number" formControlName="customerPhoneNbr" />
-            </div>
-
-            <div class="form-group full-width">
-                <label>Address</label>
-                <textarea rows="3" formControlName="address"></textarea>
+    
+        <!-- CUSTOMER DETAILS -->
+        <div class="section customerDetails">
+            <h2>Customer Details</h2>
+    
+            <div class="customer-info">
+                <div class="form-group">
+                    <label>Customer Name</label>
+                    <input type="text" placeholder="Enter customer name" formControlName="customerName" />
+                </div>
+    
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" placeholder="Phone Number" formControlName="customerPhoneNbr" />
+                </div>
+    
+                <div class="form-group full-width">
+                    <label>Address</label>
+                    <textarea rows="3" formControlName="address"></textarea>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- BILLING -->
-    <div class="section billing">
-        <div class="billing-left">
-            <h2>Billing Details</h2>
-
-            <div class="billing-details">
-                <div class="form-group">
-                    <label>Amount</label>
-                    <input type="text" formControlName="amount" readonly />
-                </div>
-
-                <div class="form-group">
-                    <label>Bill Number</label>
-                    <input type="text" [formControl]="billNbr" />
-                </div>
-
-
-
-                <div class="form-group">
-                    <label>Status</label>
-                    <div class="radio-group">
-                        <label *ngFor="let status of dailystatus">
-                            <input type="radio" [value]="status" [formControl]="dailyStatus" />
-                            {{ status }}
-                        </label>
+    
+        <!-- BILLING -->
+        <div class="section billing">
+            <div class="billing-left">
+                <h2>Billing Details</h2>
+    
+                <div class="billing-details">
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="text" formControlName="amount" readonly />
+                    </div>
+    
+                    <div class="form-group">
+                        <label>Bill Number</label>
+                        <input type="text" [formControl]="billNbr" />
+                    </div>
+    
+    
+    
+                    <div class="form-group">
+                        <label>Status</label>
+                        <div class="radio-group">
+                            <label *ngFor="let status of dailystatus">
+                                <input type="radio" [value]="status" [formControl]="dailyStatus" />
+                                {{ status }}
+                            </label>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="billing-details">
-                <div class="form-group">
-                    <label>From Date</label>
-                    <input type="date" [formControl]="fromDateDaily" (change)="onEntryDateChange($event)" />
+    
+                <div class="billing-details">
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <input type="date" [formControl]="fromDateDaily" (change)="onEntryDateChange($event)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Entry Time</label>
+                        <input type="text" [formControl]="entryTime" />
+                    </div>
+                    <div class="form-group" *ngIf="showPaidDetails">
+                        <label>Bill Amount</label>
+                        <input type="text" [formControl]="billAmount" readonly />
+                    </div>
+    
                 </div>
-                <div class="form-group">
-                    <label>Entry Time</label>
-                    <input type="text" [formControl]="entryTime" />
+                <div class="billing-details">
+                    <div class="form-group" *ngIf="showPaidDetails">
+                        <label>End Date</label>
+                        <input type="date" [formControl]="endDateDaily" (change)="onExitDateChange($event)" />
+                    </div>
+                    <div class="form-group" *ngIf="showPaidDetails">
+                        <label>Exit Time</label>
+                        <input type="text" [formControl]="exitTime" />
+                    </div>
+                    <div class="form-group" *ngIf="showPaidDetails">
+                        <label>Settled Amount</label>
+                        <input type="text" placeholder="Cost" [formControl]="actualCost" />
+                    </div>
                 </div>
-                <div class="form-group" *ngIf="showPaidDetails">
-                    <label>Bill Amount</label>
-                    <input type="text" [formControl]="billAmount" readonly />
+                <div class="billing-details">
                 </div>
-
-            </div>
-            <div class="billing-details">
-                <div class="form-group" *ngIf="showPaidDetails">
-                    <label>End Date</label>
-                    <input type="date" [formControl]="endDateDaily" (change)="onExitDateChange($event)" />
-                </div>
-                <div class="form-group" *ngIf="showPaidDetails">
-                    <label>Exit Time</label>
-                    <input type="text" [formControl]="exitTime" />
-                </div>
-                <div class="form-group" *ngIf="showPaidDetails">
-                    <label>Settled Amount</label>
-                    <input type="text" placeholder="Cost" [formControl]="actualCost" />
-                </div>
-            </div>
-            <div class="billing-details">
             </div>
         </div>
-    </div>
-    <div class="note-textArea">
-        <div class="billing-right">
-            <h3>Note</h3>
-
-            <textarea rows="4" placeholder="Leave a comment" [formControl]="note"></textarea>
+        <div class="note-textArea">
+            <div class="billing-right">
+                <h3>Note</h3>
+    
+                <textarea rows="4" placeholder="Leave a comment" [formControl]="note"></textarea>
+            </div>
         </div>
-    </div>
+    
+        <div class="form-section form-actions">
+            <app-button label="Save" variant="primary" (clicked)="submitForm()">
+            </app-button>
+    
+            <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()">
+            </app-button>
+        </div>
+        </div>
+    
+    
+    
+    </form>
+</div>
 
-    <div class="form-section form-actions">
-        <app-button label="Save" variant="primary" (clicked)="submitForm()">
-        </app-button>
-
-        <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()">
-        </app-button>
-    </div>
-    </div>
-
-
-
-</form>

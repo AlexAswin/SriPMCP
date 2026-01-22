@@ -34,6 +34,9 @@ export class AdminEntryComponent implements OnInit{
   vehicleTypes: VehicleType[] = [];
   expenses$!: Observable<any[]>;
 
+  showExpenses: boolean = false;
+  editVehicleDetails: boolean = false;
+
   constructor(
     private fb: FormBuilder,
     private adminService : AdminService

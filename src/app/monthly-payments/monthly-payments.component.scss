@@ -1,121 +1,101 @@
-.searchGroup {
-    max-width: 900px;
-    margin: 50px auto 0;
-    padding: 0px 20px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
-    font-family: 'Montserrat', sans-serif;
+.parent-container {
+  display: flex;
+
+  button {
+    border: none;
+    min-width: 100px;
+    min-height: calc(100vh - 120px);
   
-    h1 {
-      width: 100%;
-      text-align: center;
-      padding: 20px 0;
-      margin-top: 0;
-    }
-  
-    .search-row {
-      display: flex;
-      flex-wrap: wrap; 
-      gap: 20px; 
-      padding: 20px 0;
-  
-      h2 {
-        margin-bottom: 0;
-        flex-basis: 100%; 
-      }
-  
-      mat-form-field {
-        flex: 1 1 calc(33.33% - 20px); 
-        min-width: 200px; 
-  
-        .mat-mdc-form-field.mat-form-field-appearance-outline
-        .mat-mdc-form-field-subscript-wrapper {
-          display: none;
-        }
-      }
-    }
-  
-    @media (max-width: 900px) {
-      .search-row mat-form-field {
-        flex: 1 1 100%;
-      }
+    mat-icon {
+      background-color: none;
     }
   }
-  
 
-form {
-  max-width: 900px;
-  margin: 20px auto;
-  padding: 20px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  .paymentForm {
+    margin: 0 auto; 
 
-  .section {
-    margin-bottom: 25px;
-
-    h2 {
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-      color: #333;
-      border-bottom: 2px solid #eee;
-      padding-bottom: 5px;
-    }
-
-    .vehicle-info {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr); 
-      gap: 20px; 
-
-      .form-group {
-        display: flex;
-        flex-direction: column;
-
-        label {
-          font-weight: 600;
-          margin-bottom: 6px;
-          color: #555;
-        }
-
-        input {
-          padding: 10px 12px;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          font-size: 1rem;
-          transition: all 0.2s ease;
-
-          &:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-          }
-
-          &[readonly] {
-            background-color: #f5f5f5;
-            cursor: not-allowed;
-          }
-
-          &::placeholder {
-            color: #aaa;
-          }
-        }
-      }      
-    }
-    .paymentInput, .transactionDate {
+    .searchGroup {
+      min-width: 1000px;
+      margin: 50px auto 0;
+      padding: 0px 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+      font-family: 'Montserrat', sans-serif;
+    
+      h1 {
         width: 100%;
+        text-align: center;
+        padding: 20px 0;
+        margin-top: 0;
+      }
+    
+      .search-row {
         display: flex;
-        flex-direction: column;
-        padding-top: 20px;
-
-        label {
+        flex-wrap: wrap; 
+        gap: 20px; 
+        padding: 20px 0;
+    
+        h2 {
+          margin-bottom: 0;
+          flex-basis: 100%; 
+        }
+    
+        mat-form-field {
+          flex: 1 1 calc(33.33% - 20px); 
+          min-width: 200px; 
+    
+          .mat-mdc-form-field.mat-form-field-appearance-outline
+          .mat-mdc-form-field-subscript-wrapper {
+            display: none;
+          }
+        }
+      }
+    
+      @media (max-width: 900px) {
+        .search-row mat-form-field {
+          flex: 1 1 100%;
+        }
+      }
+    }
+    
+  
+  form {
+    min-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  
+    .section {
+      margin-bottom: 25px;
+  
+      h2 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+        color: #333;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 5px;
+      }
+  
+      .vehicle-info {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 20px; 
+  
+        .form-group {
+          display: flex;
+          flex-direction: column;
+  
+          label {
             font-weight: 600;
             margin-bottom: 6px;
             color: #555;
           }
   
-          input, mat-select {
+          input {
             padding: 10px 12px;
             border: 1px solid #ccc;
             border-radius: 8px;
@@ -137,25 +117,64 @@ form {
               color: #aaa;
             }
           }
-          mat-select {
-            width: 97%;
+        }      
+      }
+      .paymentInput, .transactionDate {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          padding-top: 20px;
+  
+          label {
+              font-weight: 600;
+              margin-bottom: 6px;
+              color: #555;
+            }
+    
+            input, mat-select {
+              padding: 10px 12px;
+              border: 1px solid #ccc;
+              border-radius: 8px;
+              font-size: 1rem;
+              transition: all 0.2s ease;
+    
+              &:focus {
+                outline: none;
+                border-color: #007bff;
+                box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+              }
+    
+              &[readonly] {
+                background-color: #f5f5f5;
+                cursor: not-allowed;
+              }
+    
+              &::placeholder {
+                color: #aaa;
+              }
+            }
+            mat-select {
+              width: 97%;
+            }
+        }
+        .button-group {
+          display: flex;
+          justify-content: flex-end;
+          padding: 20px 0px;
+  
+          app-button {
+              min-width: 100px;
           }
       }
-      .button-group {
-        display: flex;
-        justify-content: flex-end;
-        padding: 20px 0px;
-
-        app-button {
-            min-width: 100px;
-        }
+    }
+  
+    &:hover {
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
     }
   }
-
-  &:hover {
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   }
-}
+
+
 
 .snackbar-success {
   background-color: #4caf50; 
@@ -166,6 +185,9 @@ form {
   background-color: #f44336;
   color: white;
 }
+}
+
+
 
 
 @media (max-width: 900px) {

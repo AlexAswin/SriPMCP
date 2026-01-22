@@ -27,6 +27,12 @@
                       <mat-label>Daily Cost</mat-label>
                       <input matInput type="number" formControlName="dailyCost">
                     </mat-form-field>
+
+                    <app-button
+                      label="Edit"
+                      variant="primary"
+                      type="submit">
+                    </app-button>
                   
                     <app-button
                       label="ADD"
@@ -67,8 +73,8 @@
             </mat-expansion-panel>
         </mat-accordion>
     </div>
-     <div class="right-container">
-        <form [formGroup]="vehicleUpdateForm" (ngSubmit)="updateVehicleDetails()">
+     <div class="right-container" *ngIf="editVehicleDetails">
+        <form [formGroup]="vehicleUpdateForm" (ngSubmit)="updateVehicleDetails()" >
             <mat-label>Select Vehicle</mat-label>
         
             <mat-form-field>
@@ -99,7 +105,7 @@
               </div>
         </form>
 
-        <div class="expense-container" *ngIf="expenses$">
+        <div class="expense-container" *ngIf="expenses$ && showExpenses">
             <div class="expense-list" >
               <h3>Expense List</h3>
               <div class="expense-cards">
