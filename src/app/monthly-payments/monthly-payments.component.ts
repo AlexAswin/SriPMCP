@@ -9,7 +9,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { MatDialog } from '@angular/material/dialog';
 import { PaymentConfirmationComponent } from '../payment-confirmation/payment-confirmation.component';
 import { TransactionService } from '../transaction.service';
-import { Observable, Subject, takeUntil } from 'rxjs';
+import { Observable, Subject, take, takeUntil } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { AdminService } from '../admin.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -41,7 +41,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.monthlyPaymentFormDetails();
-    this.paymentMethods$ = this.adminService.getPaymentMethods();
+    this.paymentMethods$ = this.adminService.getPaymentMethods().pipe(take(1));
   }
 
   constructor (private fb: FormBuilder,

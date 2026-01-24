@@ -64,12 +64,12 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
 
   getActiveMonthlyUsers = () => {
     this.currentMonth = new Date().toLocaleString('default', { month: 'long' });
-    this.allCustomersWithLedgers$ = this.transactionService.getMonthlyCustomersTransactions();
-    this.activeCustomersWithLedger$ = this.allCustomersWithLedgers$.pipe(
+    this.allCustomersWithLedgers$ = this.transactionService.getMonthlyCustomersTransactions().pipe(take(1)),
+    this.activeCustomersWithLedger$ = this.allCustomersWithLedgers$.pipe((take(1)),
       map(customers => customers.filter(c => c.monthlyStatus === 'Active'))
       );
 
-    this.inactiveCustomersWithLedger$ = this.allCustomersWithLedgers$.pipe(
+    this.inactiveCustomersWithLedger$ = this.allCustomersWithLedgers$.pipe((take(1)),
       map(customers => customers.filter(c => (c.monthlyStatus === 'InActive') && c.Transactions) )
     ); 
     this.calculateExpectedMonthlyIncome();
@@ -82,7 +82,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   }
 
   calculateExpectedMonthlyIncome = (): Observable<number> =>{
-    return this.expectedMonthlyIncome$ = this.allCustomersWithLedgers$.pipe(
+    return this.expectedMonthlyIncome$ = this.allCustomersWithLedgers$.pipe((take(1)),
       map(customers =>
         customers.reduce(
           (sum, customer) =>
@@ -94,7 +94,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   }
 
   calculateMonthlyTransactionsAmount = () => {
-    this.totalMonthlyTransaction$ = this.allCustomersWithLedgers$.pipe(
+    this.totalMonthlyTransaction$ = this.allCustomersWithLedgers$.pipe((take(1)),
       map(customers =>
         customers.reduce(
           (sum, customer) =>
@@ -106,7 +106,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   }
 
   calculateTotalPending = () => {
-    this.totalPending$ = this.allCustomersWithLedgers$.pipe(
+    this.totalPending$ = this.allCustomersWithLedgers$.pipe((take(1)),
       map(customers =>
         customers.reduce(
           (sum, customer) =>
