@@ -10,9 +10,10 @@ import { AdminService, VehicleType } from '../admin.service';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { CommonModule } from '@angular/common';
-import { Observable, take } from 'rxjs';
+import { Observable, Subject, take, takeUntil } from 'rxjs';
 import { MatListModule } from '@angular/material/list';
 import { RouterModule } from '@angular/router';
+import { TransactionService } from '../transaction.service';
 
 @Component({
   selector: 'app-admin-entry',
@@ -29,6 +30,7 @@ export class AdminEntryComponent implements OnInit{
   expenseForm!: FormGroup;
   paymentForm!: FormGroup;
   vehicleUpdateForm!: FormGroup;
+  deleteCustomerForm!: FormGroup;
 
   readonly panelOpenState = signal(false);
   vehicleTypes: VehicleType[] = [];
@@ -36,10 +38,13 @@ export class AdminEntryComponent implements OnInit{
 
   showExpenses: boolean = false;
   editVehicleDetails: boolean = false;
+  private destroy$ = new Subject<void>();
+
 
   constructor(
     private fb: FormBuilder,
-    private adminService : AdminService
+    private adminService : AdminService,
+    private transactionService: TransactionService
   ) {}
 
   ngOnInit() {
@@ -49,6 +54,7 @@ export class AdminEntryComponent implements OnInit{
     this.getVehicle();
     this.expenses$ = this.adminService.getExpenses();
     this.updateVehicleForm();
+    this.deleteCustomer();
   }
 
   vehicleDetailsForm = () => {
@@ -80,6 +86,12 @@ export class AdminEntryComponent implements OnInit{
     })
   }
 
+  deleteCustomer = () => {
+    this.deleteCustomerForm = this.fb.group({
+      vehicleNumber: ['', Validators.required]
+    })
+  }
+
   saveVehicle() {
     if (this.vehicleForm.invalid) return;
 
@@ -103,7 +115,7 @@ export class AdminEntryComponent implements OnInit{
 
   getVehicle() {
     this.adminService.getVehicleTypes()
-      .pipe(take(1))
+      .pipe(take(1), takeUntil(this.destroy$))
       .subscribe(data => {
         this.vehicleTypes = data;
       });
@@ -145,5 +157,22 @@ export class AdminEntryComponent implements OnInit{
       .then(() => console.log('Expense deleted'))
       .catch(err => console.error(err));
   }
+
+  deleteCustomerRecord = () => {
+    const vehicleNumber = this.deleteCustomerForm.value.vehicleNumber;
+    this.transactionService.deleteCustomerCurrentMonthTransaction(vehicleNumber)
+    .then(() => {
+      console.log('Deleted successfully');
+    })
+    .catch(err => {
+      console.error('Error deleting transaction:', err);
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   
 }

@@ -11,6 +11,7 @@ import { FormsModule} from '@angular/forms';
 import { MatRadioModule} from '@angular/material/radio';
 import { ButtonComponent } from '../Common/button/button.component';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-new-customer-entry-form',
@@ -37,6 +38,8 @@ export class NewCustomerEntryFormComponent {
   customerTypes = ['Daily', 'Monthly'];
   status = ['Paid', 'Unpaid'];
   advanceStatus = ['Yes', 'No'];
+
+  private destroy$ = new Subject<void>();
 
   monthlyStatus = ['Active', 'InActive'];
   pricing: any = {
@@ -85,7 +88,7 @@ export class NewCustomerEntryFormComponent {
       address: ['']
     });
 
-    this.vehicleForm.get('customerType')?.valueChanges.subscribe(type => {
+    this.vehicleForm.get('customerType')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(type => {
       const statusCtrl = this.vehicleForm.get('status');
       const billNumberCtrl = this.vehicleForm.get('billNumber');
       const advanceCtrl = this.vehicleForm.get('advance');
@@ -119,7 +122,7 @@ export class NewCustomerEntryFormComponent {
       statusCtrl?.updateValueAndValidity({ emitEvent: false });
       monthlyStatusCtrl?.updateValueAndValidity({ emitEvent: false });
     });
-      this.vehicleForm.valueChanges.subscribe((values) => {
+      this.vehicleForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
       this.calculateAmount(values.customerType, values.vehicleType);
     });
   }
@@ -217,5 +220,10 @@ export class NewCustomerEntryFormComponent {
   cancelEntry() {
     this.vehicleForm.reset();
     this.formClosed.emit();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

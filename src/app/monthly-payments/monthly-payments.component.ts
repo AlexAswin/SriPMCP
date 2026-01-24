@@ -9,7 +9,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { MatDialog } from '@angular/material/dialog';
 import { PaymentConfirmationComponent } from '../payment-confirmation/payment-confirmation.component';
 import { TransactionService } from '../transaction.service';
-import { Observable } from 'rxjs';
+import { Observable, Subject, takeUntil } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { AdminService } from '../admin.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -35,6 +35,8 @@ export class MonthlyPaymentsComponent implements OnInit{
   readonly dialog = inject(MatDialog);
 
   paymentMethods$!: Observable<any[]>;
+  private destroy$ = new Subject<void>();
+
   
 
   ngOnInit() {
@@ -98,7 +100,7 @@ export class MonthlyPaymentsComponent implements OnInit{
               transactionDate: this.transactionDate.value } 
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe(result => {
       console.log('Dialog result:', result);
       if (result === 'confirm') {
         this.proceedTransaction();
@@ -143,6 +145,11 @@ export class MonthlyPaymentsComponent implements OnInit{
 
   closeForm() {
     this.router.navigate(['/dashBoard']);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
 }

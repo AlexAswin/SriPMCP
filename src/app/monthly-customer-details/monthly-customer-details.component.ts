@@ -66,6 +66,7 @@ ngOnInit() {
   this.vehicleDetailsForm.get('vehicleType')?.valueChanges
   .pipe(
     withLatestFrom(this.vehicleTypes$),
+    takeUntil(this.destroy$)
   )
   .subscribe(([selectedType, vehicleTypes]) => {
     const selectedVehicle = vehicleTypes.find(v => v.vehicleType === selectedType);
@@ -88,7 +89,7 @@ ngOnInit() {
         this.getCustomerDetails(value);
       }
     });
-  this.monthlyStatus.valueChanges.subscribe(status => {
+  this.monthlyStatus.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(status => {
     this.onMonthlyStatusChange(status);
   });
 

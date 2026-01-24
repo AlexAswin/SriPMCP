@@ -1,5 +1,5 @@
 .container {
-  height: 100vh;
+  height: calc(100vh - 120px);
 }
 
 .content {
@@ -13,6 +13,32 @@
 .title {
   margin-left: 12px;
   font-weight: 500;
+}
+
+mat-sidenav {
+  min-width: 300px;
+
+  h2 {
+    text-align: center;
+    padding: 20px;
+    text-decoration: underline;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-underline-offset: 10px;
+  }
+
+  .download-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0px 10px;
+
+    a {
+      border: 1px solid #000;
+      text-align: center;
+      border-radius: 4px;
+      padding: 15px 0px;
+    }
+  }
 }
 
 mat-toolbar {
@@ -33,17 +59,27 @@ mat-card {
     font-weight: 600;
     color: #333;
     margin-bottom: 24px;
-    border-left: 4px solid #3f51b5; // Accent border
+    border-left: 4px solid #3f51b5;
     padding-left: 12px;
     display: flex;
   }
+  .TransactionDetails {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    h3 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+  }
+  
 }
 
 // Table Styling
 .full-width {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; // ✅ Equal column widths
+  table-layout: fixed;
 
   // Header styling
   th.mat-header-cell {
@@ -54,9 +90,7 @@ mat-card {
     letter-spacing: 0.5px;
     padding: 16px;
     border-bottom: 2px solid #e0e0e0;
-
-    // Make all columns equal width
-    width: calc(100% / 8); // Adjust 8 for number of columns
+    width: calc(100% / 8); 
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -69,10 +103,15 @@ mat-card {
     color: #3c4043;
     border-bottom: 1px solid #f1f3f4;
 
-    width: calc(100% / 8); // ✅ Same width as header
+    width: calc(100% / 8);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  td.non-zero-balance {
+    color: red;
+    font-weight: bold;
   }
 
   tr.mat-row {
@@ -83,21 +122,17 @@ mat-card {
     }
   }
 
-  // Specific column alignments for financial data
   .mat-column-Advance,
   .mat-column-monthlyCost,
   .mat-column-paid,
   .mat-column-balance {
-    font-family: 'Roboto Mono', monospace; // Optional: Monospace for numbers
+    font-family: 'Roboto Mono', monospace;
     font-weight: 500;
   }
-
-  // Balance highlights
   .mat-column-balance {
-    color: #d93025; // Red for balance/debt
+    color: black; 
   }
 
-  // Payment Method Chip
   .payment-method {
     display: inline-block;
     padding: 4px 12px;

@@ -66,6 +66,7 @@ export class DailyCustomerDetailsComponent {
   this.vehicleDetailsForm.get('vehicleType')?.valueChanges
   .pipe(
     withLatestFrom(this.vehicleTypes$),
+    takeUntil(this.destroy$)
   )
   .subscribe(([selectedType, vehicleTypes]) => {
     const selectedVehicle = vehicleTypes.find(v => v.vehicleType === selectedType);

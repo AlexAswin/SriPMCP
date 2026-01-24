@@ -71,6 +71,21 @@
                     </app-button>
                 </form>
             </mat-expansion-panel>
+
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    <mat-panel-title> Delete Customer Transaction</mat-panel-title>
+                </mat-expansion-panel-header>
+                <form [formGroup]="deleteCustomerForm" (ngSubmit)="deleteCustomerRecord()">
+                    <p>To delete customer current monthly transaction please enter customer vehicle number...</p>
+                    <mat-form-field class="example-full-width" appearance="outline">
+                        <mat-label>Delete Customer Transaction</mat-label>
+                        <input matInput placeholder="Enter Vehicle Number" formControlName="vehicleNumber">
+                    </mat-form-field>
+                    <app-button label="Delete" variant="primary" type="submit">
+                    </app-button>
+                </form>
+            </mat-expansion-panel>
         </mat-accordion>
     </div>
      <div class="right-container" *ngIf="editVehicleDetails">
