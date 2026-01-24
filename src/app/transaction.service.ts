@@ -236,5 +236,44 @@ export class TransactionService {
     await deleteDoc(transactionRef);
     console.log('Deleted successfully');
   }
+
+   addDailyTransactionsToNewCustomer = async(customerDetails: any) => {
+    try {
+      const customerQuery = query(
+        collection(this.firestore, 'CustomerEntry'),
+        where('vehicleNumber', '==', customerDetails.vehicleNumber)
+      );
+  
+      const snapshot = await getDocs(customerQuery);
+  
+      if (snapshot.empty) {
+        console.error('Customer not found');
+        return;
+      }
+  
+      const customerDoc = snapshot.docs[0];
+      const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
+  
+      const [year, month] = customerDetails.fromDateMonthly.split('-').map(Number);
+      const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
+      const transactionRef = doc(customerRef, 'Transactions', currentMonth);
+      const dailyTransactionDetails = await getDoc(transactionRef);
+      const transactionData = {
+        dailyCost: customerDetails.amount,
+        currentPending: customerDetails.amount,
+        settledAmount: null,
+        transactionAmount: 0,
+        transactionDate: 'NO TRANSACTION'
+      }
+  
+      if (!dailyTransactionDetails.exists()) {
+        await setDoc(transactionRef, {
+          ...transactionData,
+        });
+      }
+    } catch (error) {
+      console.error('Error saving transaction', error);
+    }
+  }
   
 }

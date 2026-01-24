@@ -234,8 +234,6 @@ ngOnInit() {
       this.fromDateMonthly.setValue(res.fromDateMonthly);
       this.endDateMonthly.setValue(res.endDateMonthly);
       this.note.setValue(res.note);
-
-      console.log(res);
     } else if (res && res.dailyStatus === 'paid'){
       this.isNewMonthlyCustomer = false;
       this.isMonthlyActiveCustomer = false;

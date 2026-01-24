@@ -101,7 +101,6 @@ export class MonthlyPaymentsComponent implements OnInit{
     });
 
     dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe(result => {
-      console.log('Dialog result:', result);
       if (result === 'confirm') {
         this.proceedTransaction();
       } else {

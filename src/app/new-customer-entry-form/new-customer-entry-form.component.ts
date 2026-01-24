@@ -202,12 +202,9 @@ export class NewCustomerEntryFormComponent {
       }
     });
   
-    console.log('Final Payload:', payload);
-  
     this.newCustomerEntry
       .addNewCustomerEntry(payload)
       .then(() => {
-        console.log('Customer Details saved successfully');
         this.vehicleForm.reset();
         this.formClosed.emit();
       })
