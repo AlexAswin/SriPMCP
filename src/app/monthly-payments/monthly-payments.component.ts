@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { ButtonComponent } from '../Common/button/button.component';
@@ -24,7 +24,7 @@ import { Router } from '@angular/router';
   templateUrl: './monthly-payments.component.html',
   styleUrl: './monthly-payments.component.scss'
 })
-export class MonthlyPaymentsComponent implements OnInit{
+export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
 
   monthlyPaymentForm!: FormGroup;
 

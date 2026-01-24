@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,7 +22,7 @@ import { AdminService, VehicleType } from '../admin.service';
   templateUrl: './monthly-customer-details.component.html',
   styleUrl: './monthly-customer-details.component.scss'
 })
-export class MonthlyCustomerDetailsComponent implements OnInit {
+export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   monthlyStatuses = ['Active', 'InActive'];
 

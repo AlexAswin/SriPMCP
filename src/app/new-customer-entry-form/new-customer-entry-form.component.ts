@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -32,7 +32,7 @@ import { Subject, takeUntil } from 'rxjs';
   templateUrl: './new-customer-entry-form.component.html',
   styleUrl: './new-customer-entry-form.component.scss',
 })
-export class NewCustomerEntryFormComponent {
+export class NewCustomerEntryFormComponent implements OnDestroy {
   vehicleForm: FormGroup;
   vehicleTypes = ['Car', '2-Wheeler', '4-Wheeler', 'Lorry'];
   customerTypes = ['Daily', 'Monthly'];

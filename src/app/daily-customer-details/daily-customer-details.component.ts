@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ButtonComponent } from '../Common/button/button.component';
@@ -29,7 +29,7 @@ import { AdminService, VehicleType } from '../admin.service';
   templateUrl: './daily-customer-details.component.html',
   styleUrl: './daily-customer-details.component.scss',
 })
-export class DailyCustomerDetailsComponent implements OnDestroy {
+export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   vehicleDetailsForm!: FormGroup;
 
   type: 'success' | 'error' | 'warning' = 'success';
