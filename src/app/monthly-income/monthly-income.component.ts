@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatCard, MatCardTitle } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule} from '@angular/material/chips';
@@ -26,7 +26,7 @@ import { RouterModule } from '@angular/router';
   templateUrl: './monthly-income.component.html',
   styleUrl: './monthly-income.component.scss'
 })
-export class MonthlyIncomeComponent implements OnInit{
+export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   allCustomersWithLedgers$!: Observable<any[]>;
   activeCustomersWithLedger$!: Observable<any[]>;
   inactiveCustomersWithLedger$!: Observable<any[]>;

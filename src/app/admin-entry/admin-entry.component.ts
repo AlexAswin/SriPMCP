@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -24,7 +24,7 @@ import { TransactionService } from '../transaction.service';
   styleUrl: './admin-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminEntryComponent implements OnInit{
+export class AdminEntryComponent implements OnInit, OnDestroy {
 
   vehicleForm!: FormGroup;
   expenseForm!: FormGroup;
