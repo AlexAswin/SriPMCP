@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
-import { Observable, combineLatest, map, of, switchMap } from 'rxjs';
+import { Firestore, collection, collectionData, deleteDoc, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
+import { Observable, combineLatest, map, of, switchMap, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -117,9 +117,9 @@ export class TransactionService {
     return prevMonthId;
   }
 
-  getActiveCustomersWithCurrentMonthLedger(): Observable<any[]> {
+  getMonthlyCustomersTransactions(): Observable<any[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
-    const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
+    const q = query(customersRef, where('monthlyStatus', 'in', ['Active', 'InActive']));
   
     return collectionData(q, { idField: 'id' }).pipe(
       switchMap((customers: any[]) => {
@@ -222,4 +222,19 @@ export class TransactionService {
     const [y, m] = dateStr.split('-').map(Number);
     return `${y}-${String(m).padStart(2, '0')}`;
   }
+
+  async deleteCustomerCurrentMonthTransaction(vehicleNumber: string) {
+    const currentMonth = this.getCurrentMonth();
+    const transactionRef = doc(this.firestore, `CustomerEntry/${vehicleNumber}/Transactions/${currentMonth}`);
+    
+    const snap = await getDoc(transactionRef);
+    if (!snap.exists()) {
+      console.log('No transaction found to delete');
+      return;
+    }
+  
+    await deleteDoc(transactionRef);
+    console.log('Deleted successfully');
+  }
+  
 }

@@ -1,6 +1,16 @@
 <mat-sidenav-container class="container">
-  <mat-sidenav #sidenav mode="side" [(opened)]="opened" style="min-width: 250PX;">
-    <p>Sidenav content</p>
+  <mat-sidenav #sidenav mode="side" [(opened)]="opened">
+   <h2> Download Details </h2>
+    <div class="download-list">
+      <a mat-list-item (click)="downloadActiveCustomerPDF()">
+        Active Customer
+      </a>
+    
+      <a mat-list-item (click)="downloadMonthlyReportPDF()">
+        Monthly Report
+      </a>
+    </div>
+   
   </mat-sidenav>
 
   <mat-sidenav-content>
@@ -14,11 +24,15 @@
       <span class="title">Monthly Income </span>
 
       <span class="spacer"></span>
+
+      <mat-icon [routerLink]="['/dashBoard']">
+        close
+      </mat-icon>
     </mat-toolbar>
 
     <div class="content">
       <mat-card>
-        <mat-card-title>Monthly Balance Details - {{currentMonth}}
+        <mat-card-title>Active Customers - {{currentMonth}}
         </mat-card-title>
 
         <table mat-table *ngIf="activeCustomersWithLedger$" [dataSource]="(activeCustomersWithLedger$ | async) ?? []"
@@ -74,9 +88,77 @@
         </table>
       </mat-card>
 
-      <div>
-        <app-button variant="secondary" width="250px" label="downloadActiveCustomerPDF"
-          (clicked)="downloadActiveCustomerPDF()"></app-button>
-      </div>
+      <mat-card *ngIf="inactiveCustomersWithLedger$">
+        <mat-card-title>Inactive Customers - {{currentMonth}}
+        </mat-card-title>
+
+        <table mat-table  [dataSource]="(inactiveCustomersWithLedger$ | async) ?? []"
+          class="full-width">
+
+          <ng-container matColumnDef="vehicle">
+            <th mat-header-cell *matHeaderCellDef>Vehicle</th>
+            <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.vehicleNumber }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.customerName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="Advance">
+            <th mat-header-cell *matHeaderCellDef>Advance</th>
+            <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.Transactions.advance }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="monthlyCost">
+            <th mat-header-cell *matHeaderCellDef>Amount</th>
+            <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.Transactions.monthlyCost }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="paid">
+            <th mat-header-cell *matHeaderCellDef>Paid</th>
+            <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.Transactions.transactionAmount }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="balance">
+            <th mat-header-cell *matHeaderCellDef>Balance</th>
+            <td mat-cell 
+                *matCellDef="let customer" 
+                [ngClass]="{'non-zero-balance': customer.Transactions?.currentPending !== 0}">
+              ₹{{ customer.Transactions?.currentPending }}
+            </td>
+          </ng-container>
+          
+
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef>Transaction Date</th>
+            <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.Transactions.transactionDate }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="payMethod">
+            <th mat-header-cell *matHeaderCellDef>Payment Type</th>
+            <td mat-cell *matCellDef="let activeCustomers">
+              <span class="payment-method">
+                {{ activeCustomers.Transactions.paymentMethod? activeCustomers.Transactions.paymentMethod : 'Not Done'
+                }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="activeCustomersAndBalanceColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: activeCustomersAndBalanceColumns;"></tr>
+        </table>
+      </mat-card>
+
+      <mat-card>
+        <div class="TransactionDetails">
+         <h3> Total Expected Income : ₹ {{expectedMonthlyIncome$ | async }} </h3> 
+         <h3> Monthly Transaction : ₹ {{totalMonthlyTransaction$ | async }} </h3>
+         <h3> Amount Pending : ₹ {{totalPending$ | async }} </h3>         
+        </div>
+      </mat-card>
+
     </div>
+  <!-- <pre>{{ inactiveCustomersWithLedger$ | async | json }}</pre> -->
+
   </mat-sidenav-content>

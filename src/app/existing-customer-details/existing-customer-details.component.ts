@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 
 
 @Component({
@@ -20,11 +21,13 @@ export class ExistingCustomerDetailsComponent {
   isMonthly: boolean = false;
   isDaily: boolean = true
 
+  private destroy$ = new Subject<void>();
+
   
 
   ngOnInit(): void {
     this.createForm();
-    this.vehicleForm.get('customerType')?.valueChanges.subscribe(type => {
+    this.vehicleForm.get('customerType')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(type => {
       if (type === 'Daily') {
         this.vehicleForm.patchValue({
           monthlyStatus: null,
@@ -63,7 +66,7 @@ export class ExistingCustomerDetailsComponent {
   }
 
   loadVehicleData() {
-    this.newCustomerEntryService.vehicle$.subscribe((res: any) => {
+    this.newCustomerEntryService.vehicle$.pipe(takeUntil(this.destroy$)).subscribe((res: any) => {
       if (!res) return;
   
       this.vehicleForm.reset();
@@ -106,6 +109,11 @@ export class ExistingCustomerDetailsComponent {
   closeForm() {
     this.vehicleForm.reset();
     this.router.navigate(['/dashBoard'])
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
 }
