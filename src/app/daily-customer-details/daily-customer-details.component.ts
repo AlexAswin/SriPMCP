@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ButtonComponent } from '../Common/button/button.component';
@@ -7,7 +7,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, combineLatest, debounceTime, distinctUntilChanged, filter, startWith, takeUntil, withLatestFrom } from 'rxjs';
+import { Observable, Subject, combineLatest, debounceTime, distinctUntilChanged, filter, startWith, switchMap, takeUntil, withLatestFrom } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { AdminService, VehicleType } from '../admin.service';
@@ -29,7 +29,7 @@ import { AdminService, VehicleType } from '../admin.service';
   templateUrl: './daily-customer-details.component.html',
   styleUrl: './daily-customer-details.component.scss',
 })
-export class DailyCustomerDetailsComponent {
+export class DailyCustomerDetailsComponent implements OnDestroy {
   vehicleDetailsForm!: FormGroup;
 
   type: 'success' | 'error' | 'warning' = 'success';
@@ -57,6 +57,7 @@ export class DailyCustomerDetailsComponent {
 
   appxexitTime: string = '';
   showPaidDetails: boolean = false;
+  alreadyPaid: boolean = false;
   private destroy$ = new Subject<void>();
   vehicleTypes$!: Observable<VehicleType[]>;
 
@@ -77,13 +78,13 @@ export class DailyCustomerDetailsComponent {
 
     const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
-    vehicleCtrl?.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), filter(value => value?.length >= 9 ), takeUntil(this.destroy$))
-      .subscribe((value) => {
-        if (value) {
-          this.getCustomerDetails(value);
-        }
-      });
+    // vehicleCtrl?.valueChanges
+    //   .pipe(debounceTime(500), distinctUntilChanged(), filter(value => value?.length >= 9 ), takeUntil(this.destroy$))
+    //   .subscribe((value) => {
+    //     if (value) {
+    //       this.getCustomerDetails(value);
+    //     }
+    //   });
 
     this.isNewDailyCustomer = true;
 
@@ -91,6 +92,8 @@ export class DailyCustomerDetailsComponent {
 
     if (vehicleNbr) {
       vehicleCtrl?.setValue(vehicleNbr, { emitEvent: true });
+      const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNbr);
+      this.getCustomerDetails(formatedVehicleNbr);
     }
   }
 
@@ -124,6 +127,16 @@ export class DailyCustomerDetailsComponent {
     } else {
       this.showPaidDetails = false;
     }
+  }
+
+  getVehicleNbrAndCheckForExistence = () => {
+    const vehicleNbr = this.vehicleDetailsForm.get('vehicleNumber');
+    if (!vehicleNbr) {
+      return;
+    }
+    const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNbr.value);
+    this.getCustomerDetails(formatedVehicleNbr);
+
   }
   getCustomerDetails = async (vehicleNbr: string) => {
     const vehicleNumber = vehicleNbr;
@@ -174,6 +187,7 @@ export class DailyCustomerDetailsComponent {
       this.dailyStatus.setValue(res.dailyStatus);
       this.fromDateDaily.setValue(res.fromDateDaily),
         this.entryTime.setValue(res.entryTime);
+        this.alreadyPaid = true
       this.billAmount.setValue(res.billAmount),
         this.endDateDaily.setValue(res.endDateDaily),
         this.exitTime.setValue(res.exitTime),
@@ -202,7 +216,6 @@ export class DailyCustomerDetailsComponent {
       this.type = 'warning';
       this.message = 'This customer is an paid Daily Customer...';
     } else {
-      console.log('New vehicle');
       this.isNewDailyCustomer = true;
     }
   };
@@ -215,7 +228,6 @@ export class DailyCustomerDetailsComponent {
 
     const istDateTime = this.getTimeInIST(this.fromDateDaily, this.entryTime);
     this.entryTime.setValue(istDateTime);
-    console.log('Entry IST:', istDateTime);
   }
 
   onExitDateChange(event: any) {
@@ -231,7 +243,6 @@ export class DailyCustomerDetailsComponent {
       this.endDateDaily.value,
       this.exitTime.value
     );
-    console.log('Exit IST:', istDateTime);
   }
 
   getTimeInIST(

@@ -60,7 +60,6 @@ export class EntryFormComponent {
           vehicleNbr: exists.vehicleNumber,
         },
       });
-      console.log('Vehicle already exists :', exists);
     
     } else if ( exists && exists.customerType === 'Monthly') {
       this.router.navigate(['/monthlyCustomer'], {
@@ -72,7 +71,6 @@ export class EntryFormComponent {
     } else {
       this.show = true;
       this.message = 'New Customer... Please Add Customer Details';
-      console.log('New vehicle');
     }
   }    
 
