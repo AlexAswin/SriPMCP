@@ -61,7 +61,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   currentCustomer: string ='';
 
 ngOnInit() {
-  this.vehicleTypes$ = this.adminService.getVehicleTypes();
+  this.vehicleTypes$ = this.adminService.getVehicleTypes().pipe(take(1));
 
   this.vehicleDetailsForm.get('vehicleType')?.valueChanges
   .pipe(

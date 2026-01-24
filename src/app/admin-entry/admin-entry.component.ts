@@ -52,7 +52,7 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     this.expenseDetailsForm();
     this.paymentDetailsForm();
     this.getVehicle();
-    this.expenses$ = this.adminService.getExpenses();
+    this.expenses$ = this.adminService.getExpenses().pipe(take(1));
     this.updateVehicleForm();
     this.deleteCustomer();
   }

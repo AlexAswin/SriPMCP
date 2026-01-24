@@ -7,7 +7,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, combineLatest, debounceTime, distinctUntilChanged, filter, startWith, switchMap, takeUntil, withLatestFrom } from 'rxjs';
+import { Observable, Subject, combineLatest, debounceTime, distinctUntilChanged, filter, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { AdminService, VehicleType } from '../admin.service';
@@ -62,7 +62,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   vehicleTypes$!: Observable<VehicleType[]>;
 
   ngOnInit() {
-    this.vehicleTypes$ = this.adminService.getVehicleTypes();
+    this.vehicleTypes$ = this.adminService.getVehicleTypes().pipe(take(1));
 
   this.vehicleDetailsForm.get('vehicleType')?.valueChanges
   .pipe(
