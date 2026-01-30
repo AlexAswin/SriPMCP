@@ -1,41 +1,76 @@
 <mat-sidenav-container class="container">
-  <mat-sidenav #sidenav mode="side" [(opened)]="opened">
-   <h2> Download Details </h2>
-    <div class="download-list">
-      <a mat-list-item (click)="downloadActiveCustomerPDF()">
-        Active Customer
-      </a>
+  <mat-sidenav #sidenav mode="over" [(opened)]="opened">
+
+    <h2>Customer Details</h2>
+    <div class="customer-filter">
+
+      <!-- Customer Type -->
+      <div class="filter-section">
+        <h3 class="filter-title">Customer Type</h3>
     
-      <a mat-list-item (click)="downloadMonthlyReportPDF()">
-        Monthly Report
-      </a>
+        <mat-radio-group
+          aria-labelledby="customer-type-label"
+          class="radio-group"
+          [(ngModel)]="customerType">
+    
+          @for (type of customerTypes; track type) {
+            <mat-radio-button
+              class="radio-option"
+              [value]="type">
+              {{ type }}
+            </mat-radio-button>
+          }
+    
+        </mat-radio-group>
+      </div>
+    
+      <!-- Pending Range -->
+      <div class="filter-section">
+        <h3 class="filter-title">Pending Range</h3>
+    
+        <div class="range-header">
+          <span class="range-label">Range</span>
+          <span class="range-value">{{ slider.value }}</span>
+        </div>
+    
+        <mat-slider
+          class="range-slider"
+          [min]="minPending"
+          [max]="maxPending"
+          [step]="step">
+          <input matSliderThumb [(ngModel)]="value" #slider>
+        </mat-slider>
+
+        <app-button varient="secondary" label="Apply" (clicked)="showFilteredPending()"></app-button>
+      </div>
+    
     </div>
+    
    
   </mat-sidenav>
 
   <mat-sidenav-content>
     <mat-toolbar>
+      <mat-icon [routerLink]="['/dashBoard']">
+        close
+      </mat-icon>
+      <span class="title">Monthly Customer Details </span>
+
+      <span class="spacer"></span>
+
       <button mat-icon-button (click)="sidenav.toggle()" aria-label="Toggle menu">
         <mat-icon>
           {{ opened ? 'menu_open' : 'menu' }}
         </mat-icon>
       </button>
-
-      <span class="title">Monthly Income </span>
-
-      <span class="spacer"></span>
-
-      <mat-icon [routerLink]="['/dashBoard']">
-        close
-      </mat-icon>
     </mat-toolbar>
 
     <div class="content">
-      <mat-card>
+      <mat-card *ngIf="(filteredActiveCustomersWithLedger$? filteredActiveCustomersWithLedger$ : activeCustomersWithLedger$) && customerType === 'Active'">
         <mat-card-title>Active Customers - {{currentMonth}}
         </mat-card-title>
 
-        <table mat-table *ngIf="activeCustomersWithLedger$" [dataSource]="(activeCustomersWithLedger$ | async) ?? []"
+        <table mat-table  [dataSource]="(activeCustomersWithLedger$ | async) ?? []"
           class="full-width">
 
           <ng-container matColumnDef="vehicle">
@@ -88,7 +123,7 @@
         </table>
       </mat-card>
 
-      <mat-card *ngIf="inactiveCustomersWithLedger$">
+      <mat-card *ngIf="inactiveCustomersWithLedger$ && customerType === 'InActive'">
         <mat-card-title>Inactive Customers - {{currentMonth}}
         </mat-card-title>
 
@@ -150,13 +185,13 @@
         </table>
       </mat-card>
 
-      <mat-card>
+      <!-- <mat-card *ngIf="">
         <div class="TransactionDetails">
          <h3> Total Expected Income : ₹ {{expectedMonthlyIncome$ | async }} </h3> 
          <h3> Monthly Transaction : ₹ {{totalMonthlyTransaction$ | async }} </h3>
          <h3> Amount Pending : ₹ {{totalPending$ | async }} </h3>         
         </div>
-      </mat-card>
+      </mat-card> -->
 
     </div>
   <!-- <pre>{{ inactiveCustomersWithLedger$ | async | json }}</pre> -->
