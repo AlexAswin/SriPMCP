@@ -16,7 +16,7 @@ import { Route, Router, RouterModule } from '@angular/router';
   selector: 'app-dash-board',
   standalone: true,
   imports: [MatSidenavModule, MatButtonModule, MatIconModule, MatListModule, MatToolbarModule, EntryFormComponent,
-            CommonModule, MatGridListModule, RouterModule],
+    CommonModule, MatGridListModule, RouterModule, NavBarComponent],
   templateUrl: './dash-board.component.html',
   styleUrl: './dash-board.component.scss'
 })

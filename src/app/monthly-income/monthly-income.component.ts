@@ -1,27 +1,35 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { MatCard, MatCardTitle } from '@angular/material/card';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { MatCard, MatCardTitle, MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule} from '@angular/material/chips';
 import { CommonModule } from '@angular/common';
-import { Observable, Subject, firstValueFrom, forkJoin, map, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, combineLatest, firstValueFrom, forkJoin, map, take, takeUntil } from 'rxjs';
 import { TransactionService } from '../transaction.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenavModule} from '@angular/material/sidenav';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { ButtonComponent } from '../Common/button/button.component';
 import autoTable from 'jspdf-autotable';
 import jsPDF from 'jspdf';
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatInputModule } from '@angular/material/input';
 import { RouterModule } from '@angular/router';
+import { MatRadioModule } from "@angular/material/radio";
+import {MatSliderModule} from '@angular/material/slider';
+import { ButtonComponent } from "../Common/button/button.component";
 
+export interface Task {
+  name: string;
+  completed: boolean;
+  subtasks?: Task[];
+}
 @Component({
   selector: 'app-monthly-income',
   standalone: true,
   imports: [MatCard, MatCardTitle, MatTableModule, MatChipsModule, CommonModule, MatIconModule, MatSidenavModule, FormsModule,
-    MatToolbarModule, ButtonComponent, MatNativeDateModule,  MatDatepickerModule, MatInputModule, ReactiveFormsModule, RouterModule],
+    MatToolbarModule, MatNativeDateModule, MatDatepickerModule, MatInputModule, ReactiveFormsModule, RouterModule, MatRadioModule, MatCardModule,
+    MatSliderModule, ButtonComponent],
     providers: [],
   templateUrl: './monthly-income.component.html',
   styleUrl: './monthly-income.component.scss'
@@ -30,6 +38,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   allCustomersWithLedgers$!: Observable<any[]>;
   activeCustomersWithLedger$!: Observable<any[]>;
   inactiveCustomersWithLedger$!: Observable<any[]>;
+
+  inactiveCustomers: boolean = false;
+  activeCustomers: boolean = false
 
   currentMonth: string = '';
 
@@ -41,6 +52,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   expectedMonthlyIncome$!: Observable<any[]>;
   totalMonthlyTransaction$!: Observable<any[]>;
   totalPending$!: Observable<any[]>;
+  filteredActiveCustomersWithLedger$!: Observable<any[]>;
 
 
   activeCustomersAndBalanceColumns = [
@@ -53,6 +65,15 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     'date',
     'payMethod',
   ];
+
+  customerType = 'Active';
+  customerTypes: string[] = ['Active', 'InActive'];
+
+  maxPending = 30000;
+  minPending = 0;
+  step = 1000;
+  thumbLabel = true;
+  value = 0;
 
   constructor ( private transactionService: TransactionService ) {
 
@@ -80,6 +101,11 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   toggleSidenav() {
     this.opened = !this.opened;
   }
+
+  showFilteredPending() {
+
+  }
+
 
   calculateExpectedMonthlyIncome = (): Observable<number> =>{
     return this.expectedMonthlyIncome$ = this.allCustomersWithLedgers$.pipe((take(1)),

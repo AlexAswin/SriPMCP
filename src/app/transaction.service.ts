@@ -254,7 +254,7 @@ export class TransactionService {
       const customerDoc = snapshot.docs[0];
       const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
   
-      const [year, month] = customerDetails.fromDateMonthly.split('-').map(Number);
+      const [year, month] = customerDetails.fromDateDaily.split('-').map(Number);
       const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
       const transactionRef = doc(customerRef, 'Transactions', currentMonth);
       const dailyTransactionDetails = await getDoc(transactionRef);
@@ -275,5 +275,41 @@ export class TransactionService {
       console.error('Error saving transaction', error);
     }
   }
+
+  getDailyCustomersTransactions(): Observable<any[]> {
+    const customersRef = collection(this.firestore, 'CustomerEntry');
+    const q = query(customersRef, where('dailyStatus', 'in', ['paid', 'Unpaid']));
+  
+    return collectionData(q, { idField: 'id' }).pipe(
+      switchMap((customers: any[]) => {
+        if (!customers.length) return of([]);
+  
+        const currentMonth = this.getCurrentMonth();
+  
+        const details = customers.map(customer => {
+          const ledgerRef = doc(
+            this.firestore,
+            `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
+          );
+  
+          return docData(ledgerRef).pipe(
+            map(ledger => {
+              if (!ledger) {
+                this.createNewMonthLedgerForActiveCustomers(currentMonth);
+              }
+              return {
+                ...customer,
+                Transactions: ledger,
+              };
+            })
+          );
+        });
+  
+        return combineLatest(details);
+      })
+    );
+  }
+
+  
   
 }

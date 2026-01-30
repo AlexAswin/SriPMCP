@@ -1,17 +1,13 @@
 .container {
-  height: calc(100vh - 120px);
+  height: 100vh;
 }
 
 .content {
   padding: 16px;
 }
 
-.spacer {
-  flex: 1 1 auto;
-}
-
 .title {
-  margin-left: 12px;
+  margin: 0px auto;
   font-weight: 500;
 }
 
@@ -25,6 +21,64 @@ mat-sidenav {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-underline-offset: 10px;
   }
+  
+  .customer-filter {
+    padding: 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  
+    .filter-section {
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+  
+    .filter-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+  
+    /* Radio group */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+  
+    .radio-option {
+      margin-left: 4px;
+    }
+  
+    /* Pending range */
+    .range-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 300px;
+      margin: 10px 0 4px;
+    }
+  
+    .range-label {
+      font-size: 13px;
+      color: #666;
+    }
+  
+    .range-value {
+      font-weight: 600;
+      color: #333;
+    }
+  
+    .range-slider {
+      width: 100%;
+      max-width: 300px;
+      margin-top: 4px;
+    }
+  }
+  
+  
 
   .download-list {
     display: flex;
