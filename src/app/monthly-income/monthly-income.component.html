@@ -1,7 +1,7 @@
 <mat-sidenav-container class="container">
   <mat-sidenav #sidenav mode="over" [(opened)]="opened">
 
-    <h2>Customer Details</h2>
+    <h2>Filter Details</h2>
     <div class="customer-filter">
 
       <!-- Customer Type -->
@@ -25,24 +25,40 @@
       </div>
     
       <!-- Pending Range -->
-      <div class="filter-section">
+      <div class="filter-section" *ngIf="(activeCustomersWithLedger$) && customerType === 'Active'">
         <h3 class="filter-title">Pending Range</h3>
-    
+      
         <div class="range-header">
-          <span class="range-label">Range</span>
-          <span class="range-value">{{ slider.value }}</span>
+          <span class="range-label">Selected: </span>
+          <span class="range-value">₹{{minPending}} - ₹{{maxPending}}</span>
         </div>
-    
-        <mat-slider
-          class="range-slider"
-          [min]="minPending"
-          [max]="maxPending"
-          [step]="step">
-          <input matSliderThumb [(ngModel)]="value" #slider>
-        </mat-slider>
 
-        <app-button varient="secondary" label="Apply" (clicked)="showFilteredPending()"></app-button>
+        <mat-slider min="0" max="30000" step="1000" minGap="1000">
+          <input matSliderStartThumb [(ngModel)]="minPending">
+          <input matSliderEndThumb [(ngModel)]="maxPending">
+        </mat-slider>
+      
+        <app-button variant="secondary" label="Apply" (clicked)="showFilteredPending()"></app-button>
+        <app-button variant="primary" label="Reset" (clicked)="resetFilteredPending()"></app-button>
+
       </div>
+      
+      <div class="filter-section"
+     *ngIf="activeCustomersWithLedger$ && customerType === 'Active'">
+
+  <h3 class="filter-title">Transaction Date</h3>
+
+  <label>From</label>
+  <input type="date" (change)="onFromDateChange($event)" />
+
+  <label>To</label>
+  <input type="date" (change)="onToDateChange($event)" />
+<!-- 
+  <app-button variant="secondary" label="Apply" (clicked)="applyTransactionDateFilter()"></app-button>
+  <app-button variant="primary" label="Reset" (clicked)="resetTransactionDateFilter()"></app-button> -->
+
+</div>
+
     
     </div>
     
@@ -66,7 +82,7 @@
     </mat-toolbar>
 
     <div class="content">
-      <mat-card *ngIf="(filteredActiveCustomersWithLedger$? filteredActiveCustomersWithLedger$ : activeCustomersWithLedger$) && customerType === 'Active'">
+      <mat-card *ngIf="(activeCustomersWithLedger$) && customerType === 'Active'">
         <mat-card-title>Active Customers - {{currentMonth}}
         </mat-card-title>
 
@@ -99,14 +115,42 @@
           </ng-container>
 
           <ng-container matColumnDef="balance">
-            <th mat-header-cell *matHeaderCellDef>Balance</th>
-            <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.Transactions.currentPending }}</td>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              (click)="sortBy('pending')"
+              class="sortable"
+            >
+              Balance
+              <span *ngIf="sortKey === 'pending'">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
+          
+            <td mat-cell *matCellDef="let activeCustomers">
+              ₹{{ activeCustomers.Transactions.currentPending }}
+            </td>
           </ng-container>
+          
 
           <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef>Transaction Date</th>
-            <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.Transactions.transactionDate }}</td>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              (click)="sortBy('date')"
+              class="sortable"
+            >
+              Transaction Date
+              <span *ngIf="sortKey === 'date'">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
+          
+            <td mat-cell *matCellDef="let activeCustomers">
+              {{ activeCustomers.Transactions.transactionDate }}
+            </td>
           </ng-container>
+          
 
           <ng-container matColumnDef="payMethod">
             <th mat-header-cell *matHeaderCellDef>Payment Type</th>
@@ -194,6 +238,6 @@
       </mat-card> -->
 
     </div>
-  <!-- <pre>{{ inactiveCustomersWithLedger$ | async | json }}</pre> -->
+  <!-- <pre>{{ activeCustomersWithLedger$ | async | json }}</pre> -->
 
   </mat-sidenav-content>
