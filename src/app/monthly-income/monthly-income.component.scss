@@ -12,7 +12,7 @@
 }
 
 mat-sidenav {
-  min-width: 300px;
+  min-width: 350px;
 
   h2 {
     text-align: center;
@@ -21,7 +21,7 @@ mat-sidenav {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-underline-offset: 10px;
   }
-  
+
   .customer-filter {
     padding: 0 12px;
     display: flex;
@@ -46,36 +46,73 @@ mat-sidenav {
       flex-direction: column;
       gap: 6px;
       margin-top: 6px;
+
+
     }
   
     .radio-option {
       margin-left: 4px;
     }
+
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+    }
   
     /* Pending range */
-    .range-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 300px;
-      margin: 10px 0 4px;
-    }
+    // .range-header {
+    //   display: flex;
+    //   justify-content: space-between;
+    //   align-items: center;
+    //   max-width: 300px;
+    //   margin: 10px 0 4px;
+    // }
   
-    .range-label {
-      font-size: 13px;
-      color: #666;
-    }
+    // .range-label {
+    //   font-size: 13px;
+    //   color: #666;
+    // }
   
-    .range-value {
-      font-weight: 600;
-      color: #333;
-    }
+    // .range-value {
+    //   font-weight: 600;
+    //   color: #333;
+    // }
   
-    .range-slider {
-      width: 100%;
-      max-width: 300px;
-      margin-top: 4px;
-    }
+  .filter-section {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+
+  .filter-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+  }
+
+  .range-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 500;
+    color: #666;
+  }
+
+  .range-slider {
+    width: 100%;
+    margin: 8px 0;
+  }
+
+  label {
+    font-family: 'Roboto Mono', monospace;
+
+  }
+
+  input {
+    min-height: 40px;
+  }
+}
   }
   
   

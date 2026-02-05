@@ -18,18 +18,22 @@ import { RouterModule } from '@angular/router';
 import { MatRadioModule } from "@angular/material/radio";
 import {MatSliderModule} from '@angular/material/slider';
 import { ButtonComponent } from "../Common/button/button.component";
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 
 export interface Task {
   name: string;
   completed: boolean;
   subtasks?: Task[];
 }
+
+type SortKey = 'date' | 'pending';
+
 @Component({
   selector: 'app-monthly-income',
   standalone: true,
   imports: [MatCard, MatCardTitle, MatTableModule, MatChipsModule, CommonModule, MatIconModule, MatSidenavModule, FormsModule,
     MatToolbarModule, MatNativeDateModule, MatDatepickerModule, MatInputModule, ReactiveFormsModule, RouterModule, MatRadioModule, MatCardModule,
-    MatSliderModule, ButtonComponent],
+    MatSliderModule, ButtonComponent, MatSlideToggleModule],
     providers: [],
   templateUrl: './monthly-income.component.html',
   styleUrl: './monthly-income.component.scss'
@@ -54,6 +58,16 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   totalPending$!: Observable<any[]>;
   filteredActiveCustomersWithLedger$!: Observable<any[]>;
 
+  sortKey: SortKey | null = null;
+  sortDirection: 'asc' | 'desc' = 'asc';
+  
+  sort$ = new BehaviorSubject<{
+    key: SortKey;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+  
+  
+
 
   activeCustomersAndBalanceColumns = [
     'vehicle',
@@ -74,6 +88,13 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   step = 1000;
   thumbLabel = true;
   value = 0;
+  private filterCriteria$ = new BehaviorSubject<{min: number, max: number} | null>(null);
+
+  fromDate: Date | null = null;
+  toDate: Date | null = null;
+  dateFilter$ = new BehaviorSubject<{ from: Date | null; to: Date | null } | null>(null);
+  
+
 
   constructor ( private transactionService: TransactionService ) {
 
@@ -85,10 +106,69 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
 
   getActiveMonthlyUsers = () => {
     this.currentMonth = new Date().toLocaleString('default', { month: 'long' });
-    this.allCustomersWithLedgers$ = this.transactionService.getMonthlyCustomersTransactions().pipe(take(1)),
-    this.activeCustomersWithLedger$ = this.allCustomersWithLedgers$.pipe((take(1)),
-      map(customers => customers.filter(c => c.monthlyStatus === 'Active'))
-      );
+  
+    this.allCustomersWithLedgers$ =
+      this.transactionService.getMonthlyCustomersTransactions();
+  
+    this.activeCustomersWithLedger$ = combineLatest([
+      this.allCustomersWithLedgers$,
+      this.filterCriteria$,
+      this.dateFilter$,
+      this.sort$
+    ]).pipe(
+      map(([customers, range, dateRange, sort]) => {
+  
+        let activeList = customers.filter(
+          c => c.monthlyStatus === 'Active' 
+        );
+  
+        // Pending amount filter
+        if (range) {
+          activeList = activeList.filter(c =>
+            c.Transactions.currentPending >= range.min &&
+            c.Transactions.currentPending <= range.max
+          );
+        }
+  
+        // Transaction date filter
+        if (dateRange?.from && dateRange?.to) {
+          const from = this.normalizeDate(dateRange.from);
+          const to = this.normalizeDate(dateRange.to);
+  
+          activeList = activeList.filter(c => {
+            if (!c.Transactions?.transactionDate) return false;
+  
+            const txnDate = this.normalizeDate(
+              new Date(c.Transactions.transactionDate)
+            );
+  
+            return txnDate >= from && txnDate <= to;
+          });
+        }
+  
+        // SORT
+        if (sort) {
+          activeList = [...activeList].sort((a, b) => {
+  
+            if (sort.key === 'date') {
+              const d1 = new Date(a.Transactions.transactionDate).getTime();
+              const d2 = new Date(b.Transactions.transactionDate).getTime();
+              return sort.direction === 'asc' ? d1 - d2 : d2 - d1;
+            }
+  
+            if (sort.key === 'pending') {
+              return sort.direction === 'asc'
+                ? a.Transactions.currentPending - b.Transactions.currentPending
+                : b.Transactions.currentPending - a.Transactions.currentPending;
+            }
+  
+            return 0;
+          });
+        }
+  
+        return activeList;
+      })
+    );
 
     this.inactiveCustomersWithLedger$ = this.allCustomersWithLedgers$.pipe((take(1)),
       map(customers => customers.filter(c => (c.monthlyStatus === 'InActive') && c.Transactions) )
@@ -96,14 +176,62 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.calculateExpectedMonthlyIncome();
     this.calculateMonthlyTransactionsAmount();
     this.calculateTotalPending();
-    }
+  };
+  
+  
 
-  toggleSidenav() {
+  toggleSidenav = () => {
     this.opened = !this.opened;
   }
 
-  showFilteredPending() {
+  showFilteredPending = () => {
+    this.filterCriteria$.next({ 
+      min: this.minPending, 
+      max: this.maxPending 
+    });
+  }
 
+  resetFilteredPending = () => {
+    this.filterCriteria$.next(null);
+  }
+
+  onFromDateChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.fromDate = value ? new Date(value) : null;
+    this.emitDateFilter();
+  }
+  
+  onToDateChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.toDate = value ? new Date(value) : null;
+    this.emitDateFilter();
+  }
+
+  private normalizeDate(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  sortBy(key: SortKey) {
+    if (this.sortKey === key) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortKey = key;
+      this.sortDirection = 'asc';
+    }
+  
+    this.sort$.next({
+      key: this.sortKey!,
+      direction: this.sortDirection
+    });
+  }
+  
+  
+  
+  private emitDateFilter() {
+    this.dateFilter$.next({
+      from: this.fromDate,
+      to: this.toDate
+    });
   }
 
 
