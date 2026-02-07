@@ -34,8 +34,11 @@ export class TransactionService {
         advance: customerDetails.advance,
         monthlyCost: customerDetails.amount,
         currentPending: customerDetails.amount,
-        transactionAmount: 0,
-        transactionDate: 'NO TRANSACTION'
+        // transactionHistory: {
+        //   transactionDate: null,
+        //   transactionAmount: 0,
+        //   transactionType: null
+        // }
       }
   
       if (!monthlyTransactionDetails.exists()) {
@@ -69,44 +72,69 @@ export class TransactionService {
   
       const customerDoc = snapshot.docs[0];
       const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
-  
-      const [year, month] = transactionData.transactionDate.split('-').map(Number);
+
+      const [year, month] = transactionData.transactionDate
+        .split('-')
+        .map(Number);
       const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
       const transactionRef = doc(customerRef, 'Transactions', currentMonth);
       const monthlyTransactionDetails = await getDoc(transactionRef);
-  
-       if (monthlyTransactionDetails.exists()){
-        
-        const existingData = monthlyTransactionDetails.data();
-        const updatedAmount = (existingData['transactionAmount'] || 0) + (transactionData.transactionAmount || 0);
-        const currentPending = transactionData.monthlyCost - updatedAmount;
-  
-        await updateDoc(transactionRef, {
-          transactionAmount: updatedAmount,
-          transactionDate: transactionData.transactionDate,
-          currentPending: currentPending,
-          paymentMethod: transactionData.paymentMethod
-        });
-      } else {
-        const prevMonthId = this.getPreviousMonthId(currentMonth);
-        const prevTransactionRef = doc(customerRef, 'Transactions', prevMonthId);
-        const prevTxnSnap = await getDoc(prevTransactionRef);
-        const prevTxnDetails = prevTxnSnap.data();
-        const currentMonthUpdates = {
-          advance: transactionData.advance,
-          monthlyCost: transactionData.monthlyCost,
-          currentPending: (prevTxnDetails!['currentPending'] || 0 ) + (transactionData.monthlyCost || 0 ),
-          transactionAmount: transactionData.transactionAmount,
-          transactionDate: transactionData.transactionDate,
-          paymentMethod: transactionData.paymentMethod
+
+      if (monthlyTransactionDetails.exists()) {
+        const existing = monthlyTransactionDetails.data();
+
+        const previousTotal = existing['transactionAmount'] || 0;
+        const newPayment = transactionData.transactionAmount || 0;
+
+        const updatedAmount = previousTotal + newPayment;
+
+        let history = existing['transactionHistory'];
+
+        if (!Array.isArray(history)) {
+          history = history ? [history] : [];
         }
-        await setDoc(transactionRef, {
-          ...currentMonthUpdates
+
+        const newEntry = {
+          transactionAmount: newPayment,
+          transactionDate: transactionData.transactionDate,
+          transactionType: transactionData.paymentMethod,
+        };
+
+        const updatedHistory = [...history, newEntry];
+
+        const pending = (existing['monthlyCost'] || 0) - updatedAmount;
+
+        await updateDoc(transactionRef, {
+          transactionHistory: updatedHistory,
+          transactionAmount: updatedAmount,
+          currentPending: pending,
+          lastTransactionDate: transactionData.transactionDate,
+          paymentMethod: transactionData.paymentMethod,
         });
-        
       }
+      // else {
+      //   const newEntry = [
+      //     {
+      //       transactionAmount: transactionData.transactionAmount,
+      //       transactionDate: transactionData.transactionDate,
+      //       transactionType: transactionData.paymentMethod,
+      //     },
+      //   ];
+
+      //   await setDoc(transactionRef, {
+      //     advance: transactionData.advance,
+      //     monthlyCost: transactionData.monthlyCost,
+      //     transactionAmount: transactionData.transactionAmount,
+      //     transactionHistory: newEntry,
+      //     currentPending:
+      //       transactionData.monthlyCost - transactionData.transactionAmount,
+      //     lastTransactionDate: transactionData.transactionDate,
+      //     paymentMethod: transactionData.paymentMethod,
+      //   });
+      // }
+  
     } catch (error) {
-      console.error('Error saving transaction', error);
+      console.error('Transaction Error:', error);
     }
   }
 
@@ -117,17 +145,17 @@ export class TransactionService {
     return prevMonthId;
   }
 
-  getMonthlyCustomersTransactions(): Observable<any[]> {
+  getActiveMonthlyCustomers(): Observable<any[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
-    const q = query(customersRef, where('monthlyStatus', 'in', ['Active', 'InActive']));
+    const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
   
     return collectionData(q, { idField: 'id' }).pipe(
       switchMap((customers: any[]) => {
-        if (!customers.length) return of([]);
   
         const currentMonth = this.getCurrentMonth();
   
         const details = customers.map(customer => {
+  
           const ledgerRef = doc(
             this.firestore,
             `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
@@ -135,12 +163,56 @@ export class TransactionService {
   
           return docData(ledgerRef).pipe(
             map(ledger => {
+  
               if (!ledger) {
                 this.createNewMonthLedgerForActiveCustomers(currentMonth);
               }
+  
               return {
                 ...customer,
-                Transactions: ledger,
+                Transactions: ledger
+              };
+            })
+          );
+        });
+  
+        return combineLatest(details);
+      })
+    );
+  }
+
+  getInactiveCustomersWithLastTransaction(): Observable<any[]> {
+    const customersRef = collection(this.firestore, 'CustomerEntry');
+    const q = query(customersRef, where('monthlyStatus', '==', 'InActive'));
+  
+    return collectionData(q, { idField: 'id' }).pipe(
+      switchMap((customers: any[]) => {
+  
+        if (!customers.length) return of([]);
+  
+        const details = customers.map(customer => {
+  
+          const txRef = collection(
+            this.firestore,
+            `CustomerEntry/${customer.id}/Transactions`
+          );
+  
+          return collectionData(txRef, { idField: 'monthId' }).pipe(
+            map((txns: any[]) => {
+  
+              if (!txns.length) {
+                return {
+                  ...customer,
+                  Transactions: null
+                };
+              }
+              txns.sort((a, b) => a.monthId.localeCompare(b.monthId));
+  
+              const lastTxn = txns[txns.length - 1];
+  
+              return {
+                ...customer,
+                Transactions: lastTxn
               };
             })
           );
@@ -151,7 +223,6 @@ export class TransactionService {
     );
   }
   
-
   private getCurrentMonth(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -167,9 +238,6 @@ export class TransactionService {
     const now = new Date();
   
     const currentMonth = this.getMonthIdFromDate(date)
-
-
-  
     const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevMonth = `${prevMonthDate.getFullYear()}-${String(
       prevMonthDate.getMonth() + 1
@@ -197,9 +265,9 @@ export class TransactionService {
 
         const advance = prevSnap.exists()? prevSnap.data()?.['advance'] : 0;
 
-        const transactionDate = prevSnap.exists()? prevSnap.data()?.['transactionDate'] : 0;
+        const transactionDate = prevSnap.exists()? prevSnap.data()?.['lastTransactionDate'] : 0;
 
-        const paymentMethod: string | null = prevSnap.exists()? (prevSnap.data()?.['paymentMethod'] as string ?? null) : null;
+        // const paymentMethod: string | null = prevSnap.exists()? (prevSnap.data()?.['paymentMethod'] as string ?? null) : null;
 
   
       const newPending = prevPending + monthlyCost;
@@ -211,9 +279,9 @@ export class TransactionService {
         advance: advance,
         currentPending: newPending,
         monthlyCost: monthlyCost,
-        transactionAmount: 0,
-        transactionDate: 'NO TRANSACTION',
-        paymentMethod: 'NOT PAID'
+        // transactionAmount: 0,
+        // transactionDate: 'NO TRANSACTION',
+        // paymentMethod: 'NOT PAID'
       });
     }
   }

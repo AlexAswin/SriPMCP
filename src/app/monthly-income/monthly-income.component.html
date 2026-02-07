@@ -1,68 +1,64 @@
 <mat-sidenav-container class="container">
-  <mat-sidenav #sidenav mode="over" [(opened)]="opened">
+  <mat-sidenav #sidenav mode="side" [(opened)]="opened">
 
     <h2>Filter Details</h2>
-    <div class="customer-filter">
 
-      <!-- Customer Type -->
+    <div class="customer-filter">
       <div class="filter-section">
-        <h3 class="filter-title">Customer Type</h3>
-    
-        <mat-radio-group
-          aria-labelledby="customer-type-label"
-          class="radio-group"
-          [(ngModel)]="customerType">
-    
-          @for (type of customerTypes; track type) {
-            <mat-radio-button
-              class="radio-option"
-              [value]="type">
-              {{ type }}
-            </mat-radio-button>
-          }
-    
-        </mat-radio-group>
+        <div class="checkbox-group">
+          <mat-checkbox [checked]="showActive && showInactive" [indeterminate]="showActive !== showInactive"
+            (change)="toggleAll($event.checked)">
+            <h3 class="filter-title">Customer Type</h3>
+          </mat-checkbox>
+          <mat-checkbox [checked]="showActive" (change)="toggleActive($event.checked)">
+            Active
+          </mat-checkbox>
+          <mat-checkbox [checked]="showInactive" (change)="toggleInactive($event.checked)">
+            InActive
+          </mat-checkbox>
+        </div>
       </div>
-    
-      <!-- Pending Range -->
+
       <div class="filter-section" *ngIf="(activeCustomersWithLedger$) && customerType === 'Active'">
-        <h3 class="filter-title">Pending Range</h3>
-      
+        <h3 class="filter-title">Balance Range</h3>
+
         <div class="range-header">
           <span class="range-label">Selected: </span>
           <span class="range-value">₹{{minPending}} - ₹{{maxPending}}</span>
         </div>
+        <div class="filter-input">
+          <input type="number" [(ngModel)]="minPending">
+          <span>To</span>
+          <input type="number" [(ngModel)]="maxPending">
+        </div>
+        <div class="filter-btn-grp">
+          <app-button variant="secondary" label="Apply" (clicked)="showFilteredPending()"></app-button>
+          <app-button variant="primary" label="Reset" (clicked)="resetFilteredPending()"></app-button>
+        </div>
+      </div>
 
-        <mat-slider min="0" max="30000" step="1000" minGap="1000">
-          <input matSliderStartThumb [(ngModel)]="minPending">
-          <input matSliderEndThumb [(ngModel)]="maxPending">
-        </mat-slider>
-      
-        <app-button variant="secondary" label="Apply" (clicked)="showFilteredPending()"></app-button>
-        <app-button variant="primary" label="Reset" (clicked)="resetFilteredPending()"></app-button>
+      <div class="filter-section" *ngIf="activeCustomersWithLedger$ && customerType === 'Active'">
+        <h3 class="filter-title">Transaction Date</h3>
+
+        <label>From</label>
+        <input type="date" (change)="onFromDateChange($event)" />
+
+        <label>To</label>
+        <input type="date" (change)="onToDateChange($event)" />
 
       </div>
-      
-      <div class="filter-section"
-     *ngIf="activeCustomersWithLedger$ && customerType === 'Active'">
 
-  <h3 class="filter-title">Transaction Date</h3>
+      <div class="filter-section">
+        <label>Vehicle Nbr</label>
+        <input type="text" placeholder="Enter Vehicle Number">
+        <app-button variant="primary" label="Get Transactions"></app-button>
+      </div>
 
-  <label>From</label>
-  <input type="date" (change)="onFromDateChange($event)" />
-
-  <label>To</label>
-  <input type="date" (change)="onToDateChange($event)" />
-<!-- 
-  <app-button variant="secondary" label="Apply" (clicked)="applyTransactionDateFilter()"></app-button>
-  <app-button variant="primary" label="Reset" (clicked)="resetTransactionDateFilter()"></app-button> -->
-
-</div>
-
-    
+      <div class="filter-section">
+        <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
+        <!-- <app-button variant="secondary" label="Download InActive Customers"></app-button> -->
+      </div>
     </div>
-    
-   
   </mat-sidenav>
 
   <mat-sidenav-content>
@@ -82,12 +78,14 @@
     </mat-toolbar>
 
     <div class="content">
-      <mat-card *ngIf="(activeCustomersWithLedger$) && customerType === 'Active'">
-        <mat-card-title>Active Customers - {{currentMonth}}
+      <mat-card>
+        <mat-card-title>{{customerType}} Customers 
+          <button mat-icon-button (click)="downloadFile()">
+          <mat-icon>download</mat-icon>
+          </button>
         </mat-card-title>
 
-        <table mat-table  [dataSource]="(activeCustomersWithLedger$ | async) ?? []"
-          class="full-width">
+        <table mat-table [dataSource]="(displayedCustomers$ | async) ?? []" class="full-width">
 
           <ng-container matColumnDef="vehicle">
             <th mat-header-cell *matHeaderCellDef>Vehicle</th>
@@ -111,52 +109,45 @@
 
           <ng-container matColumnDef="paid">
             <th mat-header-cell *matHeaderCellDef>Paid</th>
-            <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.Transactions.transactionAmount }}</td>
+            <td mat-cell *matCellDef="let activeCustomers">₹{{  activeCustomers?.Transactions?.transactionAmount ? (activeCustomers?.Transactions?.transactionAmount) : 0 }}</td>
           </ng-container>
 
           <ng-container matColumnDef="balance">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              (click)="sortBy('pending')"
-              class="sortable"
-            >
+            <th mat-header-cell *matHeaderCellDef (click)="sortBy('pending')" class="sortable">
               Balance
               <span *ngIf="sortKey === 'pending'">
                 {{ sortDirection === 'asc' ? '↑' : '↓' }}
               </span>
             </th>
-          
+
             <td mat-cell *matCellDef="let activeCustomers">
               ₹{{ activeCustomers.Transactions.currentPending }}
             </td>
           </ng-container>
-          
+
 
           <ng-container matColumnDef="date">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              (click)="sortBy('date')"
-              class="sortable"
-            >
+            <th mat-header-cell *matHeaderCellDef (click)="sortBy('date')" class="sortable">
               Transaction Date
               <span *ngIf="sortKey === 'date'">
                 {{ sortDirection === 'asc' ? '↑' : '↓' }}
               </span>
             </th>
-          
+
             <td mat-cell *matCellDef="let activeCustomers">
-              {{ activeCustomers.Transactions.transactionDate }}
+              {{ activeCustomers?.Transactions?.lastTransactionDate
+                ? (activeCustomers.Transactions.lastTransactionDate )
+                : 'No Transactions'
+            }}
             </td>
           </ng-container>
-          
+
 
           <ng-container matColumnDef="payMethod">
             <th mat-header-cell *matHeaderCellDef>Payment Type</th>
             <td mat-cell *matCellDef="let activeCustomers">
               <span class="payment-method">
-                {{ activeCustomers.Transactions.paymentMethod? activeCustomers.Transactions.paymentMethod : 'Not Done'
+                {{ activeCustomers.Transactions.paymentMethod ? (activeCustomers.Transactions.paymentMethod) : 'Not Done'
                 }}
               </span>
             </td>
@@ -165,79 +156,15 @@
           <tr mat-header-row *matHeaderRowDef="activeCustomersAndBalanceColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: activeCustomersAndBalanceColumns;"></tr>
         </table>
-      </mat-card>
 
-      <mat-card *ngIf="inactiveCustomersWithLedger$ && customerType === 'InActive'">
-        <mat-card-title>Inactive Customers - {{currentMonth}}
-        </mat-card-title>
-
-        <table mat-table  [dataSource]="(inactiveCustomersWithLedger$ | async) ?? []"
-          class="full-width">
-
-          <ng-container matColumnDef="vehicle">
-            <th mat-header-cell *matHeaderCellDef>Vehicle</th>
-            <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.vehicleNumber }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>Name</th>
-            <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.customerName }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="Advance">
-            <th mat-header-cell *matHeaderCellDef>Advance</th>
-            <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.Transactions.advance }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="monthlyCost">
-            <th mat-header-cell *matHeaderCellDef>Amount</th>
-            <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.Transactions.monthlyCost }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="paid">
-            <th mat-header-cell *matHeaderCellDef>Paid</th>
-            <td mat-cell *matCellDef="let activeCustomers">₹{{ activeCustomers.Transactions.transactionAmount }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="balance">
-            <th mat-header-cell *matHeaderCellDef>Balance</th>
-            <td mat-cell 
-                *matCellDef="let customer" 
-                [ngClass]="{'non-zero-balance': customer.Transactions?.currentPending !== 0}">
-              ₹{{ customer.Transactions?.currentPending }}
-            </td>
-          </ng-container>
-          
-
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef>Transaction Date</th>
-            <td mat-cell *matCellDef="let activeCustomers">{{ activeCustomers.Transactions.transactionDate }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="payMethod">
-            <th mat-header-cell *matHeaderCellDef>Payment Type</th>
-            <td mat-cell *matCellDef="let activeCustomers">
-              <span class="payment-method">
-                {{ activeCustomers.Transactions.paymentMethod? activeCustomers.Transactions.paymentMethod : 'Not Done'
-                }}
-              </span>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="activeCustomersAndBalanceColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: activeCustomersAndBalanceColumns;"></tr>
-        </table>
-      </mat-card>
-
-      <!-- <mat-card *ngIf="">
         <div class="TransactionDetails">
-         <h3> Total Expected Income : ₹ {{expectedMonthlyIncome$ | async }} </h3> 
-         <h3> Monthly Transaction : ₹ {{totalMonthlyTransaction$ | async }} </h3>
-         <h3> Amount Pending : ₹ {{totalPending$ | async }} </h3>         
-        </div>
-      </mat-card> -->
+          <h3> Total Expected Income : ₹ {{expectedMonthlyIncome$ | async }} </h3> 
+          <h3> Monthly Transaction : ₹ {{totalMonthlyTransaction$ | async }} </h3>
+          <h3> Amount Pending : ₹ {{totalPending$ | async }} </h3>         
+         </div>
+      </mat-card>
 
     </div>
-  <!-- <pre>{{ activeCustomersWithLedger$ | async | json }}</pre> -->
+    <pre>{{ activeCustomersWithLedger$ | async | json }}</pre>
 
   </mat-sidenav-content>
