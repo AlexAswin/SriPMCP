@@ -19,7 +19,7 @@
         </div>
       </div>
 
-      <div class="filter-section" *ngIf="(activeCustomersWithLedger$) && customerType === 'Active'">
+      <div class="filter-section">
         <h3 class="filter-title">Balance Range</h3>
 
         <div class="range-header">
@@ -157,7 +157,7 @@
           <tr mat-row *matRowDef="let row; columns: activeCustomersAndBalanceColumns;"></tr>
         </table>
 
-        <div class="TransactionDetails" *ngIf="customerType === 'Active'">
+        <div class="TransactionDetails" *ngIf="customerType !== 'InActive'">
           <h3> Total Expected Income : ₹ {{expectedMonthlyIncome$ | async }} </h3> 
           <h3> Monthly Transaction : ₹ {{totalMonthlyTransaction$ | async }} </h3>
           <h3> Amount Pending : ₹ {{totalPending$ | async }} </h3>         
