@@ -301,8 +301,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     doc.setFontSize(14);
     doc.text(`Monthly Balance Details - ${this.currentMonth}`, 14, 15);
   
-    if (this.displayedCustomers$) {
-      this.activeCustomersWithLedgerData = await firstValueFrom(this.displayedCustomers$);
+    if (this.activeCustomersWithLedger$) {
+      this.activeCustomersWithLedgerData = await firstValueFrom(this.activeCustomersWithLedger$);
     }
   
     const tableBody = this.activeCustomersWithLedgerData?.map((c: any) => [
