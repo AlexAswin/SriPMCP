@@ -157,7 +157,7 @@
           <tr mat-row *matRowDef="let row; columns: activeCustomersAndBalanceColumns;"></tr>
         </table>
 
-        <div class="TransactionDetails">
+        <div class="TransactionDetails" *ngIf="customerType === 'Active'">
           <h3> Total Expected Income : ₹ {{expectedMonthlyIncome$ | async }} </h3> 
           <h3> Monthly Transaction : ₹ {{totalMonthlyTransaction$ | async }} </h3>
           <h3> Amount Pending : ₹ {{totalPending$ | async }} </h3>         
