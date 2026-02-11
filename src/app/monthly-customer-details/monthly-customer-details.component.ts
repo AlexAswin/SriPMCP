@@ -150,12 +150,10 @@ ngOnInit() {
 
   onVehicleNumberInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    let value = input.value.toUpperCase(); // always uppercase
+    let value = input.value.toUpperCase();
   
-    // Remove all non-alphanumeric characters (just in case)
     value = value.replace(/[^A-Z0-9]/g, '');
   
-    // Regex: 2 letters, 2 digits, 1-2 letters, 4 digits
     const match = value.match(/^([A-Z]{0,2})(\d{0,2})([A-Z]{0,2})(\d{0,4})$/);
   
     if (match) {
@@ -164,12 +162,10 @@ ngOnInit() {
       if (district) formatted += ' ' + district;
       if (series) formatted += ' ' + series;
       if (number) formatted += ' ' + number;
-  
-      // Update input value (UI)
       input.value = formatted;
   
       this.vehicleDetailsForm.get('vehicleNumber')?.setValue(
-        input.value, // store raw value without spaces
+        input.value,
         { emitEvent: false } 
       );
     }
