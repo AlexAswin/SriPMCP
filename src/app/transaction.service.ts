@@ -222,6 +222,37 @@ export class TransactionService {
       })
     );
   }
+
+  getAllCustomersWithTransactions(): Observable<any[]> {
+    const customersRef = collection(this.firestore, 'CustomerEntry');
+  
+    const q = query(customersRef, where('customerType', '==', 'Monthly'));
+    const currentMonth = this.getCurrentMonth(); 
+  
+    return collectionData(q, { idField: 'id' }).pipe(
+      switchMap((customers: any[]) => {
+        const customerStreams = customers.map(customer => {
+
+          const transactionDocRef = doc(
+            this.firestore,
+            `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
+          );
+  
+          return docData(transactionDocRef).pipe(
+            map(transaction => ({
+              ...customer,
+
+              Transactions: transaction
+            }))
+          );
+        });
+  
+        return combineLatest(customerStreams);
+      })
+    );
+  }
+  
+  
   
   private getCurrentMonth(): string {
     const d = new Date();
@@ -267,7 +298,9 @@ export class TransactionService {
 
         const transactionDate = prevSnap.exists()? prevSnap.data()?.['lastTransactionDate'] : 0;
 
-        // const paymentMethod: string | null = prevSnap.exists()? (prevSnap.data()?.['paymentMethod'] as string ?? null) : null;
+        const transactionHistory: any[] = prevSnap.exists()? prevSnap.data()?.['transactionHistory'] || [] : [];
+
+
 
   
       const newPending = prevPending + monthlyCost;
@@ -279,9 +312,7 @@ export class TransactionService {
         advance: advance,
         currentPending: newPending,
         monthlyCost: monthlyCost,
-        // transactionAmount: 0,
-        // transactionDate: 'NO TRANSACTION',
-        // paymentMethod: 'NOT PAID'
+        transactionHistory: transactionHistory
       });
     }
   }

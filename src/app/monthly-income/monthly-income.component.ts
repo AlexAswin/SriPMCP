@@ -3,7 +3,7 @@ import { MatCard, MatCardTitle, MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule} from '@angular/material/chips';
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject, Observable, Subject, combineLatest, firstValueFrom, forkJoin, map, of, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, combineLatest, firstValueFrom, forkJoin, map, of, shareReplay, take, takeUntil } from 'rxjs';
 import { TransactionService } from '../transaction.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenavModule} from '@angular/material/sidenav';
@@ -21,11 +21,6 @@ import { ButtonComponent } from "../Common/button/button.component";
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 
-export interface Task {
-  name: string;
-  completed: boolean;
-  subtasks?: Task[];
-}
 
 type SortKey = 'date' | 'pending';
 
@@ -40,203 +35,208 @@ type SortKey = 'date' | 'pending';
   styleUrl: './monthly-income.component.scss'
 })
 export class MonthlyIncomeComponent implements OnInit, OnDestroy {
-  allCustomersWithLedgers$!: Observable<any[]>;
-  activeCustomersWithLedger$!: Observable<any[]>;
-  inactiveCustomersWithLedger$!: Observable<any[]>;
-  displayedCustomers$: Observable<any[]> | null = null;
+  allCustomers$!: Observable<any[]>;
+  filteredCustomers$!: Observable<any[]>;
 
-  inactiveCustomers: boolean = false;
-  activeCustomers: boolean = false
+  showActive = true;
+  showInactive = false;
+
+  maxPending: number = null || 3000000;
+  minPending = 0;
+
+  filteredByDate = false;
+
+
+  // allCustomersWithLedgers$!: Observable<any[]>;
+  // activeCustomersWithLedger$!: Observable<any[]>;
+  // inactiveCustomersWithLedger$!: Observable<any[]>;
+  // displayedCustomers$: Observable<any[]> | null = null;
+  // filteredActiveCustomersWithLedger$!: Observable<any[]>;
+
+  // inactiveCustomers: boolean = false;
+  // activeCustomers: boolean = false
 
   currentMonth: string = '';
 
   events: string[] = [];
   opened = false;
   activeCustomersWithLedgerData: any[] = [];
-  private destroy$ = new Subject<void>();
 
-  expectedMonthlyIncome$!: Observable<any[]>;
-  totalMonthlyTransaction$!: Observable<any[]>;
-  totalPending$!: Observable<any[]>;
-  filteredActiveCustomersWithLedger$!: Observable<any[]>;
 
   sortKey: SortKey | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
+  sort$ = new BehaviorSubject<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
+  showExpandColumn = false;
+  // activeCustomersAndBalanceColumns = [ 'vehicle', 'name', 'Advance', 'monthlyCost', 'paid', 'balance', 'date', 'payMethod' ];
+
+  CustomersAndBalanceColumns = [
+    'vehicle',
+    'name',
+    'Advance',
+    'monthlyCost',
+    'paid',
+    'balance',
+    'date',
+    'payMethod',
+    // ...(this.showExpandColumn ? ['expand'] : []),
+  ];
   
-  sort$ = new BehaviorSubject<{
-    key: SortKey;
-    direction: 'asc' | 'desc';
-  } | null>(null);
   
-  activeCustomersAndBalanceColumns = [ 'vehicle', 'name', 'Advance', 'monthlyCost', 'paid', 'balance', 'date', 'payMethod' ];
 
   customerType = 'Active';
   customerTypes: string[] = ['Active', 'InActive'];
-  showActive = true;
-  showInactive = false;
 
-  maxPending: number = null || 0;
-  minPending = 0;
+  
   value = 0;
   private filterCriteria$ = new BehaviorSubject<{min: number, max: number} | null>(null);
 
   fromDate: Date | null = null;
   toDate: Date | null = null;
   dateFilter$ = new BehaviorSubject<{ from: Date | null; to: Date | null } | null>(null);
-  
 
+  expandedElement: any | null = null;
+  
+  filteredRows: any[] = [];
+
+  totals = {
+    totalAmount: 0,
+    totalPaid: 0,
+    totalBalance: 0
+  };
+
+  private destroy$ = new Subject<void>();
 
   constructor ( private transactionService: TransactionService ) {
 
   }
 
   ngOnInit() {
-    this.getActiveMonthlyUsers();
+    this.allCustomers$ = this.transactionService.getAllCustomersWithTransactions().pipe(
+      shareReplay(1)
+    );
+    this.applyFilter();
+
   }
 
-  getActiveMonthlyUsers = () => {
-    this.currentMonth = new Date().toLocaleString('default', { month: 'long' });
-  
-    this.allCustomersWithLedgers$ =
-      this.transactionService.getActiveMonthlyCustomers();
-  
-    this.activeCustomersWithLedger$ = combineLatest([
-      this.allCustomersWithLedgers$,
-      this.filterCriteria$,
-      this.dateFilter$,
-      this.sort$
-    ]).pipe(
-      map(([customers, range, dateRange, sort]) => {
-        let activeList = customers;
-
-        if (range) {
-          activeList = activeList.filter(c =>
-            c.Transactions?.currentPending >= range.min &&
-            c.Transactions?.currentPending <= range.max
-          );
+  applyFilter() {
+    this.filteredCustomers$ = this.allCustomers$.pipe(
+      map(customers => {
+        if (this.showActive && this.showInactive) {
+          return customers;
+        } else if (this.showActive) {
+          return customers.filter(c => c.monthlyStatus === 'Active');
+        } else if (this.showInactive) {
+          return customers.filter(c => c.monthlyStatus === 'InActive');
+        } else {
+          return [];
         }
-
-        if (dateRange?.from && dateRange?.to) {
-          const from = this.normalizeDate(dateRange.from);
-          const to = this.normalizeDate(dateRange.to);
-  
-          activeList = activeList.filter(c => {
-            if (!c.Transactions?.lastTransactionDate) return false;
-  
-            const txn = this.normalizeDate(new Date(c.Transactions.lastTransactionDate));
-            return txn >= from && txn <= to;
-          });
-        }
-  
-        if (sort) {
-          activeList = [...activeList].sort((a, b) => {
-            if (sort.key === 'date') {
-              return sort.direction === 'asc'
-                ? new Date(a.Transactions.lastTransactionDate).getTime() -
-                  new Date(b.Transactions.lastTransactionDate).getTime()
-                : new Date(b.Transactions.lastTransactionDate).getTime() -
-                  new Date(a.Transactions.lastTransactionDate).getTime();
-            }
-  
-            if (sort.key === 'pending') {
-              return sort.direction === 'asc'
-                ? a.Transactions.currentPending - b.Transactions.currentPending
-                : b.Transactions.currentPending - a.Transactions.currentPending;
-            }
-  
-            return 0;
-          });
-        }
-  
-        return activeList;
       })
     );
-  
-    if (this.showInactive && !this.inactiveCustomersWithLedger$) {
-      this.loadInactiveCustomers();
-    }
-  
-    this.updateDisplayedCustomers();
-    this.calculateMonthlySummary();
-  };
-  
-  toggleSidenav = () => {
-    this.opened = !this.opened;
   }
 
   toggleAll(checked: boolean) {
     this.showActive = checked;
     this.showInactive = checked;
-  
-    if (checked && !this.inactiveCustomersWithLedger$) {
-      this.loadInactiveCustomers();
-    }
-    this.updateDisplayedCustomers();
+    this.applyFilter();
   }
   
   toggleActive(checked: boolean) {
     this.showActive = checked;
-    this.updateDisplayedCustomers();
+    this.applyFilter();
   }
   
   toggleInactive(checked: boolean) {
-    this.showInactive = checked;  
-    if (checked && !this.inactiveCustomersWithLedger$) {
-      this.loadInactiveCustomers();
-    }
-    this.updateDisplayedCustomers();
+    this.showInactive = checked;
+    this.applyFilter();
   }
 
-  loadInactiveCustomers() {
-    this.inactiveCustomersWithLedger$ =
-      this.transactionService.getInactiveCustomersWithLastTransaction().pipe(
-        map(customers => customers.filter(c => c.Transactions != null))
-      );
-    this.updateDisplayedCustomers();
+  calculateTotals(customers: any[]) {
+    this.totals.totalAmount = customers.reduce(
+      (sum, c) => sum + Number(c.Transactions?.monthlyCost ?? 0),
+      0
+    );
+    // this.totals.totalPaid = customers.reduce(
+    //   (sum, c) => sum + Number(c.Transactions?.transactionAmount ?? 0),
+    //   0
+    // );
+    // this.totals.totalBalance = customers.reduce(
+    //   (sum, c) => sum + Number(c.Transactions?.currentPending ?? 0),
+    //   0
+    // );
   }
-  
-  updateDisplayedCustomers() {
-    const active$ = this.showActive ? this.activeCustomersWithLedger$! : of([]);
-    const inactive$ = this.showInactive ? this.inactiveCustomersWithLedger$! : of([]);
 
-    if(this.showActive && !this.showInactive) {
-      this.customerType = 'Active'
-    } else if (!this.showActive && this.showInactive) {
-      this.customerType = 'InActive'
-    } else {
-      this.customerType = ''
-    }
+  showFilteredPending() {
+    this.filteredCustomers$ = this.allCustomers$.pipe(
+      map(customers => {
+        let filtered = customers;
   
-    this.displayedCustomers$ = combineLatest([active$, inactive$]).pipe(
-      map(([active, inactive]) => [...active, ...inactive])
+        if (this.showActive && !this.showInactive) {
+          filtered = filtered.filter(c => c.monthlyStatus === 'Active');
+        } else if (!this.showActive && this.showInactive) {
+          filtered = filtered.filter(c => c.monthlyStatus === 'InActive');
+        } else if (this.showActive && this.showInactive) {
+          filtered = filtered;
+        } else {
+          filtered = [];
+        }
+  
+        filtered = filtered.filter(c => {
+          const amount = c.Transactions.currentPending;
+          return amount >= this.minPending && amount <= this.maxPending;
+        });
+  
+        return filtered;
+      })
     );
   }
-
-  showFilteredPending = () => {
-    this.filterCriteria$.next({ 
-      min: this.minPending, 
-      max: this.maxPending 
-    });
-  }
-
-  resetFilteredPending = () => {
-    this.filterCriteria$.next(null);
-  }
-
-  onFromDateChange(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    this.fromDate = value ? new Date(value) : null;
-    this.emitDateFilter();
-  }
   
-  onToDateChange(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    this.toDate = value ? new Date(value) : null;
-    this.emitDateFilter();
+  onFromDateChange(event: any) {
+    this.fromDate = event.target.value;
+    this.showFilteredTransactions();
   }
 
-  private normalizeDate(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  onToDateChange(event: any) {
+    this.toDate = event.target.value;
+    this.showFilteredTransactions();
+  }
+
+  showFilteredTransactions() {
+    const from = this.fromDate;
+    const to = this.toDate;
+  
+    if (!from || !to) return;
+    this.filteredByDate = true;
+    this.filteredCustomers$ = this.allCustomers$!.pipe(
+      map(customers => {
+  
+        const filteredTx = customers.flatMap(customer =>
+          (customer.Transactions?.transactionHistory || [])
+            .filter((tx: any) => tx.transactionDate >= from && tx.transactionDate <= to)
+            .map((tx: any) => ({
+              ...tx,
+              customerId: customer.id,
+              customerName: customer.customerName,
+              monthlyStatus: customer.monthlyStatus
+            }))
+        );
+  
+        const grouped: any = {};
+  
+        filteredTx.forEach(tx => {
+          if (!grouped[tx.transactionDate]) {
+            grouped[tx.transactionDate] = [];
+          }
+          grouped[tx.transactionDate].push(tx);
+        });
+  
+        return Object.keys(grouped)
+        .sort((a, b) => a.localeCompare(b))
+        .map(date => ({
+          date,
+          transactions: grouped[date]
+        }));
+      })
+    );
   }
 
   sortBy(key: SortKey) {
@@ -253,47 +253,42 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     });
   }
   
-  private emitDateFilter() {
-    this.dateFilter$.next({
-      from: this.fromDate,
-      to: this.toDate
-    });
-  }
 
-  calculateMonthlySummary = () => {
-
-    const summary$ = this.allCustomersWithLedgers$.pipe(
-      take(1),
+  filterVehicle = (event: Event) => {
+    const vehicleNumber = (event.target as HTMLInputElement).value.trim().toUpperCase();
+  
+    this.filteredCustomers$ = this.allCustomers$.pipe(
       map(customers => {
-  
-        return customers.reduce(
-          (acc, customer) => {
-  
-            const monthlyCost = Number(customer.Transactions?.monthlyCost ?? 0);
-            const paid = Number(customer.Transactions?.transactionAmount ?? 0);
-            const pending = Number(customer.Transactions?.currentPending ?? 0);
-  
-            acc.expected += monthlyCost;
-            acc.paid += paid;
-            acc.pending += pending;
-  
-            return acc;
-  
-          },
-          {
-            expected: 0,
-            paid: 0,
-            pending: 0
-          }
+        const filtered = customers.filter(c =>
+          c.vehicleNumber.includes(vehicleNumber)
         );
+  
+        this.filteredRows = filtered;
+        return filtered;
       })
     );
-  
-    this.expectedMonthlyIncome$ = summary$.pipe(map(s => s.expected));
-    this.totalMonthlyTransaction$ = summary$.pipe(map(s => s.paid));
-    this.totalPending$ = summary$.pipe(map(s => s.pending));
   };
+
+  expandRow(row: any) {
+    this.expandedElement = this.isExpanded(row) ? null : row;
+  }
   
+  isExpanded(row: any) {
+    return this.expandedElement === row;
+  }
+
+  resetFilters() {
+    this.minPending = 0;
+    this.maxPending = 1000000;
+
+    this.filteredByDate = false
+    this.fromDate = null;
+    this.toDate = null;
+
+    this.showActive = true;
+    this.showInactive = false
+    this.applyFilter();
+  }
 
   async downloadActiveCustomerPDF() {
     const doc = new jsPDF('l', 'mm', 'a4');
@@ -301,8 +296,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     doc.setFontSize(14);
     doc.text(`Monthly Balance Details - ${this.currentMonth}`, 14, 15);
   
-    if (this.activeCustomersWithLedger$) {
-      this.activeCustomersWithLedgerData = await firstValueFrom(this.activeCustomersWithLedger$);
+    if (this.filteredCustomers$) {
+      this.activeCustomersWithLedgerData = await firstValueFrom(this.filteredCustomers$);
     }
   
     const tableBody = this.activeCustomersWithLedgerData?.map((c: any) => [
@@ -366,11 +361,11 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     const doc = new jsPDF('l', 'mm', 'a4');
   
     doc.setFontSize(14);
-    doc.text(`${this.customerType} - Customer Details - ${this.currentMonth}`, 14, 15);
+    doc.text(`${this.customerType} - Customer Details`, 14, 15);
   
-    if (this.displayedCustomers$) {
+    if (this.filteredCustomers$) {
       this.activeCustomersWithLedgerData = await firstValueFrom(
-        this.displayedCustomers$.pipe(take(1))
+        this.filteredCustomers$.pipe(take(1))
       );
     }
   
@@ -409,22 +404,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       theme: 'grid'
     });
   
-    // ======================================
-    // ✅ ADD SUMMARY BELOW TABLE
-    // ======================================
-  
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-  
-    const expected = await firstValueFrom(this.expectedMonthlyIncome$.pipe(take(1)));
-    const paid = await firstValueFrom(this.totalMonthlyTransaction$.pipe(take(1)));
-    const pending = await firstValueFrom(this.totalPending$.pipe(take(1)));
-  
-    doc.setFontSize(11);
-  
-    doc.text(`Total Expected Income : Rs ${expected}`, 14, finalY);
-    doc.text(`Monthly Transaction : Rs ${paid}`, 14, finalY + 7);
-    doc.text(`Amount Pending : Rs ${pending}`, 14, finalY + 14);
-  
+    doc.setFontSize(11);  
     doc.save(`Monthly-Customer-Details-${this.currentMonth}.pdf`);
   };
   
