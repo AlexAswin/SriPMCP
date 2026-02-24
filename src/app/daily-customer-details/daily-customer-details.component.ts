@@ -78,13 +78,13 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
     const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
-    // vehicleCtrl?.valueChanges
-    //   .pipe(debounceTime(500), distinctUntilChanged(), filter(value => value?.length >= 9 ), takeUntil(this.destroy$))
-    //   .subscribe((value) => {
-    //     if (value) {
-    //       this.getCustomerDetails(value);
-    //     }
-    //   });
+    vehicleCtrl?.valueChanges
+      .pipe(debounceTime(500), distinctUntilChanged(), filter(value => value?.length >= 9 ), takeUntil(this.destroy$))
+      .subscribe((value) => {
+        if (value) {
+          this.getCustomerDetails(value);
+        }
+      });
 
     this.isNewDailyCustomer = true;
 
