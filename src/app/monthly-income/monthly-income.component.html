@@ -6,14 +6,15 @@
     <div class="customer-filter">
       <div class="filter-section">
         <div class="checkbox-group">
-          <mat-checkbox [checked]="showActive && showInactive" [indeterminate]="showActive !== showInactive"
-            (change)="toggleAll($event.checked)">
+          <mat-checkbox [checked]="(showActive$ | async) && (showInactive$ | async)"
+            [indeterminate]="(showActive$ | async) !== (showInactive$ | async)" (change)="toggleAll($event.checked)">
             <h3 class="filter-title">Customer Type</h3>
           </mat-checkbox>
-          <mat-checkbox [checked]="showActive" (change)="toggleActive($event.checked)">
+          <mat-checkbox [checked]="showActive$ | async" (change)="showActive$.next($event.checked)">
             Active
           </mat-checkbox>
-          <mat-checkbox [checked]="showInactive" (change)="toggleInactive($event.checked)">
+      
+          <mat-checkbox [checked]="showInactive$ | async" (change)="showInactive$.next($event.checked)">
             InActive
           </mat-checkbox>
         </div>
@@ -21,46 +22,63 @@
 
       <div class="filter-section">
         <h3 class="filter-title">Balance Range</h3>
-
+      
         <div class="range-header">
           <span class="range-label">Selected: </span>
-          <span class="range-value">₹{{minPending}} - ₹{{maxPending}}</span>
+          <span class="range-value">
+            ₹{{ (minPending$ | async) ?? 0 }} - ₹{{ (maxPending$ | async) ?? 'Max' }}
+          </span>
         </div>
+      
         <div class="filter-input">
-          <input type="number" [(ngModel)]="minPending">
+          <input type="number" 
+                 [(ngModel)]="minPending" 
+                 placeholder="Min"
+                 (keydown.enter)="showFilteredPending()">
           <span>To</span>
-          <input type="number" [(ngModel)]="maxPending">
+          <input type="number" 
+                 [(ngModel)]="maxPending" 
+                 placeholder="Max"
+                 (keydown.enter)="showFilteredPending()">
         </div>
+      
         <div class="filter-btn-grp">
-          <app-button variant="secondary" label="Apply" (clicked)="showFilteredPending()"></app-button>
+          <app-button variant="secondary" 
+                      label="Apply" 
+                      (clicked)="showFilteredPending()">
+          </app-button>
         </div>
       </div>
 
       <div class="filter-section">
         <h3 class="filter-title">Transaction Date</h3>
-
+      
         <label>From</label>
-        <input type="date" (change)="onFromDateChange($event)" />
-
+        <input type="date" 
+               #from 
+               (change)="fromDate$.next(from.value)" />
+      
         <label>To</label>
-        <input type="date" (change)="onToDateChange($event)" />
+        <input type="date" 
+               #to 
+               (change)="toDate$.next(to.value)" />
+        
+        <small *ngIf="fromDate$.value && !toDate$.value" style="color: orange;">
+          Please select 'To' date to see transactions
+        </small>
       </div>
 
-      <!-- <div class="filter-section">
-        <label>Vehicle Nbr</label>
-        <input type="text" placeholder="Enter Vehicle Number">
-        <app-button variant="primary" label="Get Transactions"></app-button>
-      </div> -->
-
-      <div class="filter-section">
-        <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
-        <!-- <app-button variant="secondary" label="Download InActive Customers"></app-button> -->
-      </div>
-
-      <app-button variant="primary" label="Reset" (clicked)="resetFilters()"></app-button>
+      <app-button variant="primary" label="Reset" (click)="resetFilters(from, to)"></app-button>
 
     </div>
+
+
   </mat-sidenav>
+
+  <div class="filter-section">
+    <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
+    <!-- <app-button variant="secondary" label="Download InActive Customers"></app-button> -->
+  </div>
 
   <mat-sidenav-content>
     <mat-toolbar>
@@ -78,7 +96,7 @@
       </button>
     </mat-toolbar>
 
-    <div class="content" *ngIf="!filteredByDate">
+    <div class="content">
       <mat-card>
         <mat-card-title>{{customerType}} Customers
           <div style="display: flex;">
@@ -89,33 +107,41 @@
           </div>
           
         </mat-card-title>
-
+        <div class="table-scroll-container">
         <table mat-table [dataSource]="(filteredCustomers$ | async) ?? []" multiTemplateDataRows class="full-width">
 
           <ng-container matColumnDef="vehicle">
             <th mat-header-cell *matHeaderCellDef>Vehicle</th>
             <td mat-cell *matCellDef="let Customers">{{ Customers.vehicleNumber }}</td>
+            <td mat-footer-cell *matFooterCellDef>Total</td>
           </ng-container>
 
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>
             <td mat-cell *matCellDef="let Customers">{{ Customers.customerName }}</td>
+            <td mat-footer-cell *matFooterCellDef></td>
           </ng-container>
 
           <ng-container matColumnDef="Advance">
             <th mat-header-cell *matHeaderCellDef>Advance</th>
             <td mat-cell *matCellDef="let Customers">₹{{ Customers.Transactions.advance }}</td>
+            <td mat-footer-cell *matFooterCellDef></td>
           </ng-container>
 
           <ng-container matColumnDef="monthlyCost">
             <th mat-header-cell *matHeaderCellDef>Amount</th>
             <td mat-cell *matCellDef="let Customers">₹{{ Customers.Transactions.monthlyCost }}</td>
-            <!-- <td mat-footer-cell *matFooterCellDef> {{'totals.totalAmount'}} </td> -->
+            <td mat-footer-cell *matFooterCellDef>
+              ₹{{totalMonthlyCost$ | async }}
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="paid">
             <th mat-header-cell *matHeaderCellDef>Paid</th>
             <td mat-cell *matCellDef="let Customers">₹{{  Customers?.Transactions?.transactionAmount ? (Customers?.Transactions?.transactionAmount) : 0 }}</td>
+            <td mat-footer-cell *matFooterCellDef>
+              ₹{{totalPaid$ | async}}
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="balance">
@@ -128,6 +154,9 @@
 
             <td mat-cell *matCellDef="let Customers" [ngClass]="{'non-zero-balance': (Customers.Transactions?.currentPending > 0) && customerType === 'InActive'}">
               ₹{{ Customers.Transactions.currentPending }}
+            </td>
+            <td mat-footer-cell *matFooterCellDef>
+              ₹{{totalBalance$ | async }}
             </td>
           </ng-container>
 
@@ -146,6 +175,7 @@
               : 'No Transactions'
               }}
             </td>
+            <td mat-footer-cell *matFooterCellDef></td>
           </ng-container>
 
 
@@ -157,6 +187,7 @@
                 }}
               </span>
             </td>
+            <td mat-footer-cell *matFooterCellDef></td>
           </ng-container>
 <!-- 
           <ng-container matColumnDef="expand" *ngIf="test">
@@ -179,15 +210,32 @@
                    class="example-element-detail-wrapper"
                    [class.example-element-detail-wrapper-expanded]="isExpanded(row)">
           
-                <div class="example-element-detail">
+                <div>
                   <div style="padding:16px">
                     <h4>Transaction History</h4>
-          
-                    <div *ngFor="let t of row.Transactions.transactionHistory">
-                      ₹{{t.transactionAmount || 0}} —
-                      {{t.transactionDate || 'No Date'}} —
-                      {{t.transactionType || 'Not Set'}}
-                    </div>
+
+                    <table class="full-width">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Existing Pending</th>
+                          <th>Transaction Amount</th>
+                          <th>New Pending</th>
+                          <th>Transaction Type</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <ng-container>                  
+                          <tr  *ngFor="let t of row.Transactions.transactionHistory">
+                            <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate  }}</td>
+                            <td>{{ t.existingPending }}</td>
+                            <td>₹{{ t.transactionAmount }}</td>
+                            <td>{{ t.newPending }}</td>
+                            <td>{{ t.transactionType  }}</td>
+                          </tr>
+                        </ng-container>
+                      </tbody>
+                    </table>
           
                   </div>
                 </div>
@@ -207,55 +255,20 @@
           </tr>
         
           <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="example-detail-row"></tr>
-          <!-- <tr mat-footer-row *matFooterRowDef="CustomersAndBalanceColumns"></tr> -->
-        </table>
 
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" [attr.colspan]="CustomersAndBalanceColumns.length">
+              No customer details found...
+            </td>
+          </tr>
+          <ng-container>
+            <tr mat-footer-row *matFooterRowDef="showFooter ? CustomersAndBalanceColumns : []; sticky: true" class="footer-row"></tr>
+          </ng-container>
+        </table>
+      </div>
       </mat-card>
 
     </div>
-
-    <div class="transaction-container" *ngIf="filteredByDate">
-
-      <div class="table-header">
-        <h2>Monthly Transactions</h2>
-        <button class="download-btn">Download</button>
-      </div>
-
-      <h3>{{fromDate}} To {{toDate}}</h3>
-    
-      <table class="full-width">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Customer Name</th>
-            <th>Transaction Type</th>
-            <th>Amount</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <ng-container *ngFor="let group of filteredCustomers$ | async">
-            <tr class="date-row">
-              <td colspan="5">{{ group.date }}</td>
-            </tr>
-    
-            <tr *ngFor="let tx of group.transactions">
-              <td></td>
-              <td>{{ tx.customerName }}</td>
-              <td>{{ tx.transactionType }}</td>
-              <td>₹{{ tx.transactionAmount }}</td>
-              <td>{{ tx.monthlyStatus }}</td>
-            </tr>
-          </ng-container>
-        </tbody>
-      </table>
-    
-    </div>
-    
-    
-
-    
-    
     <!-- <pre>{{ filteredCustomers$ | async | json }}</pre> -->
 
   </mat-sidenav-content>

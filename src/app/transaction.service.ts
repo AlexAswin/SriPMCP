@@ -88,6 +88,8 @@ export class TransactionService {
 
         const updatedAmount = previousTotal + newPayment;
 
+        const pending = (existing['monthlyCost'] || 0) - updatedAmount;
+
         let history = existing['transactionHistory'];
 
         if (!Array.isArray(history)) {
@@ -98,11 +100,12 @@ export class TransactionService {
           transactionAmount: newPayment,
           transactionDate: transactionData.transactionDate,
           transactionType: transactionData.paymentMethod,
+          existingPending: existing['currentPending']? existing['currentPending'] : existing['monthlyCost'],
+          newPending: pending
         };
 
         const updatedHistory = [...history, newEntry];
 
-        const pending = (existing['monthlyCost'] || 0) - updatedAmount;
 
         await updateDoc(transactionRef, {
           transactionHistory: updatedHistory,
@@ -298,13 +301,20 @@ export class TransactionService {
 
         const transactionDate = prevSnap.exists()? prevSnap.data()?.['lastTransactionDate'] : 0;
 
-        const transactionHistory: any[] = prevSnap.exists()? prevSnap.data()?.['transactionHistory'] || [] : [];
+        const newPending = prevPending + monthlyCost;
+        const newLedgerRef = doc(transactionsRef, currentMonth);
 
+        const transactionHistoryUnpaid = {
+          existingPending : newPending,
+          newPending: 0,
+          transactionAmount : 0,
+          transactionDate : null,
+          transactionType : null
+        }
 
+        const transactionHistory: any[] = prevSnap.exists()? prevSnap.data()?.['transactionHistory'] || [transactionHistoryUnpaid] : [];
 
-  
-      const newPending = prevPending + monthlyCost;
-      const newLedgerRef = doc(transactionsRef, currentMonth);
+      
       const existingSnap = await getDoc(newLedgerRef);
       if (existingSnap.exists()) continue;
   
