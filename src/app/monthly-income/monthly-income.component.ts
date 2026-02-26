@@ -124,6 +124,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   totalPaid$!: Observable<number>;
   totalBalance$!: Observable<number>;
 
+  vehicleFilter$ = new BehaviorSubject<string>('');
+
   private destroy$ = new Subject<void>();
 
   constructor(private transactionService: TransactionService) {}
@@ -141,10 +143,14 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       this.maxPending$,
       this.fromDate$,
       this.toDate$,
-      this.sort$
+      this.sort$,
+      this.vehicleFilter$
     ]).pipe(
-      map(([customers, showActive, showInactive, min, max, start, end, sort]) => {
+      map(([customers, showActive, showInactive, min, max, start, end, sort, vehicle]) => {
         let filteredList = customers.filter((c) => {
+
+          if (vehicle && !c.vehicleNumber.toUpperCase().includes(vehicle)) return false;
+
           const statusMatch =
             (showActive && c.monthlyStatus === 'Active') ||
             (showInactive && c.monthlyStatus === 'InActive');
@@ -156,7 +162,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
 
           return bal >= minVal && bal <= maxVal;
         });
-
+        
         if (start && end) {
           const fromTime = new Date(start).getTime();
           const toTime = new Date(end).setHours(23, 59, 59, 999);
@@ -265,17 +271,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     const vehicleNumber = (event.target as HTMLInputElement).value
       .trim()
       .toUpperCase();
-
-    this.filteredCustomers$ = this.allCustomers$.pipe(
-      map((customers) => {
-        const filtered = customers.filter((c) =>
-          c.vehicleNumber.includes(vehicleNumber)
-        );
-
-        this.filteredRows = filtered;
-        return filtered;
-      })
-    );
+    this.vehicleFilter$.next(vehicleNumber);
     this.showFooter = false;
   };
 
