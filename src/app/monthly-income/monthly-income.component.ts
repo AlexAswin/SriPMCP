@@ -141,9 +141,10 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       this.maxPending$,
       this.fromDate$,
       this.toDate$,
+      this.sort$
     ]).pipe(
-      map(([customers, showActive, showInactive, min, max, start, end]) => {
-        const filteredList = customers.filter((c) => {
+      map(([customers, showActive, showInactive, min, max, start, end, sort]) => {
+        let filteredList = customers.filter((c) => {
           const statusMatch =
             (showActive && c.monthlyStatus === 'Active') ||
             (showInactive && c.monthlyStatus === 'InActive');
@@ -183,6 +184,24 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                 currentPending: tx.newPending,
               },
             }));
+          });
+        }
+        if (sort?.key) {
+          filteredList = [...filteredList].sort((a, b) => {
+            let valueA: any;
+            let valueB: any;
+      
+            if (sort.key === 'pending') {
+              valueA = a.Transactions?.currentPending ?? 0;
+              valueB = b.Transactions?.currentPending ?? 0;
+            }
+      
+            if (sort.key === 'date') {
+              valueA = new Date(a.Transactions?.lastTransactionDate || 0).getTime();
+              valueB = new Date(b.Transactions?.lastTransactionDate || 0).getTime();
+            }
+      
+            return sort.direction === 'asc' ? valueA - valueB : valueB - valueA;
           });
         }
         return filteredList;
