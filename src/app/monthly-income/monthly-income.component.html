@@ -226,7 +226,7 @@
                       </thead>
                       <tbody>
                         <ng-container>                  
-                          <tr  *ngFor="let t of row.Transactions.transactionHistory">
+                          <tr  *ngFor="let t of row.FullTransactionHistory">
                             <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate  }}</td>
                             <td>{{ t.existingPending }}</td>
                             <td>₹{{ t.transactionAmount }}</td>
