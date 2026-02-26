@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, collectionData, deleteDoc, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
-import { Observable, combineLatest, map, of, switchMap, tap } from 'rxjs';
+import { Firestore, addDoc, collection, collectionData, deleteDoc, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
+import { Observable, combineLatest, from, map, of, switchMap, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -34,11 +34,7 @@ export class TransactionService {
         advance: customerDetails.advance,
         monthlyCost: customerDetails.amount,
         currentPending: customerDetails.amount,
-        // transactionHistory: {
-        //   transactionDate: null,
-        //   transactionAmount: 0,
-        //   transactionType: null
-        // }
+        isTransactionMade: false
       }
   
       if (!monthlyTransactionDetails.exists()) {
@@ -72,74 +68,59 @@ export class TransactionService {
   
       const customerDoc = snapshot.docs[0];
       const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
-
-      const [year, month] = transactionData.transactionDate
-        .split('-')
-        .map(Number);
+  
+      const [year, month] = transactionData.transactionDate.split('-').map(Number);
       const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
       const transactionRef = doc(customerRef, 'Transactions', currentMonth);
       const monthlyTransactionDetails = await getDoc(transactionRef);
-
+  
       if (monthlyTransactionDetails.exists()) {
         const existing = monthlyTransactionDetails.data();
-
+  
         const previousTotal = existing['transactionAmount'] || 0;
         const newPayment = transactionData.transactionAmount || 0;
-
+  
         const updatedAmount = previousTotal + newPayment;
-
+  
         const pending = (existing['monthlyCost'] || 0) - updatedAmount;
-
+  
         let history = existing['transactionHistory'];
-
         if (!Array.isArray(history)) {
           history = history ? [history] : [];
         }
-
+  
         const newEntry = {
           transactionAmount: newPayment,
           transactionDate: transactionData.transactionDate,
           transactionType: transactionData.paymentMethod,
-          existingPending: existing['currentPending']? existing['currentPending'] : existing['monthlyCost'],
+          existingPending: existing['currentPending'] ? existing['currentPending'] : existing['monthlyCost'],
           newPending: pending
         };
-
+  
         const updatedHistory = [...history, newEntry];
-
-
+  
+        // ✅ Update the month ledger as you had it
         await updateDoc(transactionRef, {
           transactionHistory: updatedHistory,
           transactionAmount: updatedAmount,
           currentPending: pending,
           lastTransactionDate: transactionData.transactionDate,
           paymentMethod: transactionData.paymentMethod,
+          isTransactionMade: true
+        });
+  
+        const uniqueDocId = `${currentMonth}_${Date.now()}`;
+        const fullHistoryRef = doc(transactionRef, 'FullTransactionHistory', uniqueDocId);
+    
+        await setDoc(fullHistoryRef, {
+          ...newEntry,
+          timestamp: new Date() // optional
         });
       }
-      // else {
-      //   const newEntry = [
-      //     {
-      //       transactionAmount: transactionData.transactionAmount,
-      //       transactionDate: transactionData.transactionDate,
-      //       transactionType: transactionData.paymentMethod,
-      //     },
-      //   ];
-
-      //   await setDoc(transactionRef, {
-      //     advance: transactionData.advance,
-      //     monthlyCost: transactionData.monthlyCost,
-      //     transactionAmount: transactionData.transactionAmount,
-      //     transactionHistory: newEntry,
-      //     currentPending:
-      //       transactionData.monthlyCost - transactionData.transactionAmount,
-      //     lastTransactionDate: transactionData.transactionDate,
-      //     paymentMethod: transactionData.paymentMethod,
-      //   });
-      // }
-  
     } catch (error) {
       console.error('Transaction Error:', error);
     }
-  }
+  };
 
   getPreviousMonthId(currentMonth: string): string {
     const [year, month] = currentMonth.split('-').map(Number);
@@ -228,24 +209,32 @@ export class TransactionService {
 
   getAllCustomersWithTransactions(): Observable<any[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
-  
     const q = query(customersRef, where('customerType', '==', 'Monthly'));
-    const currentMonth = this.getCurrentMonth(); 
+    const currentMonth = this.getCurrentMonth();
   
     return collectionData(q, { idField: 'id' }).pipe(
       switchMap((customers: any[]) => {
         const customerStreams = customers.map(customer => {
-
+          // 1️⃣ Current month ledger
           const transactionDocRef = doc(
             this.firestore,
             `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
           );
   
-          return docData(transactionDocRef).pipe(
-            map(transaction => ({
+          // 2️⃣ FullTransactionHistory subcollection
+          const fullHistoryRef = collection(
+            this.firestore,
+            `CustomerEntry/${customer.id}/Transactions/${currentMonth}/FullTransactionHistory`
+          );
+  
+          return combineLatest([
+            docData(transactionDocRef),
+            collectionData(fullHistoryRef, { idField: 'id' })
+          ]).pipe(
+            map(([ledger, fullHistory]) => ({
               ...customer,
-
-              Transactions: transaction
+              Transactions: ledger || {},
+              FullTransactionHistory: fullHistory || []
             }))
           );
         });

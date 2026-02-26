@@ -159,24 +159,26 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         if (start && end) {
           const fromTime = new Date(start).getTime();
           const toTime = new Date(end).setHours(23, 59, 59, 999);
-
+        
           return filteredList.flatMap((c) => {
-            const history = c.Transactions?.transactionHistory || [];
-
-            const filteredHistory = history.filter((tx: any) => {
+        
+            const fullTransactions = c.FullTransactionHistory || [];
+        
+            const filteredHistory = fullTransactions.filter((tx: any) => {
               if (!tx.transactionDate) return false;
               const txTime = new Date(tx.transactionDate).getTime();
               return txTime >= fromTime && txTime <= toTime;
             });
+        
             return filteredHistory.map((tx: any) => ({
               ...tx,
               customerName: c.customerName,
               vehicleNumber: c.id,
               monthlyStatus: c.monthlyStatus,
               Transactions: {
-                advance: c.advance,
+                advance: c.Transactions?.advance,
                 lastTransactionDate: tx.transactionDate,
-                monthlyCost: tx.existingPending,
+                monthlyCost: c.Transactions?.monthlyCost,
                 transactionAmount: tx.transactionAmount,
                 currentPending: tx.newPending,
               },
