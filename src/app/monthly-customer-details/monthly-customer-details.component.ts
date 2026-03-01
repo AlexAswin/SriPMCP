@@ -37,12 +37,12 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   // existingCustomer: boolean = false;
   // vehicleTypes: VehicleType[] = [];
 
-  advance= new FormControl<string>('');
-  customerType = new FormControl<string>('monthly');
-  monthlyStatus= new FormControl<string>('');
-  fromDateMonthly= new FormControl<string>('');
-  endDateMonthly= new FormControl<string>('');
-  note = new FormControl<string>('');
+  advance= new FormControl<string>('', [Validators.required]);
+  customerType = new FormControl<string>('monthly', [Validators.required]);
+  monthlyStatus= new FormControl<string>('', [Validators.required]);
+  fromDateMonthly= new FormControl<string>('', [Validators.required]);
+  endDateMonthly= new FormControl<string>('', [Validators.required]);
+  note = new FormControl<string>('', [Validators.required]);
 
   isStatusInActive: boolean = false;
 
@@ -116,15 +116,31 @@ ngOnInit() {
 
   vehicleDetails = () => {
     this.vehicleDetailsForm = this.fb.group({
-      vehicleNumber: [{ value: '', disabled: false }, Validators.required],
-      vehicleType: [{ value: '', disabled: false }, Validators.required],
-
-      customerName: [{ value: '', disabled: false }, Validators.required],
-      customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
-      customerType: 'Monthly',
-      address: [{ value: '', disabled: false }],
-      amount: [{ value: '', disabled: false }],
-
+      vehicleNumber: [
+        { value: '', disabled: false }, 
+        [Validators.required, Validators.pattern(/^[A-Z]{2} [0-9]{2} [A-Z]{2} [0-9]{4}$/)]
+      ],
+      vehicleType: [
+        { value: '', disabled: false },
+        [Validators.required]
+      ],
+      customerName: [
+        { value: '', disabled: false },
+        [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)] // Only letters & spaces
+      ],
+      customerPhoneNbr: [
+        { value: '', disabled: false },
+        [Validators.required, Validators.pattern(/^[0-9]{10}$/)] // Exactly 10 digits
+      ],
+      customerType: ['Monthly'],
+      address: [
+        { value: '', disabled: false },
+        [Validators.required]
+      ],
+      amount: [
+        { value: '', disabled: false },
+        [Validators.required]
+      ]
     });
   }
 
@@ -148,26 +164,93 @@ ngOnInit() {
       .trim();
   }
 
+  restrictVehicleInput(event: KeyboardEvent) {
+    const input = event.target as HTMLInputElement;
+    const key = event.key;
+  
+    // Allow control keys
+    if (['Backspace','Delete','Tab','ArrowLeft','ArrowRight'].includes(key)) return;
+  
+    const rawValue = input.value.replace(/ /g, '');
+    const position = rawValue.length;
+  
+    const letterPositions = [0, 1, 4, 5];
+    const digitPositions = [2, 3, 6, 7, 8, 9];
+  
+    const control = this.vehicleDetailsForm.get('vehicleNumber');
+  
+    // Reset previous custom errors
+    control?.setErrors(null);
+  
+    if (letterPositions.includes(position) && !/^[A-Z]$/i.test(key)) {
+      event.preventDefault();
+      control?.setErrors({ letterExpected: true });
+    }
+  
+    if (digitPositions.includes(position) && !/^[0-9]$/.test(key)) {
+      event.preventDefault();
+      control?.setErrors({ digitExpected: true });
+    }
+  
+    // Max 10 chars
+    if (rawValue.length >= 10) {
+      event.preventDefault();
+    }
+  }
+
   onVehicleNumberInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = input.value.toUpperCase();
   
+    // Remove non-alphanumeric
     value = value.replace(/[^A-Z0-9]/g, '');
   
-    const match = value.match(/^([A-Z]{0,2})(\d{0,2})([A-Z]{0,2})(\d{0,4})$/);
+    // Limit to 10 characters
+    value = value.substring(0, 10);
   
-    if (match) {
-      const [, state, district, series, number] = match;
-      let formatted = state;
-      if (district) formatted += ' ' + district;
-      if (series) formatted += ' ' + series;
-      if (number) formatted += ' ' + number;
-      input.value = formatted;
+    let formatted = '';
   
-      this.vehicleDetailsForm.get('vehicleNumber')?.setValue(
-        input.value,
-        { emitEvent: false } 
-      );
+    if (value.length > 0) {
+      formatted += value.substring(0, 2);
+    }
+  
+    if (value.length >= 3) {
+      formatted += ' ' + value.substring(2, 4);
+    }
+  
+    if (value.length >= 5) {
+      formatted += ' ' + value.substring(4, 6);
+    }
+  
+    if (value.length >= 7) {
+      formatted += ' ' + value.substring(6, 10);
+    }
+  
+    input.value = formatted;
+  
+    this.vehicleDetailsForm.get('vehicleNumber')?.setValue(
+      formatted,
+      { emitEvent: false }
+    );
+  }
+
+  restrictDigits(event: KeyboardEvent) {
+    const key = event.key;
+  
+    // Allow control keys
+    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) {
+      return;
+    }
+  
+    // Only allow digits
+    if (!/^[0-9]$/.test(key)) {
+      event.preventDefault();
+    }
+  
+    // Optional: max length check
+    const input = event.target as HTMLInputElement;
+    if (input.value.replace(/\D/g, '').length >= 10) {
+      event.preventDefault();
     }
   }
   
@@ -283,8 +366,16 @@ ngOnInit() {
   
   
   submitForm = async () => {
+
+    this.advance.markAsTouched();
+    this.customerType.markAsTouched();
+    this.monthlyStatus.markAsTouched();
+    this.fromDateMonthly.markAsTouched();
+    this.endDateMonthly.markAsTouched();
+    this.note.markAsTouched();
+    
     if (this.vehicleDetailsForm.invalid) {
-      this.vehicleDetailsForm.markAllAsTouched();
+      this.vehicleDetailsForm.markAllAsTouched(); 
       return;
     }
   
