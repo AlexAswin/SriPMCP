@@ -241,6 +241,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         }, 0)
       )
     );
+
+    this.transactionService.getActiveMonthlyCustomers();
   }
 
   toggleAll(value: boolean) {

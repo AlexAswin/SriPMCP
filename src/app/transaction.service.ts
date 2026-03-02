@@ -27,6 +27,7 @@ export class TransactionService {
       const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
   
       const [year, month] = customerDetails.fromDateMonthly.split('-').map(Number);
+      // const currentMonth = `2026-02`;
       const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
       const transactionRef = doc(customerRef, 'Transactions', currentMonth);
       const monthlyTransactionDetails = await getDoc(transactionRef);
@@ -71,6 +72,7 @@ export class TransactionService {
   
       const [year, month] = transactionData.transactionDate.split('-').map(Number);
       const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
+      // const currentMonth = `2026-02`
       const transactionRef = doc(customerRef, 'Transactions', currentMonth);
       const monthlyTransactionDetails = await getDoc(transactionRef);
   
@@ -82,7 +84,7 @@ export class TransactionService {
   
         const updatedAmount = previousTotal + newPayment;
   
-        const pending = (existing['monthlyCost'] || 0) - updatedAmount;
+        const pending = (existing['currentPending'] || 0) - updatedAmount;
   
         let history = existing['transactionHistory'];
         if (!Array.isArray(history)) {
@@ -132,6 +134,7 @@ export class TransactionService {
   getActiveMonthlyCustomers(): Observable<any[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
     const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
+    console.log(q)
   
     return collectionData(q, { idField: 'id' }).pipe(
       switchMap((customers: any[]) => {
@@ -215,13 +218,12 @@ export class TransactionService {
     return collectionData(q, { idField: 'id' }).pipe(
       switchMap((customers: any[]) => {
         const customerStreams = customers.map(customer => {
-          // 1️⃣ Current month ledger
+  
           const transactionDocRef = doc(
             this.firestore,
             `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
           );
   
-          // 2️⃣ FullTransactionHistory subcollection
           const fullHistoryRef = collection(
             this.firestore,
             `CustomerEntry/${customer.id}/Transactions/${currentMonth}/FullTransactionHistory`
@@ -231,11 +233,19 @@ export class TransactionService {
             docData(transactionDocRef),
             collectionData(fullHistoryRef, { idField: 'id' })
           ]).pipe(
-            map(([ledger, fullHistory]) => ({
-              ...customer,
-              Transactions: ledger || {},
-              FullTransactionHistory: fullHistory || []
-            }))
+            map(([ledger, fullHistory]) => {
+  
+              // ✅ ADDED CONDITION HERE
+              if (!ledger) {
+                this.createNewMonthLedgerForActiveCustomers(currentMonth);
+              }
+  
+              return {
+                ...customer,
+                Transactions: ledger || {},
+                FullTransactionHistory: fullHistory || []
+              };
+            })
           );
         });
   
@@ -249,6 +259,8 @@ export class TransactionService {
   private getCurrentMonth(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    // return `2026-02`
   }
   
   async createNewMonthLedgerForActiveCustomers(date: string): Promise<void> {
@@ -265,7 +277,7 @@ export class TransactionService {
     const prevMonth = `${prevMonthDate.getFullYear()}-${String(
       prevMonthDate.getMonth() + 1
     ).padStart(2, '0')}`;
-
+    // const prevMonth = '2026-01'
   
     for (const customer of customersSnap.docs) {
       const customerId = customer.id;
@@ -311,7 +323,7 @@ export class TransactionService {
         advance: advance,
         currentPending: newPending,
         monthlyCost: monthlyCost,
-        transactionHistory: transactionHistory
+        // transactionHistory: transactionHistory
       });
     }
   }
@@ -319,6 +331,8 @@ export class TransactionService {
   getMonthIdFromDate(dateStr: string): string {
     const [y, m] = dateStr.split('-').map(Number);
     return `${y}-${String(m).padStart(2, '0')}`;
+
+    // return `2026-02`
   }
 
   async deleteCustomerCurrentMonthTransaction(vehicleNumber: string) {
