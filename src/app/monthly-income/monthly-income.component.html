@@ -72,13 +72,15 @@
 
     </div>
 
+    <div class="filter-section">
+      <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
+      <!-- <app-button variant="secondary" label="Download InActive Customers"></app-button> -->
+    </div>
+
 
   </mat-sidenav>
 
-  <div class="filter-section">
-    <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
-    <!-- <app-button variant="secondary" label="Download InActive Customers"></app-button> -->
-  </div>
+ 
 
   <mat-sidenav-content>
     <mat-toolbar>
