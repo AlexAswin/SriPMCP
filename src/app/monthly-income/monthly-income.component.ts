@@ -127,6 +127,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   vehicleFilter$ = new BehaviorSubject<string>('');
 
   private destroy$ = new Subject<void>();
+  showHistory: boolean = false;
 
   constructor(private transactionService: TransactionService) {}
 
@@ -150,6 +151,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         let filteredList = customers.filter((c) => {
 
           if (vehicle && !c.vehicleNumber.toUpperCase().includes(vehicle)) return false;
+          
 
           const statusMatch =
             (showActive && c.monthlyStatus === 'Active') ||
@@ -241,8 +243,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         }, 0)
       )
     );
-
-    this.transactionService.getActiveMonthlyCustomers();
   }
 
   toggleAll(value: boolean) {
@@ -270,11 +270,13 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   }
 
   filterVehicle = (event: Event) => {
-    const vehicleNumber = (event.target as HTMLInputElement).value
-      .trim()
-      .toUpperCase();
+    const input = event.target as HTMLInputElement | null;
+  
+    const vehicleNumber = input?.value?.trim().toUpperCase() || '';
+  
     this.vehicleFilter$.next(vehicleNumber);
-    this.showFooter = false;
+  
+    this.showFooter = vehicleNumber === '';
   };
 
   expandRow(row: any) {

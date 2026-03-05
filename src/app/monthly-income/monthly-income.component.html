@@ -208,7 +208,7 @@
             <td mat-cell *matCellDef="let row"
                 [attr.colspan]="CustomersAndBalanceColumns.length">
           
-              <div *ngIf="filteredRows.includes(row) && filteredRows.length === 1"
+              <div *ngIf="(vehicleFilter$ | async) && (filteredCustomers$ | async)?.length === 1"
                    class="example-element-detail-wrapper"
                    [class.example-element-detail-wrapper-expanded]="isExpanded(row)">
           
@@ -226,8 +226,7 @@
                           <th>Transaction Type</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        <ng-container>                  
+                      <tbody>                
                           <tr  *ngFor="let t of row.FullTransactionHistory">
                             <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate  }}</td>
                             <td>{{ t.existingPending }}</td>
@@ -235,7 +234,12 @@
                             <td>{{ t.newPending }}</td>
                             <td>{{ t.transactionType  }}</td>
                           </tr>
-                        </ng-container>
+
+                          <tr *ngIf="!row.FullTransactionHistory?.length">
+                            <td colspan="5" style="text-align: center;">
+                              No Transactions
+                            </td>
+                          </tr>
                       </tbody>
                     </table>
           
