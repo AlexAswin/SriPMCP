@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, addDoc, collection, collectionData, deleteDoc, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
+import { Firestore, addDoc, arrayUnion, collection, collectionData, deleteDoc, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
 import { Observable, combineLatest, from, map, of, switchMap, tap } from 'rxjs';
 
 @Injectable({
@@ -48,7 +48,7 @@ export class TransactionService {
     }
   }
 
-  customerMonthlyTransactionDetails = async (customer: string | null, transactionData: any) => {
+  customerMonthlyTransactionDetails = async ( customer: string | null, transactionData: any ) => {
     if (!customer) {
       console.error('Customer is null');
       return;
@@ -70,55 +70,64 @@ export class TransactionService {
       const customerDoc = snapshot.docs[0];
       const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
   
-      const [year, month] = transactionData.transactionDate.split('-').map(Number);
+      const date = new Date(transactionData.transactionDate);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
       const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
-      // const currentMonth = `2026-02`
+      // const currentMonth = `2026-02`;
+
+  
       const transactionRef = doc(customerRef, 'Transactions', currentMonth);
       const monthlyTransactionDetails = await getDoc(transactionRef);
   
-      if (monthlyTransactionDetails.exists()) {
-        const existing = monthlyTransactionDetails.data();
-  
-        const previousTotal = existing['transactionAmount'] || 0;
-        const newPayment = transactionData.transactionAmount || 0;
-  
-        const updatedAmount = previousTotal + newPayment;
-  
-        const pending = (existing['currentPending'] || 0) - updatedAmount;
-  
-        let history = existing['transactionHistory'];
-        if (!Array.isArray(history)) {
-          history = history ? [history] : [];
-        }
-  
-        const newEntry = {
-          transactionAmount: newPayment,
-          transactionDate: transactionData.transactionDate,
-          transactionType: transactionData.paymentMethod,
-          existingPending: existing['currentPending'] ? existing['currentPending'] : existing['monthlyCost'],
-          newPending: pending
-        };
-  
-        const updatedHistory = [...history, newEntry];
-  
-        // ✅ Update the month ledger as you had it
-        await updateDoc(transactionRef, {
-          transactionHistory: updatedHistory,
-          transactionAmount: updatedAmount,
-          currentPending: pending,
-          lastTransactionDate: transactionData.transactionDate,
-          paymentMethod: transactionData.paymentMethod,
-          isTransactionMade: true
-        });
-  
-        const uniqueDocId = `${currentMonth}_${Date.now()}`;
-        const fullHistoryRef = doc(transactionRef, 'FullTransactionHistory', uniqueDocId);
-    
-        await setDoc(fullHistoryRef, {
-          ...newEntry,
-          timestamp: new Date() // optional
-        });
+      if (!monthlyTransactionDetails.exists()) {
+        console.error('Monthly ledger does not exist');
+        return;
       }
+  
+      const existing = monthlyTransactionDetails.data();
+  
+      const previousTotal = existing['transactionAmount'] || 0;
+      const newPayment = transactionData.transactionAmount || 0;
+      const updatedAmount = previousTotal + newPayment;
+      const currentPending = existing['currentPending'] ?? existing['monthlyCost'] ?? 0;
+      const pending = Math.max(currentPending - newPayment, 0);
+  
+      let history = existing['transactionHistory'];
+      if (!Array.isArray(history)) {
+        history = history ? [history] : [];
+      }
+  
+      const newEntry = {
+        transactionAmount: newPayment,
+        transactionDate: transactionData.transactionDate,
+        transactionType: transactionData.paymentMethod,
+        existingPending: currentPending,
+        newPending: pending
+      };
+  
+      const updatedHistory = [...history, newEntry];
+  
+      await updateDoc(transactionRef, {
+        transactionHistory: updatedHistory,
+        transactionAmount: updatedAmount,
+        currentPending: pending,
+        lastTransactionDate: transactionData.transactionDate,
+        paymentMethod: transactionData.paymentMethod,
+        isTransactionMade: true
+      });
+  
+      const uniqueDocId = `${currentMonth}_${Date.now()}`;
+      const fullHistoryRef = doc( transactionRef, 'FullTransactionHistory', uniqueDocId );
+  
+      await updateDoc(customerRef, {
+        FullTransactionHistory: arrayUnion({
+          ...newEntry,
+          timestamp: new Date(),
+          id: `${currentMonth}_${Date.now()}`
+        })
+      });
+  
     } catch (error) {
       console.error('Transaction Error:', error);
     }
@@ -131,84 +140,84 @@ export class TransactionService {
     return prevMonthId;
   }
 
-  getActiveMonthlyCustomers(): Observable<any[]> {
-    const customersRef = collection(this.firestore, 'CustomerEntry');
-    const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
-    console.log(q)
+  // getActiveMonthlyCustomers(): Observable<any[]> {
+  //   const customersRef = collection(this.firestore, 'CustomerEntry');
+  //   const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
+  //   console.log(q)
   
-    return collectionData(q, { idField: 'id' }).pipe(
-      switchMap((customers: any[]) => {
+  //   return collectionData(q, { idField: 'id' }).pipe(
+  //     switchMap((customers: any[]) => {
   
-        const currentMonth = this.getCurrentMonth();
+  //       const currentMonth = this.getCurrentMonth();
   
-        const details = customers.map(customer => {
+  //       const details = customers.map(customer => {
   
-          const ledgerRef = doc(
-            this.firestore,
-            `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
-          );
+  //         const ledgerRef = doc(
+  //           this.firestore,
+  //           `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
+  //         );
   
-          return docData(ledgerRef).pipe(
-            map(ledger => {
+  //         return docData(ledgerRef).pipe(
+  //           map(ledger => {
   
-              if (!ledger) {
-                this.createNewMonthLedgerForActiveCustomers(currentMonth);
-              }
+  //             if (!ledger) {
+  //               this.createNewMonthLedgerForActiveCustomers(currentMonth);
+  //             }
   
-              return {
-                ...customer,
-                Transactions: ledger
-              };
-            })
-          );
-        });
+  //             return {
+  //               ...customer,
+  //               Transactions: ledger
+  //             };
+  //           })
+  //         );
+  //       });
   
-        return combineLatest(details);
-      })
-    );
-  }
+  //       return combineLatest(details);
+  //     })
+  //   );
+  // }
 
-  getInactiveCustomersWithLastTransaction(): Observable<any[]> {
-    const customersRef = collection(this.firestore, 'CustomerEntry');
-    const q = query(customersRef, where('monthlyStatus', '==', 'InActive'));
+  // getInactiveCustomersWithLastTransaction(): Observable<any[]> {
+  //   const customersRef = collection(this.firestore, 'CustomerEntry');
+  //   const q = query(customersRef, where('monthlyStatus', '==', 'InActive'));
   
-    return collectionData(q, { idField: 'id' }).pipe(
-      switchMap((customers: any[]) => {
+  //   return collectionData(q, { idField: 'id' }).pipe(
+  //     switchMap((customers: any[]) => {
   
-        if (!customers.length) return of([]);
+  //       if (!customers.length) return of([]);
   
-        const details = customers.map(customer => {
+  //       const details = customers.map(customer => {
   
-          const txRef = collection(
-            this.firestore,
-            `CustomerEntry/${customer.id}/Transactions`
-          );
+  //         const txRef = collection(
+  //           this.firestore,
+  //           `CustomerEntry/${customer.id}/Transactions`
+  //         );
   
-          return collectionData(txRef, { idField: 'monthId' }).pipe(
-            map((txns: any[]) => {
+  //         return collectionData(txRef, { idField: 'monthId' }).pipe(
+  //           map((txns: any[]) => {
   
-              if (!txns.length) {
-                return {
-                  ...customer,
-                  Transactions: null
-                };
-              }
-              txns.sort((a, b) => a.monthId.localeCompare(b.monthId));
+  //             if (!txns.length) {
+  //               return {
+  //                 ...customer,
+  //                 Transactions: null
+  //               };
+  //             }
+  //             txns.sort((a, b) => a.monthId.localeCompare(b.monthId));
   
-              const lastTxn = txns[txns.length - 1];
+  //             const lastTxn = txns[txns.length - 1];
   
-              return {
-                ...customer,
-                Transactions: lastTxn
-              };
-            })
-          );
-        });
+  //             return {
+  //               ...customer,
+  //               Transactions: lastTxn
+  //             };
+  //           })
+  //         );
+  //       });
   
-        return combineLatest(details);
-      })
-    );
-  }
+  //       return combineLatest(details);
+  //     })
+  //   );
+  // }
 
   getAllCustomersWithTransactions(): Observable<any[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
@@ -235,15 +244,14 @@ export class TransactionService {
           ]).pipe(
             map(([ledger, fullHistory]) => {
   
-              // ✅ ADDED CONDITION HERE
               if (!ledger) {
-                this.createNewMonthLedgerForActiveCustomers(currentMonth);
+                // this.createNewMonthLedgerForActiveCustomers(currentMonth);
               }
   
               return {
                 ...customer,
                 Transactions: ledger || {},
-                FullTransactionHistory: fullHistory || []
+                // FullTransactionHistory: fullHistory || []
               };
             })
           );
@@ -323,6 +331,7 @@ export class TransactionService {
         advance: advance,
         currentPending: newPending,
         monthlyCost: monthlyCost,
+        isTransactionMade: false
         // transactionHistory: transactionHistory
       });
     }
