@@ -81,7 +81,7 @@ ngOnInit() {
     .pipe(
       debounceTime(500),          
       distinctUntilChanged(),
-      filter(value => value?.length >= 9 ),
+      // filter(value => value?.length >= 9 ),
       takeUntil(this.destroy$)
     )
     .subscribe(value => {
@@ -126,11 +126,11 @@ ngOnInit() {
       ],
       customerName: [
         { value: '', disabled: false },
-        [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)] // Only letters & spaces
+        [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)] 
       ],
       customerPhoneNbr: [
         { value: '', disabled: false },
-        [Validators.required, Validators.pattern(/^[0-9]{10}$/)] // Exactly 10 digits
+        [Validators.required, Validators.pattern(/^[0-9]{10}$/)] 
       ],
       customerType: ['Monthly'],
       address: [
@@ -160,7 +160,7 @@ ngOnInit() {
   private normalizeVehicleNumber(value: string): string {
     return value
       .toUpperCase()
-      .replace(/\s+/g, '')
+      // .replace(/\s+/g, '')
       .trim();
   }
 
@@ -335,7 +335,18 @@ ngOnInit() {
       this.showAlert = true;
       this.type = 'error';
       this.message = 'Sorry... This customer is an Unpaid Daily Customer...';
-
+    } else {
+      this.isNewMonthlyCustomer = true;
+      this.isMonthlyActiveCustomer = false;
+      this.isMonthlyInActiveCustomer = false;
+      this.resetStandaloneControls();
+      this.vehicleDetailsForm.patchValue({
+        vehicleType: '',
+        customerName: '',
+        customerPhoneNbr: '',
+        address: '',
+        amount: ''
+      });
     }
   }    
 
@@ -478,7 +489,8 @@ ngOnInit() {
   
 
   cancelEntry() {
-
+    this.vehicleDetailsForm.reset();
+    this.resetStandaloneControls();
   }
 
   closeForm() {
