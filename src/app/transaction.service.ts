@@ -270,10 +270,10 @@ export class TransactionService {
   }
 
   private getCurrentMonth(): string {
-    // const d = new Date();
-    // return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-    return `2026-04`;
+    // return `2026-04`;
   }
 
   async createNewMonthLedgerForActiveCustomers(date: string): Promise<void> {
@@ -285,8 +285,8 @@ export class TransactionService {
     const currentMonthId = this.getMonthIdFromDate(date);
     const d = new Date(date);
     d.setMonth(d.getMonth() - 1);
-    // const prevMonthId = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const prevMonthId ='2026-03'
+    const prevMonthId = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    // const prevMonthId ='2026-03'
   
     const batch = writeBatch(this.firestore);
   
@@ -345,10 +345,10 @@ export class TransactionService {
   }
 
   getMonthIdFromDate(dateStr: string): string {
-    // const [y, m] = dateStr.split('-').map(Number);
-    // return `${y}-${String(m).padStart(2, '0')}`;
+    const [y, m] = dateStr.split('-').map(Number);
+    return `${y}-${String(m).padStart(2, '0')}`;
 
-    return `2026-04`;
+    // return `2026-04`;
   }
 
   async deleteCustomerCurrentMonthTransaction(vehicleNumber: string) {
