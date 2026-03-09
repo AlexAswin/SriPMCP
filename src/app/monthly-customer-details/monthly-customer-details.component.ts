@@ -37,7 +37,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   // existingCustomer: boolean = false;
   // vehicleTypes: VehicleType[] = [];
 
-  advance= new FormControl<string>('', [Validators.required]);
+  advance= new FormControl<string>('', [Validators.required, Validators.pattern('^[0-9]*$')]);
   customerType = new FormControl<string>('monthly', [Validators.required]);
   monthlyStatus= new FormControl<string>('', [Validators.required]);
   fromDateMonthly= new FormControl<string>('', [Validators.required]);
@@ -176,64 +176,74 @@ ngOnInit() {
   restrictVehicleInput(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
     const key = event.key;
-    const rawValue = input.value.replace(/ /g, '');
+
+    const rawValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const control = this.vehicleDetailsForm.get('vehicleNumber');
   
     if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
-  
-    // 1. Prevent non-alphanumeric
+
     if (!/^[a-zA-Z0-9]$/.test(key)) {
       event.preventDefault();
       return;
     }
   
-    // 2. State Code: First two must be Letters
+    control?.setErrors(null);
+
     if (rawValue.length < 2 && !/^[a-zA-Z]$/.test(key)) {
       event.preventDefault();
+      control?.setErrors({ letterExpected: true });
+      return;
     }
-  
-    // 3. District Code: Next two must be Digits
+ 
     if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
       event.preventDefault();
+      control?.setErrors({ digitExpected: true });
+      return;
     }
-  
-    // 4. Max length check (10 alphanumeric chars)
-    if (rawValue.length >= 10) {
+
+    if (rawValue.length === 4 && !/^[a-zA-Z]$/.test(key)) {
       event.preventDefault();
+      control?.setErrors({ letterExpected: true });
+      return;
+    }
+
+    if (rawValue.length >= 9) {
+      const hasTwoLetterSeries = /^[A-Z]{2}[0-9]{2}[A-Z]{2}/.test(rawValue);
+      if (!hasTwoLetterSeries && rawValue.length === 9 && /^[0-9]$/.test(key)) {
+        if (/^[0-9]$/.test(rawValue[5])) {
+           event.preventDefault();
+        }
+      }
+  
+      if (rawValue.length >= 10) {
+        event.preventDefault();
+      }
     }
   }
-
+  
   onVehicleNumberInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    
-    // Limit total alphanumeric chars to 10
+
     raw = raw.substring(0, 10);
   
     let formatted = '';
-    // Part 1: State Code (TN)
     if (raw.length > 0) formatted += raw.substring(0, 2);
+    if (raw.length > 2) formatted += ' ' + raw.substring(2, 4); 
     
-    // Part 2: District Code (85)
-    if (raw.length > 2) formatted += ' ' + raw.substring(2, 4);
-    
-    // Part 3: Series (D or DD) - This is the tricky part
-    // We look for letters starting at index 4
-    let series = '';
-    let digits = '';
-    
-    const remainder = raw.substring(4);
-    const firstDigitIndex = remainder.search(/[0-9]/);
+    if (raw.length > 4) {
+      const remainder = raw.substring(4);
+      const digitMatch = remainder.match(/\d/); 
+      const firstDigitIndex = digitMatch ? remainder.indexOf(digitMatch[0]) : -1;
   
-    if (firstDigitIndex === -1) {
-      // Only letters typed so far in the remainder
-      series = remainder;
-    } else {
-      series = remainder.substring(0, firstDigitIndex);
-      digits = remainder.substring(firstDigitIndex, firstDigitIndex + 4);
+      if (firstDigitIndex === -1) {
+        formatted += ' ' + remainder.substring(0, 2);
+      } else {
+        const series = remainder.substring(0, firstDigitIndex);
+        const digits = remainder.substring(firstDigitIndex, firstDigitIndex + 4);
+        formatted += ' ' + series + ' ' + digits;
+      }
     }
-  
-    if (series.length > 0) formatted += ' ' + series;
-    if (digits.length > 0) formatted += ' ' + digits;
   
     input.value = formatted.trim();
     this.vehicleDetailsForm.get('vehicleNumber')?.setValue(input.value, { emitEvent: false });
@@ -242,21 +252,20 @@ ngOnInit() {
   restrictDigits(event: KeyboardEvent) {
     const key = event.key;
   
-    // Allow control keys
     if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) {
       return;
     }
-  
-    // Only allow digits
+
     if (!/^[0-9]$/.test(key)) {
       event.preventDefault();
     }
-  
-    // Optional: max length check
+
     const input = event.target as HTMLInputElement;
     if (input.value.replace(/\D/g, '').length >= 10) {
       event.preventDefault();
     }
+
+    this.advance.setErrors({ pattern: true });
   }
   
 
@@ -379,118 +388,108 @@ ngOnInit() {
     }
     return payload;
   }
-  
-  
-  submitForm = async () => {
 
-    this.advance.markAsTouched();
-    this.customerType.markAsTouched();
-    this.monthlyStatus.markAsTouched();
-    this.fromDateMonthly.markAsTouched();
+isFormValid(): boolean {
+  // 1. Mark everything as touched so error messages appear in the UI
+  this.vehicleDetailsForm.markAllAsTouched();
+  this.advance.markAsTouched();
+  this.customerType.markAsTouched();
+  this.monthlyStatus.markAsTouched();
+  this.fromDateMonthly.markAsTouched();
+  this.note.markAsTouched();
+  
+  // Conditionally check endDate if status is InActive
+  if (this.monthlyStatus.value === 'InActive') {
     this.endDateMonthly.markAsTouched();
-    this.note.markAsTouched();
-    
-    if (this.vehicleDetailsForm.invalid) {
-      this.vehicleDetailsForm.markAllAsTouched(); 
-      return;
-    }
-  
-    try {
-  
-      if (this.isNewMonthlyCustomer) {
-  
-        let payload = this.normalizePayload({ ...this.vehicleDetailsForm.value });
-  
-        const customerDetails = {
-          ...payload,
-          advance: this.advance.value,
-          monthlyStatus: this.monthlyStatus.value,
-          fromDateMonthly: this.fromDateMonthly.value,
-          note: this.note.value
-        };
-  
-        await this.newCustomerEntryService.addNewCustomerEntry(customerDetails);
+  }
 
-        this.vehicleDetailsForm.reset({
-          customerType: 'Monthly'
-        });
-        this.message = 'Customer Added Successfully...';
-      }
-      else if (this.isMonthlyInActiveCustomer) {
+  // 2. Aggregate validity
+  const isMainFormValid = this.vehicleDetailsForm.valid;
+  const areStandaloneValid = 
+    this.advance.valid && 
+    this.customerType.valid && 
+    this.monthlyStatus.valid && 
+    this.fromDateMonthly.valid && 
+    this.note.valid &&
+    (this.monthlyStatus.value === 'InActive' ? this.endDateMonthly.valid : true);
+
+  return isMainFormValid && areStandaloneValid;
+}
   
-        const updatePayload: any = {
-          monthlyStatus: 'Active',
-          fromDateMonthly: this.fromDateMonthly.value,
-          endDateMonthly: null,
-          advance: this.advance.value
-        };
   
-        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
-          this.currentCustomer,
-          updatePayload
-        );
-  
-        this.message = 'Customer Updated Successfully...';
-      }
-  
-      else if (this.isMonthlyActiveCustomer) {
-  
-        const updatePayload: any = {
-          monthlyStatus: 'InActive',
-          endDateMonthly: this.endDateMonthly.value,
-          note: this.note.value
-        };
-  
-        const historyPayload = this.buildHistory(
-          this.fromDateMonthly.value,
-          this.endDateMonthly.value,
-        );
-  
-        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
-          this.currentCustomer,
-          updatePayload,
-          historyPayload
-        );
-        this.vehicleDetailsForm.reset({
-          customerType: 'Monthly'
-        });
-  
-        this.message = 'Customer Updated Successfully...';
-      }
-      else if (this.dailyToMonthlyCustomer) {
-  
-        let payload = this.normalizePayload({ ...this.vehicleDetailsForm.value });
-  
-        const customerDetails = {
-          ...payload,
-          advance: this.advance.value,
-          monthlyStatus: this.monthlyStatus.value,
-          fromDateMonthly: this.fromDateMonthly.value,
-          endDateMonthly: null,
-          note: this.note.value
-        };
+submitForm = async () => {
+  // 1. Check aggregate validity
+  if (!this.isFormValid()) {
+    this.showAlert = true;
+    this.type = 'error'; // Ensure your alert turns red
+    this.message = 'Please fill all required fields correctly.';
+    return;
+  }
+
+  try {
+    const formValue = this.vehicleDetailsForm.value;
     
-        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
-          this.currentCustomer,
-          customerDetails,
-        );
-  
-        this.vehicleDetailsForm.reset({
-          customerType: 'Monthly'
-        });
-        this.message = 'Customer Converted to Monthly Successfully...';
-      }
-  
-      this.showAlert = true;
-  
-    } catch (error) {
-      this.showAlert = true;
-      this.message = 'Something went wrong. Please try again.';
-      console.error(error);
-    } finally {
-      this.resetStandaloneControls();
+    // Helper to get common standalone values
+    const standaloneValues = {
+      advance: this.advance.value,
+      monthlyStatus: this.monthlyStatus.value,
+      fromDateMonthly: this.fromDateMonthly.value,
+      note: this.note.value
+    };
+
+    if (this.isNewMonthlyCustomer) {
+      let payload = this.normalizePayload({ ...formValue });
+      const customerDetails = { ...payload, ...standaloneValues };
+
+      await this.newCustomerEntryService.addNewCustomerEntry(customerDetails);
+      this.message = 'Customer Added Successfully...';
+      this.type = 'success';
+    } 
+    else if (this.isMonthlyInActiveCustomer) {
+      const updatePayload = {
+        monthlyStatus: 'Active',
+        fromDateMonthly: this.fromDateMonthly.value,
+        endDateMonthly: null,
+        advance: this.advance.value
+      };
+
+      await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, updatePayload);
+      this.message = 'Customer Updated Successfully...';
+      this.type = 'success';
+    } 
+    else if (this.isMonthlyActiveCustomer) {
+      const updatePayload = {
+        monthlyStatus: 'InActive',
+        endDateMonthly: this.endDateMonthly.value,
+        note: this.note.value
+      };
+
+      const historyPayload = this.buildHistory(this.fromDateMonthly.value, this.endDateMonthly.value);
+      await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, updatePayload, historyPayload);
+      this.message = 'Customer Updated Successfully...';
+      this.type = 'success';
+    } 
+    else if (this.dailyToMonthlyCustomer) {
+      let payload = this.normalizePayload({ ...formValue });
+      const customerDetails = { ...payload, ...standaloneValues, endDateMonthly: null };
+
+      await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, customerDetails);
+      this.message = 'Customer Converted to Monthly Successfully...';
+      this.type = 'success';
     }
-  };
+
+    // Reset Form after successful operation
+    this.vehicleDetailsForm.reset({ customerType: 'Monthly' });
+    this.resetStandaloneControls();
+    this.showAlert = true;
+
+  } catch (error) {
+    this.showAlert = true;
+    this.type = 'error';
+    this.message = 'Something went wrong. Please try again.';
+    console.error(error);
+  }
+};
   
 
   cancelEntry() {
