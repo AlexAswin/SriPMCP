@@ -4,7 +4,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { ButtonComponent } from '../Common/button/button.component';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatRadioModule} from '@angular/material/radio';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
@@ -118,7 +118,7 @@ ngOnInit() {
     this.vehicleDetailsForm = this.fb.group({
       vehicleNumber: [
         { value: '', disabled: false }, 
-        [Validators.required, Validators.pattern(/^[A-Z]{2} [0-9]{2} [A-Z]{2} [0-9]{4}$/)]
+        [Validators.required,  this.VehicleNumberValidator]
       ],
       vehicleType: [
         { value: '', disabled: false },
@@ -144,6 +144,15 @@ ngOnInit() {
     });
   }
 
+  VehicleNumberValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+  
+    const value = control.value.replace(/\s/g, '').toUpperCase();
+    const pattern = /^[A-Z]{2}[0-9]{6,7}$/;
+  
+    return pattern.test(value) ? null : { invalidVehicleNumber: true };
+  }
+
   onMonthlyStatusChange(status: string | null) {  
     if (status === 'Active') {
       this.isStatusInActive = false;
@@ -167,32 +176,27 @@ ngOnInit() {
   restrictVehicleInput(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
     const key = event.key;
-  
-    // Allow control keys
-    if (['Backspace','Delete','Tab','ArrowLeft','ArrowRight'].includes(key)) return;
-  
     const rawValue = input.value.replace(/ /g, '');
-    const position = rawValue.length;
   
-    const letterPositions = [0, 1, 4, 5];
-    const digitPositions = [2, 3, 6, 7, 8, 9];
+    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
   
-    const control = this.vehicleDetailsForm.get('vehicleNumber');
-  
-    // Reset previous custom errors
-    control?.setErrors(null);
-  
-    if (letterPositions.includes(position) && !/^[A-Z]$/i.test(key)) {
+    // 1. Prevent non-alphanumeric
+    if (!/^[a-zA-Z0-9]$/.test(key)) {
       event.preventDefault();
-      control?.setErrors({ letterExpected: true });
+      return;
     }
   
-    if (digitPositions.includes(position) && !/^[0-9]$/.test(key)) {
+    // 2. State Code: First two must be Letters
+    if (rawValue.length < 2 && !/^[a-zA-Z]$/.test(key)) {
       event.preventDefault();
-      control?.setErrors({ digitExpected: true });
     }
   
-    // Max 10 chars
+    // 3. District Code: Next two must be Digits
+    if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
+      event.preventDefault();
+    }
+  
+    // 4. Max length check (10 alphanumeric chars)
     if (rawValue.length >= 10) {
       event.preventDefault();
     }
@@ -200,38 +204,39 @@ ngOnInit() {
 
   onVehicleNumberInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    let value = input.value.toUpperCase();
-  
-    // Remove non-alphanumeric
-    value = value.replace(/[^A-Z0-9]/g, '');
-  
-    // Limit to 10 characters
-    value = value.substring(0, 10);
+    let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    
+    // Limit total alphanumeric chars to 10
+    raw = raw.substring(0, 10);
   
     let formatted = '';
+    // Part 1: State Code (TN)
+    if (raw.length > 0) formatted += raw.substring(0, 2);
+    
+    // Part 2: District Code (85)
+    if (raw.length > 2) formatted += ' ' + raw.substring(2, 4);
+    
+    // Part 3: Series (D or DD) - This is the tricky part
+    // We look for letters starting at index 4
+    let series = '';
+    let digits = '';
+    
+    const remainder = raw.substring(4);
+    const firstDigitIndex = remainder.search(/[0-9]/);
   
-    if (value.length > 0) {
-      formatted += value.substring(0, 2);
+    if (firstDigitIndex === -1) {
+      // Only letters typed so far in the remainder
+      series = remainder;
+    } else {
+      series = remainder.substring(0, firstDigitIndex);
+      digits = remainder.substring(firstDigitIndex, firstDigitIndex + 4);
     }
   
-    if (value.length >= 3) {
-      formatted += ' ' + value.substring(2, 4);
-    }
+    if (series.length > 0) formatted += ' ' + series;
+    if (digits.length > 0) formatted += ' ' + digits;
   
-    if (value.length >= 5) {
-      formatted += ' ' + value.substring(4, 6);
-    }
-  
-    if (value.length >= 7) {
-      formatted += ' ' + value.substring(6, 10);
-    }
-  
-    input.value = formatted;
-  
-    this.vehicleDetailsForm.get('vehicleNumber')?.setValue(
-      formatted,
-      { emitEvent: false }
-    );
+    input.value = formatted.trim();
+    this.vehicleDetailsForm.get('vehicleNumber')?.setValue(input.value, { emitEvent: false });
   }
 
   restrictDigits(event: KeyboardEvent) {

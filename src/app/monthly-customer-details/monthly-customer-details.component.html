@@ -1,62 +1,54 @@
 <div class="parent-container">
-    <button (click)="closeForm()">
+    <button (click)="closeForm()" class="back-btn">
         <mat-icon>arrow_back</mat-icon>
     </button>
 
     <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
-        <div>
+        <div class="header-title">
             <h1>Monthly Customer Details</h1>
         </div>
+
         <mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
             <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
             <span class="message">{{ message }}</span>
         </mat-card>
     
-        <div *ngIf="!dailyCustomerUnpaid">
+        <div *ngIf="!dailyCustomerUnpaid" class="main-content">
             <div class="section vehicleDetails">
                 <h2>Vehicle Details</h2>
-    
                 <div class="vehicle-info">
-                    <div class="form-group">
-                        <label>Vehicle Number</label>
-                        <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber"
-                            style="text-transform: uppercase" maxlength="13" (keydown)="restrictVehicleInput($event)"
-                            (input)="onVehicleNumberInput($event)" />
-    
-                        <div *ngIf="vehicleDetailsForm.get('vehicleNumber')?.invalid && 
-                                       (vehicleDetailsForm.get('vehicleNumber')?.dirty ||
-                                        vehicleDetailsForm.get('vehicleNumber')?.touched)">
-    
-                            <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['required']">
-                                Vehicle number is required
-                            </small>
-    
-                            <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['pattern']">
-                                Format must be like TN 01 AB 1234
-                            </small>
-    
-                            <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['letterExpected']">
-                                Only letters are allowed in this position
-                            </small>
-    
-                            <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['digitExpected']">
-                                Only digits are allowed in this position
-                            </small>
-    
+                    <div class="leftContainer">
+                        <div class="form-group">
+                            <div class="input-row">
+                                <label>Vehicle Number</label>
+                                <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber"
+                                    style="text-transform: uppercase" maxlength="13" (keydown)="restrictVehicleInput($event)"
+                                    (input)="onVehicleNumberInput($event)" />
+                            </div>
+                    
+                            <div class="error-container" *ngIf="vehicleDetailsForm.get('vehicleNumber')?.invalid && 
+                                           (vehicleDetailsForm.get('vehicleNumber')?.dirty ||
+                                            vehicleDetailsForm.get('vehicleNumber')?.touched)">
+                                <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['required']">Vehicle number is required</small>
+                                <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['pattern']">Format must be like TN 01 AB 1234</small>
+                                <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['letterExpected']">Only letters allowed here</small>
+                                <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['digitExpected']">Only digits allowed here</small>
+                            </div>
                         </div>
                     </div>
-    
-    
-                    <div class="form-group">
-                        <label>Vehicle Type</label>
-                        <mat-select placeholder="select Vehicle" formControlName="vehicleType">
-                            <mat-option *ngFor="let types of vehicleTypes$ | async"
-                                [value]="types.vehicleType">{{types.vehicleType}}</mat-option>
-                        </mat-select>
-                        <div *ngIf="vehicleDetailsForm.get('vehicleType')?.invalid &&
-                            (vehicleDetailsForm.get('vehicleType')?.dirty ||
-                             vehicleDetailsForm.get('vehicleType')?.touched)">
-                            <small>Vehicle type is required</small>
+
+                    <div class="rightContainer">
+                        <div class="form-group">
+                            <div class="input-row">
+                                <label>Vehicle Type</label>
+                                <mat-select placeholder="select Vehicle" formControlName="vehicleType">
+                                    <mat-option *ngFor="let types of vehicleTypes$ | async"
+                                        [value]="types.vehicleType">{{types.vehicleType}}</mat-option>
+                                </mat-select>
+                            </div>
+                            <div class="error-container" *ngIf="vehicleDetailsForm.get('vehicleType')?.invalid && (vehicleDetailsForm.get('vehicleType')?.dirty || vehicleDetailsForm.get('vehicleType')?.touched)">
+                                <small>Vehicle type is required</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -64,126 +56,114 @@
     
             <div class="section customerDetails">
                 <h2>Customer Details</h2>
-    
                 <div class="customer-info">
-                    <div class="form-group">
-                        <label>Customer Name</label>
-                        <input type="text" placeholder="Enter customer name" formControlName="customerName" />
-                        <div *ngIf="vehicleDetailsForm.get('customerName')?.invalid &&
-                    (vehicleDetailsForm.get('customerName')?.dirty || 
-                     vehicleDetailsForm.get('customerName')?.touched)">
-                            <small *ngIf="vehicleDetailsForm.get('customerName')?.errors?.['required']">
-                                Customer name is required
-                            </small>
-                            <small *ngIf="vehicleDetailsForm.get('customerName')?.errors?.['pattern']">
-                                Only letters and spaces are allowed
-                            </small>
+                    <div class="form-group half-width">
+                        <div class="input-row">
+                            <label>Customer Name</label>
+                            <input type="text" placeholder="Enter customer name" formControlName="customerName" />
+                        </div>
+                        <div class="error-container" *ngIf="vehicleDetailsForm.get('customerName')?.invalid && (vehicleDetailsForm.get('customerName')?.dirty || vehicleDetailsForm.get('customerName')?.touched)">
+                            <small>Name is required</small>
                         </div>
                     </div>
     
-                    <div class="form-group">
-                        <label>Phone Number</label>
-                        <input type="text" placeholder="Phone Number" maxlength="10" formControlName="customerPhoneNbr"
-                            (keydown)="restrictDigits($event)" />
-                        <div *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.invalid &&
-                    (vehicleDetailsForm.get('customerPhoneNbr')?.dirty || 
-                     vehicleDetailsForm.get('customerPhoneNbr')?.touched)">
-                            <small *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.errors?.['required']">
-                                Phone number is required
-                            </small>
-                            <small *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.errors?.['pattern']">
-                                Only 10 digits are allowed
-                            </small>
+                    <div class="form-group half-width">
+                        <div class="input-row">
+                            <label>Phone Number</label>
+                            <input type="text" placeholder="Phone Number" maxlength="10" formControlName="customerPhoneNbr" (keydown)="restrictDigits($event)" />
+                        </div>
+                        <div class="error-container" *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.invalid && (vehicleDetailsForm.get('customerPhoneNbr')?.dirty || vehicleDetailsForm.get('customerPhoneNbr')?.touched)">
+                            <small>Valid 10-digit number is required</small>
                         </div>
                     </div>
     
-                    <div class="form-group full-width">
-                        <label>Address</label>
-                        <textarea rows="3" formControlName="address"></textarea>
-                        <div *ngIf="vehicleDetailsForm.get('address')?.invalid &&
-                    (vehicleDetailsForm.get('address')?.dirty || 
-                     vehicleDetailsForm.get('address')?.touched)">
-                            <small>Address is required</small>
+                    <div class="form-group full-width mt-10">
+                        <div class="input-row">
+                            <label>Address</label>
+                            <textarea rows="2" formControlName="address"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
     
-            <!-- BILLING -->
             <div class="section billing">
-                <div class="billing-left">
-                    <h2>Billing Details</h2>
-    
-                    <div class="billing-details">
+                <h2>Billing Details</h2>
+                <div class="billing-content">
+                    <div class="billing-row">
                         <div class="form-group">
-                            <label>Amount</label>
-                            <input type="text" formControlName="amount" readonly />
-                            <div *ngIf="vehicleDetailsForm.get('amount')?.invalid &&
-                                        (vehicleDetailsForm.get('amount')?.dirty || 
-                                         vehicleDetailsForm.get('amount')?.touched)">
+                            <div class="input-row">
+                                <label>Amount</label>
+                                <input type="text" formControlName="amount" readonly />
+                            </div>
+                            <div class="error-container" *ngIf="vehicleDetailsForm.get('amount')?.invalid && (vehicleDetailsForm.get('amount')?.dirty || vehicleDetailsForm.get('amount')?.touched)">
                                 <small>Amount is required</small>
                             </div>
                         </div>
-    
+            
                         <div class="form-group">
-                            <!-- <label>Advance</label> -->
-                            <div class="radio-group">
+                            <div class="input-row">
                                 <label>Advance</label>
                                 <input type="text" [formControl]="advance" />
-                                <div *ngIf="advance.invalid && (advance.dirty || advance.touched)">
-                                    <small *ngIf="advance.errors?.['required']">Advance is required</small>
-                                  </div>
+                            </div>
+                            <div class="error-container" *ngIf="advance.invalid && (advance.dirty || advance.touched)">
+                                <small>Advance is required</small>
                             </div>
                         </div>
-    
+            
                         <div class="form-group">
-                            <label>Status</label>
-                            <div class="radio-group">
-                                <label *ngFor="let status of monthlyStatuses">
-                                    <input type="radio" [value]="status" [formControl]="monthlyStatus" />
-                                    {{ status }}
-                                    <div *ngIf="monthlyStatus.invalid && (monthlyStatus.dirty || monthlyStatus.touched)">
-                                        <small>Status is required</small>
-                                      </div>
-                                </label>
+                            <div class="input-row">
+                                <label>Status</label>
+                                <div class="radio-group">
+                                    <label *ngFor="let status of monthlyStatuses">
+                                        <input type="radio" [value]="status" [formControl]="monthlyStatus" /> {{ status }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="error-container" *ngIf="monthlyStatus.invalid && (monthlyStatus.dirty || monthlyStatus.touched)">
+                                <small>Please select a status</small>
                             </div>
                         </div>
                     </div>
-    
-                    <div class="billing-details">
-                        <div class="form-group">
-                            <label>From Date</label>
-                            <input type="date" [formControl]="fromDateMonthly" />
-                            <div *ngIf="fromDateMonthly.invalid && (fromDateMonthly.dirty || fromDateMonthly.touched)">
-                                <small>From Date is required</small>
-                              </div>
+            
+                    <div class="billing-row mt-20"> <div class="form-group">
+                            <div class="input-row">
+                                <label>From Date</label>
+                                <input type="date" [formControl]="fromDateMonthly" />
+                            </div>
+                            <div class="error-container" *ngIf="fromDateMonthly.invalid && (fromDateMonthly.dirty || fromDateMonthly.touched)">
+                                <small>Start date is required</small>
+                            </div>
                         </div>
+            
                         <div class="form-group" *ngIf="isStatusInActive">
-                            <label>End Date</label>
-                            <input type="date" [formControl]="endDateMonthly" />
-                        </div>
+                            <div class="input-row">
+                                <label>End Date</label>
+                                <input type="date" [formControl]="endDateMonthly" />
+                            </div>
+                            <div class="error-container" *ngIf="endDateMonthly.invalid && (endDateMonthly.dirty || endDateMonthly.touched)">
+                                <small>End date is required</small>
+                            </div>
+                            </div>
                     </div>
-    
-    
-                </div>
-    
-            </div>
-            <div class="note-textArea">
-                <div class="billing-right">
-                    <h3>Note</h3>
-    
-                    <textarea rows="4" placeholder="Leave a comment" [formControl]="note"></textarea>
                 </div>
             </div>
+
+            <div class="section note-section">
+                <div class="form-group full-width note-group">
+                    <div class="input-row">
+                        <label>Note</label>
+                        <textarea rows="2" placeholder="Leave a comment" [formControl]="note"></textarea>
+                    </div>
+                    <div class="error-container" *ngIf="note.invalid && (note.dirty || note.touched)">
+                        <small>Note is required</small>
+                    </div>
+                </div>
+            </div>
     
-            <div class="form-section form-actions">
-                <app-button label="Save" variant="primary" (clicked)="submitForm()">
-                </app-button>
-    
-                <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()">
-                </app-button>
+            <div class="form-actions">
+                <app-button label="Save" variant="primary" (clicked)="submitForm()"></app-button>
+                <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()"></app-button>
             </div>
         </div>
-    
     </form>
 </div>
