@@ -1,283 +1,207 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat');
 
+$font-stack: 'Montserrat', sans-serif;
+$primary-blue: #3f51b5;
+$error-red: #c62828;
+$border-color: #ccc;
+$label-width: 120px;
+$input-gap: 10px;
+
+@mixin flex-row-layout {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
 body {
-    font-family: 'Montserrat';
+  font-family: $font-stack;
+  margin: 0;
+  padding: 0;
 }
 
 .parent-container {
   display: flex;
-  h1 {
-    width: 100%;
-    text-align: center;
-    font-family: 'Montserrat';
-}
+  background-color: #fdfdfd;
 
-button {
-  border: none;
-  min-width: 100px;
-  // min-height: calc(100vh - 120px);
-  min-height: 100vh;
-
-  mat-icon {
-    background-color: none;
-  }
-}
-
-.form-container {
-  max-width: 1100px;
-  margin: 0 auto; 
-  padding: 0px 15px;
-  font-family: 'Montserrat';
-  margin-top: 50px;
-
-
-
-  /* Sections */
-  .section {
-    background: #fff;
-    border-radius: 6px;
-    padding: 20px 10px;
-
-    h2,
-    h3 {
-      margin-bottom: 4px;
-      font-size: 16px;
-      font-weight: 600;
-    }
-  }
-
-  /* Flex rows */
-  .vehicle-info,
-  .customer-info {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-
-    .form-group {
-      flex: 1 1 48%;
-      max-height: 65px;
-    }
-  }
-
-  /* Billing layout */
-  .billing {
-    display: flex;
-    gap: 20px;
-
-    .billing-left {
-      flex: 2;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-
-      .billing-details {
-        display: flex;
-        justify-content: space-between;
-      }
-    }
-  }
-
-
-    
-.note-textArea {
-  min-width: 100%;
-  .billing-right {
-    display: flex;
-    h3 {
-      min-width: 130px;
-    }
-
-    textarea {
-      min-width: 100%;
-      max-height: 40px;
-      min-width: 80%;
-    
-    }
-  }
-}
-
-
-  /* Form group — ROW layout */
-  .form-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  /* Labels */
-  label {
-    min-width: 110px;
-    font-size: 13px;
-    font-weight: bolder;
-    color: #444;
-    white-space: nowrap;
-  }
-
-  mat-select {
-    border-bottom: 1px solid  grey;
-  }
-
-  /* Inputs & textarea */
-  input,
-  textarea {
-    flex: 1;
-    height: 25px;
-    padding: 6px 10px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    outline: none;
-
+  .back-btn {
     border: none;
-    border-bottom: 1px solid grey;
-    border-radius: 0px;
+    background: transparent;
+    min-width: 80px;
+    min-height: 100vh;
+    cursor: pointer;
+    color: #333;
+    transition: color 0.2s;
 
-    &:focus {
-      border-color: #3f51b5;
+    &:hover { color: $primary-blue; }
+  }
+
+  .form-container {
+    flex: 1;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+
+    h1 {
+      text-align: center;
+      font-weight: 500;
+      margin-bottom: 30px;
+      color: #222;
     }
 
-    &[readonly] {
-      background: #f5f5f5;
-      cursor: not-allowed;
-    }
-  }
+    .section {
+      background: #fff;
+      padding: 20px 15px;
+      // margin-bottom: 25px; 
+      border-radius: 8px;
 
-  .form-group small {
-    display: block;
-    color: red;     
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
-  }
-
-  textarea {
-    height: auto;
-    // min-height: 72px;
-    resize: vertical;
-    max-height: 40px;
-  }
-
-  /* Radio buttons */
-  .radio-group {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-
-    label {
-      min-width: auto;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 14px;
-    }
-  }
-
-  /* Actions */
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 16px;
-  }
-
-  
-  
-  
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .vehicle-info,
-    .customer-info {
-      .form-group {
-        flex: 1 1 100%;
+      h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #444;
+        padding-bottom: 8px;
       }
     }
 
-    .billing {
-      flex-direction: column;
+    .vehicle-info, 
+    .customer-info, 
+    .billing-row {
+      @include flex-row-layout;
+      justify-content: space-between;
+    }
+
+    .leftContainer, 
+    .rightContainer, 
+    .half-width {
+      flex: 1 1 45%;
+      min-width: 300px;
     }
 
     .form-group {
+      position: relative;
+      display: flex;
       flex-direction: column;
-      align-items: stretch;
+      margin-bottom: 12px;
 
-      label {
-        min-width: auto;
+      &.full-width { flex: 1 1 100%; }
+
+      .input-row {
+        display: flex;
+        align-items: center;
+        gap: $input-gap;
+        width: 100%;
+
+        label {
+          min-width: $label-width;
+          font-size: 13px;
+          font-weight: bold;
+          color: #555;
+          white-space: nowrap;
+        }
+
+        input, mat-select, textarea {
+          flex: 1;
+          border: none;
+          border-bottom: 1px solid $border-color;
+          padding: 6px 0;
+          outline: none;
+          background: transparent;
+          font-family: $font-stack;
+          font-size: 14px;
+
+          &:focus { border-bottom: 2px solid $primary-blue; }
+          &[readonly] { background: #f9f9f9; color: #888; cursor: not-allowed; }
+        }
+
+        .radio-group {
+          display: flex;
+          gap: 20px;
+          label {
+            min-width: auto;
+            font-weight: normal;
+            cursor: pointer;
+          }
+        }
+      }
+
+      .error-container {
+        position: absolute;
+        top: 50px; 
+        left: calc(#{$label-width} + #{$input-gap});
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        pointer-events: none; 
+
+        small {
+          color: $error-red;
+          font-size: 13px;
+          font-weight: 500;
+          line-height: 1.1;
+          white-space: nowrap;
+        }
       }
     }
+
+    .mt-10 { margin-top: 10px; }
+    .mt-20 { margin-top: 25px; } 
+
+    .note-section {
+      .note-box {
+        border: 1px solid $border-color !important; 
+        padding: 8px !important;
+        border-radius: 4px;
+        min-height: 30px;
+      }
+    }
+
 
     .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 30px;
+      padding-bottom: 60px;
+    }
+
+    .alert-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      animation: slideDown 0.3s ease-out;
+
+      &.success { background: #e8f5e9; color: #2e7d32; border-left: 5px solid #2e7d32; }
+      &.error { background: #ffebee; color: $error-red; border-left: 5px solid $error-red; }
+      &.warning { background: #fff8e1; color: #ef6c00; border-left: 5px solid #ef6c00; }
+    }
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 850px) {
+  .parent-container .form-container {
+    .vehicle-info, .customer-info, .billing-row {
       flex-direction: column;
+      gap: 25px;
     }
-  }
-
-
-.alert-card {
-  gap: 12px;
-  max-width: 1100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 18px;
-  margin: 12px 0;
-
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 500;
-
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  animation: slideFadeIn 0.3s ease-in-out;
-
-  mat-icon {
-    font-size: 24px;
-  }
-
-  // .message {
-  //   flex: 1;
-  // }
-
-  &.success {
-    background-color: #a7f4ae;
-    color: #2e7d32;
-    border-left: 5px solid #2e7d32;
-
-    mat-icon {
-      color: #2e7d32;
+    .form-group .error-container {
+      left: 0;
+      top: 55px; 
     }
-  }
-
-  &.error {
-    background-color: #fdecea;
-    color: #c62828;
-    border-left: 5px solid #c62828;
-
-    mat-icon {
-      color: #c62828;
-    }
-  }
-
-  &.warning {
-    background-color: #fff8e1;
-    color: #ef6c00;
-    border-left: 5px solid #ef6c00;
-
-    mat-icon {
-      color: #ef6c00;
+    .input-row {
+      flex-direction: column;
+      align-items: flex-start;
+      label { margin-bottom: 5px; min-width: 10%; }
     }
   }
 }
-
-/* ANIMATION */
-@keyframes slideFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-}
-}
-
-
