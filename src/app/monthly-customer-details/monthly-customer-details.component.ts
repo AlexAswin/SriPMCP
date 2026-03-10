@@ -17,16 +17,23 @@ import { AdminService, VehicleType } from '../admin.service';
 @Component({
   selector: 'app-monthly-customer-details',
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, MatIconModule, ButtonComponent, CommonModule, ReactiveFormsModule,
-            ReactiveFormsModule, MatGridListModule, MatRadioModule, MatSelectModule],
+  imports: [
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    ButtonComponent,
+    CommonModule,
+    ReactiveFormsModule,
+    ReactiveFormsModule,
+    MatGridListModule,
+    MatRadioModule,
+    MatSelectModule,
+  ],
   templateUrl: './monthly-customer-details.component.html',
-  styleUrl: './monthly-customer-details.component.scss'
+  styleUrl: './monthly-customer-details.component.scss',
 })
 export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
-
   monthlyStatuses = ['Active', 'InActive'];
-
-
 
   type: 'success' | 'error' | 'warning' = 'success';
   message: string = '';
@@ -34,14 +41,15 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   vehicleDetailsForm!: FormGroup;
 
   showAlert = false;
-  // existingCustomer: boolean = false;
-  // vehicleTypes: VehicleType[] = [];
 
-  advance= new FormControl<string>('', [Validators.required, Validators.pattern('^[0-9]*$')]);
+  advance = new FormControl<string>('', [
+    Validators.required,
+    Validators.pattern('^[0-9]*$'),
+  ]);
   customerType = new FormControl<string>('monthly', [Validators.required]);
-  monthlyStatus= new FormControl<string>('', [Validators.required]);
-  fromDateMonthly= new FormControl<string>('', [Validators.required]);
-  endDateMonthly= new FormControl<string>('', [Validators.required]);
+  monthlyStatus = new FormControl<string>('', [Validators.required]);
+  fromDateMonthly = new FormControl<string>('', [Validators.required]);
+  endDateMonthly = new FormControl<string>('', [Validators.required]);
   note = new FormControl<string>('', [Validators.required]);
 
   isStatusInActive: boolean = false;
@@ -56,58 +64,64 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   vehicleTypes$!: Observable<VehicleType[]>;
   private destroy$ = new Subject<void>();
 
+  currentCustomer: string = '';
 
+  ngOnInit() {
+    this.vehicleTypes$ = this.adminService.getVehicleTypes().pipe(take(1));
 
-  currentCustomer: string ='';
+    this.vehicleDetailsForm
+      .get('vehicleType')
+      ?.valueChanges.pipe(
+        withLatestFrom(this.vehicleTypes$),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(([selectedType, vehicleTypes]) => {
+        const selectedVehicle = vehicleTypes.find(
+          (v) => v.vehicleType === selectedType
+        );
+        if (selectedVehicle) {
+          this.vehicleDetailsForm
+            .get('amount')
+            ?.setValue(selectedVehicle.monthlyCost, { emitEvent: true });
+        }
+      });
 
-ngOnInit() {
-  this.vehicleTypes$ = this.adminService.getVehicleTypes().pipe(take(1));
+    const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
-  this.vehicleDetailsForm.get('vehicleType')?.valueChanges
-  .pipe(
-    withLatestFrom(this.vehicleTypes$),
-    takeUntil(this.destroy$)
-  )
-  .subscribe(([selectedType, vehicleTypes]) => {
-    const selectedVehicle = vehicleTypes.find(v => v.vehicleType === selectedType);
-    if (selectedVehicle) {
-      this.vehicleDetailsForm.get('amount')?.setValue(selectedVehicle.monthlyCost, { emitEvent: true });
+    vehicleCtrl?.valueChanges
+      .pipe(
+        debounceTime(500),
+        distinctUntilChanged(),
+        // filter(value => value?.length >= 9 ),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((value) => {
+        if (value) {
+          this.getCustomerDetails(value);
+        }
+      });
+    this.monthlyStatus.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((status) => {
+        this.onMonthlyStatusChange(status);
+      });
+
+    this.isNewMonthlyCustomer = true;
+
+    const vehicleNbr = this.route.snapshot.queryParamMap.get('vehicleNbr');
+    if (vehicleNbr) {
+      this.getCustomerDetails(vehicleNbr);
     }
-  });
-    
-  const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
-
-  vehicleCtrl?.valueChanges
-    .pipe(
-      debounceTime(500),          
-      distinctUntilChanged(),
-      // filter(value => value?.length >= 9 ),
-      takeUntil(this.destroy$)
-    )
-    .subscribe(value => {
-      if (value) {
-        this.getCustomerDetails(value);
-      }
-    });
-  this.monthlyStatus.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(status => {
-    this.onMonthlyStatusChange(status);
-  });
-
-  this.isNewMonthlyCustomer = true;
-
-  const vehicleNbr = this.route.snapshot.queryParamMap.get('vehicleNbr');
-  if (vehicleNbr) {
-    this.getCustomerDetails(vehicleNbr);
   }
-}
 
-  constructor ( private newCustomerEntryService : NewCustomerEntryService,
-                private fb: FormBuilder,
-                private router: Router,
-                private route: ActivatedRoute,
-                private adminService: AdminService) {
-
-                this.vehicleDetails();
+  constructor(
+    private newCustomerEntryService: NewCustomerEntryService,
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private adminService: AdminService
+  ) {
+    this.vehicleDetails();
   }
 
   close() {
@@ -116,44 +130,23 @@ ngOnInit() {
 
   vehicleDetails = () => {
     this.vehicleDetailsForm = this.fb.group({
-      vehicleNumber: [
-        { value: '', disabled: false }, 
-        [Validators.required,  this.VehicleNumberValidator]
-      ],
-      vehicleType: [
-        { value: '', disabled: false },
-        [Validators.required]
-      ],
+      vehicleNumber: [{ value: '', disabled: false }, [Validators.required]],
+      vehicleType: [{ value: '', disabled: false }, [Validators.required]],
       customerName: [
         { value: '', disabled: false },
-        [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)] 
+        [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)],
       ],
       customerPhoneNbr: [
         { value: '', disabled: false },
-        [Validators.required, Validators.pattern(/^[0-9]{10}$/)] 
+        [Validators.required, Validators.pattern(/^[0-9]{10}$/)],
       ],
       customerType: ['Monthly'],
-      address: [
-        { value: '', disabled: false },
-        [Validators.required]
-      ],
-      amount: [
-        { value: '', disabled: false },
-        [Validators.required]
-      ]
+      address: [{ value: '', disabled: false }, [Validators.required]],
+      amount: [{ value: '', disabled: false }, [Validators.required]],
     });
-  }
+  };
 
-  VehicleNumberValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value) return null;
-  
-    const value = control.value.replace(/\s/g, '').toUpperCase();
-    const pattern = /^[A-Z]{2}[0-9]{6,7}$/;
-  
-    return pattern.test(value) ? null : { invalidVehicleNumber: true };
-  }
-
-  onMonthlyStatusChange(status: string | null) {  
+  onMonthlyStatusChange(status: string | null) {
     if (status === 'Active') {
       this.isStatusInActive = false;
       // this.isMonthlyActiveCustomer = true;
@@ -167,10 +160,12 @@ ngOnInit() {
   }
 
   private normalizeVehicleNumber(value: string): string {
-    return value
-      .toUpperCase()
-      // .replace(/\s+/g, '')
-      .trim();
+    return (
+      value
+        .toUpperCase()
+        // .replace(/\s+/g, '')
+        .trim()
+    );
   }
 
   restrictVehicleInput(event: KeyboardEvent) {
@@ -179,14 +174,15 @@ ngOnInit() {
 
     const rawValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const control = this.vehicleDetailsForm.get('vehicleNumber');
-  
-    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
+
+    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(key))
+      return;
 
     if (!/^[a-zA-Z0-9]$/.test(key)) {
       event.preventDefault();
       return;
     }
-  
+
     control?.setErrors(null);
 
     if (rawValue.length < 2 && !/^[a-zA-Z]$/.test(key)) {
@@ -194,7 +190,7 @@ ngOnInit() {
       control?.setErrors({ letterExpected: true });
       return;
     }
- 
+
     if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ digitExpected: true });
@@ -211,48 +207,64 @@ ngOnInit() {
       const hasTwoLetterSeries = /^[A-Z]{2}[0-9]{2}[A-Z]{2}/.test(rawValue);
       if (!hasTwoLetterSeries && rawValue.length === 9 && /^[0-9]$/.test(key)) {
         if (/^[0-9]$/.test(rawValue[5])) {
-           event.preventDefault();
+          event.preventDefault();
         }
       }
-  
+
       if (rawValue.length >= 10) {
         event.preventDefault();
       }
     }
   }
-  
+
   onVehicleNumberInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
     raw = raw.substring(0, 10);
-  
+
     let formatted = '';
     if (raw.length > 0) formatted += raw.substring(0, 2);
-    if (raw.length > 2) formatted += ' ' + raw.substring(2, 4); 
-    
+    if (raw.length > 2) formatted += ' ' + raw.substring(2, 4);
+
     if (raw.length > 4) {
       const remainder = raw.substring(4);
-      const digitMatch = remainder.match(/\d/); 
-      const firstDigitIndex = digitMatch ? remainder.indexOf(digitMatch[0]) : -1;
-  
+      const digitMatch = remainder.match(/\d/);
+      const firstDigitIndex = digitMatch
+        ? remainder.indexOf(digitMatch[0])
+        : -1;
+
       if (firstDigitIndex === -1) {
         formatted += ' ' + remainder.substring(0, 2);
       } else {
         const series = remainder.substring(0, firstDigitIndex);
-        const digits = remainder.substring(firstDigitIndex, firstDigitIndex + 4);
+        const digits = remainder.substring(
+          firstDigitIndex,
+          firstDigitIndex + 4
+        );
         formatted += ' ' + series + ' ' + digits;
       }
     }
-  
+
     input.value = formatted.trim();
-    this.vehicleDetailsForm.get('vehicleNumber')?.setValue(input.value, { emitEvent: false });
+    this.vehicleDetailsForm
+      .get('vehicleNumber')
+      ?.setValue(input.value, { emitEvent: false });
   }
 
   restrictDigits(event: KeyboardEvent) {
     const key = event.key;
-  
-    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) {
+
+    if (
+      [
+        'Backspace',
+        'Delete',
+        'Tab',
+        'ArrowLeft',
+        'ArrowRight',
+        'Enter',
+      ].includes(key)
+    ) {
       return;
     }
 
@@ -264,21 +276,20 @@ ngOnInit() {
     if (input.value.replace(/\D/g, '').length >= 10) {
       event.preventDefault();
     }
-
-    this.advance.setErrors({ pattern: true });
   }
-  
 
-  getCustomerDetails = async(vehicleNbr: string) => {
-
+  getCustomerDetails = async (vehicleNbr: string) => {
     const vehicleNumber = vehicleNbr;
 
-    if (!vehicleNumber ) {
+    if (!vehicleNumber) {
       return;
     }
-    const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber)
-    const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
- 
+    const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber);
+    const res = await this.newCustomerEntryService.getVehicleByNumber(
+      formatedVehicleNbr,
+      'vehicleNbr'
+    );
+
     this.currentCustomer = res?.vehicleNumber;
 
     if (res && res.monthlyStatus === 'Active') {
@@ -297,18 +308,16 @@ ngOnInit() {
         customerPhoneNbr: res.customerPhoneNbr,
         customerType: res.customerType,
         address: res.address,
-        amount: res.amount,  
+        amount: res.amount,
       });
       this.advance.setValue(res.advance);
       this.monthlyStatus.setValue(res.monthlyStatus);
       this.fromDateMonthly.setValue(res.fromDateMonthly),
-      this.note.setValue(res.note);
-
+        this.note.setValue(res.note);
     } else if (res && res.monthlyStatus === 'InActive') {
       this.isNewMonthlyCustomer = false;
       this.isMonthlyInActiveCustomer = true;
       this.isMonthlyActiveCustomer = false;
-
 
       this.isStatusInActive = true;
       this.vehicleDetailsForm.patchValue({
@@ -320,14 +329,14 @@ ngOnInit() {
         customerType: res.customerType,
         address: res.address,
 
-        amount: res.amount,  
+        amount: res.amount,
       });
       this.advance.setValue(res.advance);
       this.monthlyStatus.setValue(res.monthlyStatus);
       this.fromDateMonthly.setValue(res.fromDateMonthly);
       this.endDateMonthly.setValue(res.endDateMonthly);
       this.note.setValue(res.note);
-    } else if (res && res.dailyStatus === 'paid'){
+    } else if (res && res.dailyStatus === 'paid') {
       this.isNewMonthlyCustomer = false;
       this.isMonthlyActiveCustomer = false;
       this.isMonthlyInActiveCustomer = false;
@@ -359,10 +368,28 @@ ngOnInit() {
         customerName: '',
         customerPhoneNbr: '',
         address: '',
-        amount: ''
+        amount: '',
       });
     }
-  }    
+
+    this.vehicleDetailsForm.markAsUntouched();
+    this.markStandalonesAsUntouched();
+    this.vehicleDetailsForm.updateValueAndValidity();
+  };
+
+  private markStandalonesAsUntouched() {
+    [
+      this.advance,
+      this.monthlyStatus,
+      this.fromDateMonthly,
+      this.endDateMonthly,
+      this.note,
+    ].forEach((control) => {
+      control.markAsUntouched();
+      control.markAsPristine();
+      control.updateValueAndValidity();
+    });
+  }
 
   private resetStandaloneControls() {
     this.advance.reset();
@@ -372,125 +399,163 @@ ngOnInit() {
     this.note.reset();
   }
 
-  private buildHistory(Entry: string | null, Exit: string | null, options?: { startDate?: any; endDate?: any;}) {
-
-    const history: any = {
-      Entry,
-      Exit,
-    };
+  private buildHistory(fromDate: string, endDate: string): any {
+    if (!fromDate || !endDate) return null;
   
-    return history;
+    return {
+      vehicleNumber: this.currentCustomer, // The ID link
+      startDate: fromDate,
+      endDate: endDate,
+      amountPaid: this.vehicleDetailsForm.get('amount')?.value,
+      advancePaid: this.advance.value,
+      note: this.note.value,
+      completedAt: new Date().toISOString()
+    };
   }
 
   private normalizePayload(payload: any) {
     if (payload.vehicleNumber) {
-      payload.vehicleNumber = this.normalizeVehicleNumber(payload.vehicleNumber);
+      payload.vehicleNumber = this.normalizeVehicleNumber(
+        payload.vehicleNumber
+      );
     }
     return payload;
   }
 
-isFormValid(): boolean {
-  // 1. Mark everything as touched so error messages appear in the UI
-  this.vehicleDetailsForm.markAllAsTouched();
-  this.advance.markAsTouched();
-  this.customerType.markAsTouched();
-  this.monthlyStatus.markAsTouched();
-  this.fromDateMonthly.markAsTouched();
-  this.note.markAsTouched();
-  
-  // Conditionally check endDate if status is InActive
-  if (this.monthlyStatus.value === 'InActive') {
-    this.endDateMonthly.markAsTouched();
-  }
+  isFormValid(): boolean {
 
-  // 2. Aggregate validity
-  const isMainFormValid = this.vehicleDetailsForm.valid;
-  const areStandaloneValid = 
-    this.advance.valid && 
-    this.customerType.valid && 
-    this.monthlyStatus.valid && 
-    this.fromDateMonthly.valid && 
-    this.note.valid &&
-    (this.monthlyStatus.value === 'InActive' ? this.endDateMonthly.valid : true);
+    const isMainValid = this.vehicleDetailsForm.valid;
 
-  return isMainFormValid && areStandaloneValid;
-}
-  
-  
-submitForm = async () => {
-  // 1. Check aggregate validity
-  if (!this.isFormValid()) {
-    this.showAlert = true;
-    this.type = 'error'; // Ensure your alert turns red
-    this.message = 'Please fill all required fields correctly.';
-    return;
-  }
+    const isEndDateRequired = this.monthlyStatus.value === 'InActive';
 
-  try {
-    const formValue = this.vehicleDetailsForm.value;
-    
-    // Helper to get common standalone values
-    const standaloneValues = {
-      advance: this.advance.value,
-      monthlyStatus: this.monthlyStatus.value,
-      fromDateMonthly: this.fromDateMonthly.value,
-      note: this.note.value
-    };
+    const areStandalonesValid =
+      this.advance.valid &&
+      this.monthlyStatus.valid &&
+      this.fromDateMonthly.valid &&
+      this.note.valid &&
+      (isEndDateRequired ? this.endDateMonthly.valid : true);
 
-    if (this.isNewMonthlyCustomer) {
-      let payload = this.normalizePayload({ ...formValue });
-      const customerDetails = { ...payload, ...standaloneValues };
+    if (!isMainValid || !areStandalonesValid) {
 
-      await this.newCustomerEntryService.addNewCustomerEntry(customerDetails);
-      this.message = 'Customer Added Successfully...';
-      this.type = 'success';
-    } 
-    else if (this.isMonthlyInActiveCustomer) {
-      const updatePayload = {
-        monthlyStatus: 'Active',
-        fromDateMonthly: this.fromDateMonthly.value,
-        endDateMonthly: null,
-        advance: this.advance.value
-      };
+      this.vehicleDetailsForm.markAllAsTouched();
+      this.advance.markAsTouched();
+      this.monthlyStatus.markAsTouched();
+      this.fromDateMonthly.markAsTouched();
+      this.note.markAsTouched();
+      if (isEndDateRequired) this.endDateMonthly.markAsTouched();
 
-      await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, updatePayload);
-      this.message = 'Customer Updated Successfully...';
-      this.type = 'success';
-    } 
-    else if (this.isMonthlyActiveCustomer) {
-      const updatePayload = {
-        monthlyStatus: 'InActive',
-        endDateMonthly: this.endDateMonthly.value,
-        note: this.note.value
-      };
-
-      const historyPayload = this.buildHistory(this.fromDateMonthly.value, this.endDateMonthly.value);
-      await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, updatePayload, historyPayload);
-      this.message = 'Customer Updated Successfully...';
-      this.type = 'success';
-    } 
-    else if (this.dailyToMonthlyCustomer) {
-      let payload = this.normalizePayload({ ...formValue });
-      const customerDetails = { ...payload, ...standaloneValues, endDateMonthly: null };
-
-      await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, customerDetails);
-      this.message = 'Customer Converted to Monthly Successfully...';
-      this.type = 'success';
+      this.logValidationErrors();
+      return false;
     }
 
-    // Reset Form after successful operation
+    return true;
+  }
+
+  private logValidationErrors() {
+    Object.keys(this.vehicleDetailsForm.controls).forEach((key) => {
+      const controlErrors = this.vehicleDetailsForm.get(key)?.errors;
+      if (controlErrors) console.error('FormGroup Error:', key, controlErrors);
+    });
+    if (this.note.errors) console.error('Note Error:', this.note.errors);
+  }
+
+  submitForm = async () => {
+    if (!this.isFormValid()) {
+      this.showAlert = true;
+      this.type = 'error';
+      this.message = 'Please fill all required fields correctly.';
+      return;
+    }
+  
+    try {
+      const formValue = this.vehicleDetailsForm.getRawValue();
+      const normalizedData = this.normalizePayload({ ...formValue });
+  
+      const fullPayload = {
+        ...normalizedData,
+        advance: this.advance.value,
+        monthlyStatus: this.monthlyStatus.value,
+        fromDateMonthly: this.fromDateMonthly.value,
+        note: this.note.value,
+        endDateMonthly: this.monthlyStatus.value === 'Active' ? null : this.endDateMonthly.value,
+      };
+  
+      if (this.isNewMonthlyCustomer) {
+        await this.newCustomerEntryService.addNewCustomerEntry(fullPayload);
+        this.message = 'New Customer Added Successfully!';
+      } 
+      else if (this.dailyToMonthlyCustomer) {
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, fullPayload);
+        this.message = 'Daily Customer converted to Monthly!';
+      } 
+      else {
+        let updatePayload: any;
+        let historyPayload: any = null;
+  
+        if (this.isMonthlyInActiveCustomer && this.monthlyStatus.value === 'Active') {
+          updatePayload = {
+            ...normalizedData,
+            monthlyStatus: 'Active',
+            fromDateMonthly: this.fromDateMonthly.value,
+            endDateMonthly: null,
+            advance: this.advance.value,
+            note: this.note.value,
+          };
+          this.message = 'Customer Reactivated Successfully!';
+        }
+        else if (this.isMonthlyActiveCustomer && this.monthlyStatus.value === 'InActive') {
+          updatePayload = {
+            ...normalizedData,
+            monthlyStatus: 'InActive',
+            endDateMonthly: this.endDateMonthly.value,
+            note: this.note.value,
+          };
+
+          historyPayload = this.buildHistory(
+            this.fromDateMonthly.value ?? '',
+            this.endDateMonthly.value ?? ''
+          );
+          this.message = 'Customer session saved to history and deactivated.';
+        } 
+
+        else {
+          updatePayload = {
+            ...normalizedData,
+            advance: this.advance.value,
+            fromDateMonthly: this.fromDateMonthly.value,
+            note: this.note.value,
+            monthlyStatus: this.monthlyStatus.value,
+          };
+          this.message = 'Customer Details Updated Successfully!';
+        }
+  
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+          this.currentCustomer,
+          updatePayload,
+          historyPayload
+        );
+      }
+  
+      this.type = 'success';
+      this.showAlert = true;
+      this.onSuccessCleanup();
+  
+    } catch (error) {
+      this.type = 'error';
+      this.showAlert = true;
+      this.message = 'An error occurred while saving. Please try again.';
+      console.error('Submission Error:', error);
+    }
+  };
+
+  private onSuccessCleanup() {
     this.vehicleDetailsForm.reset({ customerType: 'Monthly' });
     this.resetStandaloneControls();
-    this.showAlert = true;
 
-  } catch (error) {
-    this.showAlert = true;
-    this.type = 'error';
-    this.message = 'Something went wrong. Please try again.';
-    console.error(error);
+    setTimeout(() => {
+      this.showAlert = false;
+    }, 3000);
   }
-};
-  
 
   cancelEntry() {
     this.vehicleDetailsForm.reset();
@@ -499,14 +564,12 @@ submitForm = async () => {
 
   closeForm() {
     this.vehicleDetailsForm.reset();
-    this.router.navigate(['/dashBoard'])
+    this.router.navigate(['/dashBoard']);
   }
 
-
-ngOnDestroy() {
-  this.destroy$.next();
-  this.destroy$.complete();
-}
-
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 }
 
