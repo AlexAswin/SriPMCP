@@ -554,7 +554,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
     setTimeout(() => {
       this.showAlert = false;
-    }, 3000);
+    }, 5000);
   }
 
   cancelEntry() {

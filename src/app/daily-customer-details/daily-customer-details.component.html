@@ -1,140 +1,158 @@
 <div class="parent-container">
-    <button (click)="closeForm()">
-        <mat-icon>arrow_back</mat-icon>
-    </button>
-    
-    <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container" >
-        <div>
-            <h1>Daily Customer Details</h1>
-        </div>
-        <mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
-            <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
+    <div class="sidebar">
+        <button class="back-btn" (click)="closeForm()">
+            <mat-icon>arrow_back</mat-icon>
+        </button>
+    </div>
+
+    <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
+        <h1>Daily Customer Details</h1>
+
+        <div class="alert-card" *ngIf="showAlert" [ngClass]="type">
+            <mat-icon>{{ type === 'success' ? 'check_circle' : 'error' }}</mat-icon>
             <span class="message">{{ message }}</span>
-        </mat-card>
-    
+        </div>
+
         <div *ngIf="!isMonthlyActiveCustomer">
-        <!-- VEHICLE DETAILS -->
-        <div class="section vehicleDetails">
-            <h2>Vehicle Details</h2>
-    
-            <div class="vehicle-info">
+            
+            <div class="section-title">Vehicle Details</div>
+            <div class="row">
                 <div class="form-group">
                     <label>Vehicle Number</label>
-                    <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" />
-                </div>
-    
-                <div class="form-group">
-                    <label>Vehicle Type</label>
-                    <mat-select placeholder="select Vehicle" formControlName="vehicleType">
-                        <mat-option *ngFor="let types of vehicleTypes$ | async" [value]="types.vehicleType">{{types.vehicleType}}</mat-option>
-                    </mat-select>
-                </div>
-            </div>
-        </div>
-    
-        <!-- CUSTOMER DETAILS -->
-        <div class="section customerDetails">
-            <h2>Customer Details</h2>
-    
-            <div class="customer-info">
-                <div class="form-group">
-                    <label>Customer Name</label>
-                    <input type="text" placeholder="Enter customer name" formControlName="customerName" />
-                </div>
-    
-                <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="text" placeholder="Phone Number" formControlName="customerPhoneNbr" />
-                </div>
-    
-                <div class="form-group full-width">
-                    <label>Address</label>
-                    <textarea rows="3" formControlName="address"></textarea>
-                </div>
-            </div>
-        </div>
-    
-        <!-- BILLING -->
-        <div class="section billing">
-            <div class="billing-left">
-                <h2>Billing Details</h2>
-    
-                <div class="billing-details">
-                    <div class="form-group">
-                        <label>Amount</label>
-                        <input type="text" formControlName="amount" readonly />
-                    </div>
-    
-                    <div class="form-group">
-                        <label>Bill Number</label>
-                        <input type="text" [formControl]="billNbr" />
-                    </div>
-    
-    
-    
-                    <div class="form-group">
-                        <label>Status</label>
-                        <div class="radio-group">
-                            <label *ngFor="let status of dailystatus">
-                                <input type="radio" [value]="status" [formControl]="dailyStatus" (change)="onDailylyStatusChange(status)" />
-                                {{ status }}
-                            </label>
+                    <div class="input-wrapper">
+                        <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" (keydown)="restrictVehicleInput($event)"
+                        (input)="onVehicleNumberInput($event)" />
+                        <div class="error-msg" *ngIf="vehicleDetailsForm.get('vehicleNumber')?.invalid && vehicleDetailsForm.get('vehicleNumber')?.touched">
+                            <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['required']">Required</small>
+                            <small *ngIf="vehicleDetailsForm.get('vehicleNumber')?.errors?.['pattern']">Invalid Format</small>
                         </div>
                     </div>
                 </div>
-    
-                <div class="billing-details">
-                    <div class="form-group">
-                        <label>From Date</label>
+
+                <div class="form-group">
+                    <label>Vehicle Type</label>
+                    <div class="input-wrapper">
+                        <mat-select placeholder="select Vehicle" formControlName="vehicleType">
+                            <mat-option *ngFor="let types of vehicleTypes$ | async" [value]="types.vehicleType">
+                                {{types.vehicleType}}
+                            </mat-option>
+                        </mat-select>
+                        <div class="error-msg" *ngIf="vehicleDetailsForm.get('vehicleType')?.invalid && vehicleDetailsForm.get('vehicleType')?.touched">
+                            <small>Selection required</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Customer Details</div>
+            <div class="row">
+                <div class="form-group">
+                    <label>Customer Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" placeholder="Enter customer name" formControlName="customerName" />
+                        <div class="error-msg" *ngIf="vehicleDetailsForm.get('customerName')?.invalid && vehicleDetailsForm.get('customerName')?.touched">
+                            <small>Name is required</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <div class="input-wrapper">
+                        <input type="text" placeholder="Phone Number" formControlName="customerPhoneNbr" />
+                        <div class="error-msg" *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.invalid && vehicleDetailsForm.get('customerPhoneNbr')?.touched">
+                            <small>Invalid phone number</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group full-width">
+                    <label>Address</label>
+                    <div class="input-wrapper">
+                        <textarea rows="1" formControlName="address"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="section-title">Billing Details</div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Status</label>
+                    <div class="radio-group">
+                        <label *ngFor="let status of dailystatus">
+                            <input type="radio" [value]="status" [formControl]="dailyStatus" (change)="onDailylyStatusChange(status)" />
+                            {{ status }}
+                        </label>
+                        <div class="error-msg" *ngIf="dailyStatus.invalid && dailyStatus.touched">
+                            <small>Please select a status</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Base Amount</label>
+                    <div class="input-wrapper">
+                        <input type="text" formControlName="amount" readonly class="readonly-input" />
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="form-group">
+                    <label>Entry Date</label>
+                    <div class="input-wrapper">
                         <input type="date" [formControl]="fromDateDaily" (change)="onEntryDateChange($event)" />
+                        <div class="error-msg" *ngIf="fromDateDaily.invalid && fromDateDaily.touched">
+                            <small>Entry date is required</small>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Entry Time</label>
-                        <input type="text" [formControl]="entryTime" />
-                    </div>
-                    <div class="form-group" *ngIf="showPaidDetails">
-                        <label>Bill Amount</label>
-                        <input type="text" [formControl]="billAmount" readonly />
-                    </div>
-    
                 </div>
-                <div class="billing-details">
-                    <div class="form-group" *ngIf="showPaidDetails">
-                        <label>End Date</label>
+                <div class="form-group">
+                    <label>Entry Time</label>
+                    <div class="input-wrapper">
+                        <input type="text" [formControl]="entryTime" readonly class="readonly-input" />
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row" *ngIf="showPaidDetails || alreadyPaid">
+                <div class="form-group">
+                    <label>Exit Date</label>
+                    <div class="input-wrapper">
                         <input type="date" [formControl]="endDateDaily" (change)="onExitDateChange($event)" />
-                    </div>
-                    <div class="form-group" *ngIf="showPaidDetails">
-                        <label>Exit Time</label>
-                        <input type="text" [formControl]="exitTime" />
-                    </div>
-                    <div class="form-group" *ngIf="showPaidDetails || alreadyPaid">
-                        <label>Settled Amount</label>
-                        <input type="text" placeholder="Cost" [formControl]="actualCost" />
+                        <div class="error-msg" *ngIf="endDateDaily.invalid && endDateDaily.touched">
+                            <small>Exit date is required</small>
+                        </div>
                     </div>
                 </div>
-                <div class="billing-details">
+                <div class="form-group">
+                    <label>Settled Cost</label>
+                    <div class="input-wrapper">
+                        <input type="text" placeholder="0.00" [formControl]="actualCost" />
+                        
+                        <div class="error-msg" *ngIf="actualCost.invalid && actualCost.touched">
+                            <small *ngIf="actualCost.errors?.['required']">Amount is required</small>
+                            <small *ngIf="actualCost.errors?.['pattern']">Numbers only</small>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="note-textArea">
-            <div class="billing-right">
-                <h3>Note</h3>
-    
-                <textarea rows="4" placeholder="Leave a comment" [formControl]="note"></textarea>
+
+            <div class="row">
+                <div class="form-group full-width">
+                    <label>Note</label>
+                    <div class="input-wrapper">
+                        <textarea rows="1" placeholder="Leave a comment" [formControl]="note"></textarea>
+                        <div class="error-msg" *ngIf="note.invalid && note.touched">
+                            <small>Note is required</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">Save</button>
+                <button type="button" class="btn-cancel" (click)="cancelEntry()">Cancel</button>
             </div>
         </div>
-    
-        <div class="form-section form-actions">
-            <app-button label="Save" variant="primary" (clicked)="submitForm()">
-            </app-button>
-    
-            <app-button label="Cancel" variant="secondary" (clicked)="cancelEntry()">
-            </app-button>
-        </div>
-        </div>
-    
-    
-    
     </form>
 </div>
-

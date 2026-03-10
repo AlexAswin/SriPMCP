@@ -1,258 +1,198 @@
-@import url('https://fonts.googleapis.com/css?family=Montserrat');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
-body {
-    font-family: 'Montserrat';
-}
-
-h1 {
-    width: 100%;
-    text-align: center;
-    font-family: 'Montserrat';
-}
+// Variables
+$font-main: 'Roboto', sans-serif;
+$border-color: #e0e0e0;
+$primary-black: #000;
+$error-red: #d32f2f;
+$label-width: 150px;
 
 .parent-container {
-  display: flex;
+    display: flex;
+    background-color: #fff;
+    min-height: 100vh;
+    font-family: $font-main;
 
-  button {
-    border: none;
-    min-width: 100px;
-    min-height: calc(100vh - 120px);
-  
-    mat-icon {
-      background-color: none;
-    }
-  }
-
-  .form-container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0px 15px;
-    font-family: 'Montserrat';
-    margin-top: 50px;
-
-  
-    /* Sections */
-    .section {
-      background: #fff;
-      border-radius: 6px;
-      padding: 20px 10px;
-  
-      h2,
-      h3 {
-        margin-bottom: 4px;
-        font-size: 16px;
-        font-weight: 600;
-      }
-    }
-  
-    .alert-card {
-      gap: 12px;
-      max-width: 1100px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px 18px;
-      margin: 12px 0;
-    
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 500;
-    
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-      animation: slideFadeIn 0.3s ease-in-out;
-    
-      mat-icon {
-        font-size: 24px;
-      }
-    
-      // .message {
-      //   flex: 1;
-      // }
-    
-      &.success {
-        background-color: #a7f4ae;
-        color: #2e7d32;
-        border-left: 5px solid #2e7d32;
-    
-        mat-icon {
-          color: #2e7d32;
-        }
-      }
-    
-      &.error {
-        background-color: #fdecea;
-        color: #c62828;
-        border-left: 5px solid #c62828;
-    
-        mat-icon {
-          color: #c62828;
-        }
-      }
-    
-      &.warning {
-        background-color: #fff8e1;
-        color: #ef6c00;
-        border-left: 5px solid #ef6c00;
-    
-        mat-icon {
-          color: #ef6c00;
-        }
-      }
-    }
-  
-    /* Flex rows */
-    .vehicle-info,
-    .customer-info {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-  
-      .form-group {
-        flex: 1 1 48%;
-        max-height: 65px;
-      }
-    }
-  
-    /* Billing layout */
-    .billing {
-      display: flex;
-      gap: 20px;
-  
-      .billing-left {
-        flex: 2;
+    // Sidebar with Back Arrow
+    .sidebar {
+        width: 80px;
         display: flex;
-        flex-direction: column;
-        gap: 16px;
-  
-        .billing-details {
-          display: flex;
-          justify-content: space-between;
+        justify-content: center;
+        padding-top: 200px;
+        
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #333;
+            transition: transform 0.2s;
+            &:hover { transform: translateX(-3px); }
         }
-      }
     }
-  
-  
-      
-  .note-textArea {
-    min-width: 100%;
-    .billing-right {
-      display: flex;
-      h3 {
-        min-width: 130px;
-      }
-  
-      textarea {
-        min-width: 100%;
-        max-height: 40px;
-        min-width: 80%;
-      
-      }
-    }
-  }
-  
-  
-    /* Form group — ROW layout */
-    .form-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-  
-    /* Labels */
-    label {
-      min-width: 110px;
-      font-size: 13px;
-      font-weight: bolder;
-      color: #444;
-      white-space: nowrap;
-    }
-    mat-select {
-      border-bottom: 1px solid  grey;
-    }
-  
-    /* Inputs & textarea */
-    input,
-    textarea {
-      flex: 1;
-      height: 25px;
-      padding: 6px 10px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      outline: none;
-  
-      border: none;
-      border-bottom: 1px solid grey;
-      border-radius: 0px;
-  
-      &:focus {
-        border-color: #3f51b5;
-      }
-  
-      &[readonly] {
-        background: #f5f5f5;
-        cursor: not-allowed;
-      }
-    }
-  
-    textarea {
-      height: auto;
-      // min-height: 72px;
-      resize: vertical;
-      max-height: 40px;
-    }
-  
-    /* Radio buttons */
-    .radio-group {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-  
-      label {
-        min-width: auto;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 14px;
-      }
-    }
-  
-    /* Actions */
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 16px;
-    }
-  
-    /* Responsive */
-    @media (max-width: 768px) {
-      .vehicle-info,
-      .customer-info {
+
+    .form-container {
+        flex: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 20px;
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 60px;
+            color: #333;
+        }
+
+        // Section Headers
+        .section-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin: 45px 0 25px 0;
+            color: #000;
+        }
+
+        // Rows and Groups
+        .row {
+            display: flex;
+            gap: 80px;
+            margin-bottom: 35px; // Extra space for absolute error messages
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
         .form-group {
-          flex: 1 1 100%;
+            display: flex;
+            align-items: flex-end;
+            flex: 1;
+            min-width: 350px;
+            position: relative;
+
+            &.full-width { flex: 1 1 100%; }
+
+            label {
+                flex: 0 0 $label-width;
+                font-size: 14px;
+                font-weight: 500;
+                color: #444;
+                padding-bottom: 8px;
+            }
+
+            .input-wrapper {
+                flex: 1;
+                position: relative;
+
+                input, textarea, mat-select {
+                    width: 100%;
+                    border: none;
+                    border-bottom: 1px solid $border-color;
+                    padding: 8px 0;
+                    font-family: $font-main;
+                    font-size: 14px;
+                    outline: none;
+                    background: transparent;
+
+                    &::placeholder { color: #bbb; }
+                    &:focus { border-bottom: 1px solid $primary-black; }
+                    
+                    // Style for non-editable fields
+                    &.readonly-input {
+                        color: #777;
+                        border-bottom: 1px solid transparent;
+                        background: #f9f9f9;
+                        padding: 8px 10px;
+                    }
+                }
+
+                // Error Message Positioning
+                .error-msg {
+                    position: absolute;
+                    bottom: -18px;
+                    left: 0;
+                    
+                    small {
+                        color: $error-red;
+                        font-size: 11px;
+                        font-weight: 400;
+                        white-space: nowrap;
+                    }
+                }
+            }
+
+            // Status Radio Buttons
+            .radio-group {
+              display: flex;
+              gap: 25px;
+              align-items: center;
+              position: relative; // This is crucial for the error message below
+      
+              .error-msg {
+                  position: absolute;
+                  bottom: -22px; // Slightly lower for radios to clear the clickable area
+                  left: 0;
+                  
+                  small {
+                      color: $error-red;
+                      font-size: 11px;
+                  }
+              }
+          }
         }
-      }
-  
-      .billing {
-        flex-direction: column;
-      }
-  
-      .form-group {
-        flex-direction: column;
-        align-items: stretch;
-  
-        label {
-          min-width: auto;
+
+        // Action Buttons
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 80px;
+            padding-bottom: 60px;
+
+            button {
+                height: 42px;
+                padding: 0 50px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                border-radius: 2px;
+                font-family: $font-main;
+                transition: all 0.2s ease;
+            }
+
+            .btn-save {
+                background: $primary-black;
+                color: #fff;
+                border: 1px solid $primary-black;
+                &:hover { background: #333; }
+            }
+
+            .btn-cancel {
+                background: #fff;
+                color: $primary-black;
+                border: 1px solid #ccc;
+                &:hover { background: #f5f5f5; }
+            }
         }
-      }
-  
-      .form-actions {
-        flex-direction: column;
-      }
+
+        // Alerts
+        .alert-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            font-size: 14px;
+
+            &.success { 
+                background-color: #e8f5e9; 
+                color: #2e7d32; 
+                border: 1px solid #a5d6a7; 
+            }
+            &.error { 
+                background-color: #ffebee; 
+                color: #c62828; 
+                border: 1px solid #ef9a9a; 
+            }
+        }
     }
-  }
 }
-
-
-
