@@ -354,7 +354,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   };
 
   private normalizeVehicleNumber(value: string): string {
-    return value.toUpperCase().replace(/\s+/g, '').trim();
+    return value.toUpperCase().trim();
   }
   private normalizePayload(payload: any) {
     if (payload.vehicleNumber) {
