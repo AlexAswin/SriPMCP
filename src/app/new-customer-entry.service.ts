@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { addDoc, collectionData, doc, setDoc, updateDoc } from '@angular/fire/firestore';
+import { addDoc, collectionData, doc, setDoc, updateDoc, writeBatch } from '@angular/fire/firestore';
 import { Firestore, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { TransactionService } from './transaction.service';
@@ -17,12 +17,40 @@ export class NewCustomerEntryService {
   constructor(private firestore: Firestore,
               private transactionService: TransactionService) {}
 
-  async addNewCustomerEntry(customerDetails: any) {  
-    const docRef = doc(this.firestore, 'CustomerEntry', customerDetails.vehicleNumber);
-  
-    await setDoc(docRef, customerDetails);
-    await this.transactionService.createNewMonthlyCustomerTransaction(customerDetails);
-  }
+              async addNewCustomerEntry(customerDetails: any) {
+                const batch = writeBatch(this.firestore);
+              
+                const customerRef = doc(this.firestore, 'CustomerEntry', customerDetails.vehicleNumber);
+              
+                const dateParts = customerDetails.fromDateMonthly.split('-');
+                const monthId = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
+                
+                const transactionRef = doc(
+                  this.firestore, 
+                  'CustomerEntry', 
+                  customerDetails.vehicleNumber, 
+                  'Transactions', 
+                  monthId
+                );
+              
+                const transactionData = {
+                  advance: Number(customerDetails.advance) || 0,
+                  monthlyCost: Number(customerDetails.amount) || 0,
+                  currentPending: Number(customerDetails.amount) || 0,
+                  isTransactionMade: false,
+                };
+              
+                batch.set(customerRef, customerDetails);
+                batch.set(transactionRef, transactionData);
+              
+                try {
+                  await batch.commit();
+                  console.log('Customer and Transaction created atomically.');
+                } catch (error) {
+                  console.error('Batch failed! No data was saved.', error);
+                  throw error; 
+                }
+              }
 
   async getVehicleByNumber(vehicleNumber: string, identifier: string) {
     if (!vehicleNumber) return null;

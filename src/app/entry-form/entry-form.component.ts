@@ -77,7 +77,7 @@ export class EntryFormComponent {
   private formateVehicleNumber(value: string): string {
     return value
       .toUpperCase()
-      .replace(/\s+/g, '')
+      // .replace(/\s+/g, '')
       .trim();
   }
 

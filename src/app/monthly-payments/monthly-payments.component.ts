@@ -87,7 +87,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   private formateVehicleNumber(value: string): string {
     return value
       .toUpperCase()
-      .replace(/\s+/g, '')
+      // .replace(/\s+/g, '')
       .trim();
   }
 
