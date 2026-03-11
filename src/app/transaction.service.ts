@@ -8,47 +8,6 @@ import { Observable, combineLatest, from, map, of, switchMap, tap } from 'rxjs';
 export class TransactionService {
   constructor(private firestore: Firestore) {}
 
-  async createNewMonthlyCustomerTransaction(customerDetails: any) {
-    try {
-      const customerQuery = query(
-        collection(this.firestore, 'CustomerEntry'),
-        where('vehicleNumber', '==', customerDetails.vehicleNumber)
-      );
-
-      const snapshot = await getDocs(customerQuery);
-
-      if (snapshot.empty) {
-        console.error('Customer not found');
-        return;
-      }
-
-      const customerDoc = snapshot.docs[0];
-      const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
-
-      const [year, month] = customerDetails.fromDateMonthly
-        .split('-')
-        .map(Number);
-      // const currentMonth = `2026-02`;
-      const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
-      const transactionRef = doc(customerRef, 'Transactions', currentMonth);
-      const monthlyTransactionDetails = await getDoc(transactionRef);
-      const transactionData = {
-        advance: customerDetails.advance,
-        monthlyCost: customerDetails.amount,
-        currentPending: customerDetails.amount,
-        isTransactionMade: false,
-      };
-
-      if (!monthlyTransactionDetails.exists()) {
-        await setDoc(transactionRef, {
-          ...transactionData,
-        });
-      }
-    } catch (error) {
-      console.error('Error saving transaction', error);
-    }
-  }
-
   customerMonthlyTransactionDetails = async (
     customer: string | null,
     transactionData: any
