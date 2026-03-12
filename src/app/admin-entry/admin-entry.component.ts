@@ -28,7 +28,7 @@ import { MatChipsModule } from '@angular/material/chips';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminEntryComponent implements OnInit, OnDestroy {
-  // 1. Using Signals for OnPush compatibility
+
   vehicleTypes = signal<VehicleType[]>([]);
   editVehicleDetails = signal<boolean>(false);
   
@@ -52,7 +52,7 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     this.loadInitialData();
   }
 
-  // Grouped form initialization
+
   private initAllForms() {
     const priceValidators = [Validators.required, Validators.min(0)];
   
@@ -82,18 +82,16 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   }
 
   private loadInitialData() {
-    // 2. Removed take(1) so the list updates in real-time when a vehicle is added
+
     this.adminService.getVehicleTypes()
       .pipe(takeUntil(this.destroy$))
       .subscribe(data => {
-        this.vehicleTypes.set(data); // Updating the signal triggers UI refresh
+        this.vehicleTypes.set(data); 
       });
 
     this.expenses$ = this.adminService.getExpenses();
   }
 
-  // ACTIONS
- // Sets the Edit Pane state
 openEditMode(vehicle: any) {
   this.editVehicleDetails.set(true);
   this.vehicleUpdateForm.patchValue({
@@ -114,7 +112,6 @@ async saveVehicle() {
   try {
     await this.adminService.addVehicle(this.vehicleForm.value);
     this.vehicleForm.reset();
-    // No need to call getVehicle() if using a real-time stream in ngOnInit
   } catch (err) {
     console.error("Error adding vehicle:", err);
   }
@@ -135,31 +132,128 @@ async updateVehicleDetails() {
 }
 
 restrictVehicleInput(event: KeyboardEvent) {
+  const input = event.target as HTMLInputElement;
+  const key = event.key;
+
+  const rawValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const control = this.deleteCustomerForm.get('vehicleNumber');
+
+  if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key))
+    return;
+
+  if (!/^[a-zA-Z0-9]$/.test(key)) {
+    event.preventDefault();
+    return;
+  }
+
+  control?.setErrors(null);
+
+  if (rawValue.length < 2 && !/^[A-Za-z]$/.test(key)) {
+    event.preventDefault();
+    control?.setErrors({ letterExpected: true });
+    return;
+  }
+
+  if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
+    event.preventDefault();
+    control?.setErrors({ digitExpected: true });
+    return;
+  }
+
+  if (rawValue.length === 4 && !/^[A-Za-z]$/.test(key)) {
+    event.preventDefault();
+    control?.setErrors({ letterExpected: true });
+    return;
+  }
+
+  if (rawValue.length === 5) {
+    if (!/^[a-zA-Z0-9]$/.test(key)) {
+      event.preventDefault();
+      return;
+    }
+  }
+
+  if (rawValue.length >= 6 && rawValue.length < 10) {
+    if (!/^[0-9]$/.test(key)) {
+      event.preventDefault();
+      control?.setErrors({ digitExpected: true });
+      return;
+    }
+  }
+
+  if (rawValue.length >= 10) {
+    event.preventDefault();
+  }
+}
+
+onVehicleNumberInput(event: Event) {
+  const input = event.target as HTMLInputElement;
+
+  let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  raw = raw.substring(0, 10);
+
+  if(raw === '') {
+    // this.cancelEntry();
+    return;
+  }
+
+  let formatted = '';
+
+  if (raw.length > 0) formatted += raw.substring(0, 2);
+  if (raw.length > 2) formatted += ' ' + raw.substring(2, 4);
+
+  if (raw.length > 4) {
+    const remainder = raw.substring(4);
+
+    const digitMatch = remainder.match(/\d/);
+    const firstDigitIndex = digitMatch
+      ? remainder.indexOf(digitMatch[0])
+      : -1;
+
+    if (firstDigitIndex === -1) {
+      formatted += ' ' + remainder.substring(0, 2);
+    } else {
+      const series = remainder.substring(0, firstDigitIndex);
+
+      const digits = remainder
+        .substring(firstDigitIndex)
+        .replace(/[^0-9]/g, '')
+        .substring(0, 4);
+
+      formatted += ' ' + series + ' ' + digits;
+    }
+  }
+
+  input.value = formatted.trim();
+
+  this.deleteCustomerForm
+    .get('vehicleNumber')
+    ?.setValue(input.value, { emitEvent: false });
+}
+
+restrictNegativeVehicleInput(event: KeyboardEvent) {
   if (['-', 'e', '+'].includes(event.key)) {
     event.preventDefault();
   }
 }
 
+
 async deleteVehicle() {
-  // 1. Get the type from the form (using getRawValue because it might be disabled)
+
   const vehicleType = this.vehicleUpdateForm.getRawValue().vehicleType;
   
   if (!vehicleType) return;
 
-  // 2. Security Confirmation
+
   const confirmDelete = confirm(`Are you sure you want to delete "${vehicleType}"? This will remove it from the selection list.`);
   
   if (confirmDelete) {
     try {
-      // 3. Call Service
+
       await this.adminService.deleteVehicle(vehicleType);
       
-      // 4. Cleanup UI State
-      this.cancelEdit(); // Closes the edit pane and resets the form
-      
-      // 5. Refresh local list (Optional if using a real-time Signal/Observable)
-      // this.getVehicle(); 
-      
+      this.cancelEdit(); 
+         
       console.log(`${vehicleType} deleted successfully`);
     } catch (err) {
       console.error('Error deleting vehicle:', err);
@@ -169,29 +263,29 @@ async deleteVehicle() {
 }
 
 async savePayment() {
-  // 1. Validation Guard
+
   if (this.paymentForm.invalid) {
     this.paymentForm.markAllAsTouched();
     return;
   }
 
   try {
-    // 2. Extract value
+
     const payload = this.paymentForm.value;
 
-    // 3. Call Service
+
     await this.adminService.addPaymentMethod(payload);
 
-    // 4. Success UI Update
+
     this.paymentForm.reset();
     this.paymentForm.markAsPristine();
     this.paymentForm.markAsUntouched();
     
     console.log('Payment method added successfully');
-    // Optional: Trigger a snackbar/toast here
+
   } catch (error) {
     console.error('Error saving payment method:', error);
-    // Optional: Show error alert to user
+
   }
 }
 
