@@ -175,7 +175,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     const rawValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const control = this.vehicleDetailsForm.get('vehicleNumber');
   
-    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(key))
+    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key))
       return;
   
     if (!/^[a-zA-Z0-9]$/.test(key)) {
@@ -202,18 +202,20 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       control?.setErrors({ letterExpected: true });
       return;
     }
-
+  
     if (rawValue.length === 5) {
-      if (!/^[A-Za-z0-9]$/.test(key)) {
+      if (!/^[a-zA-Z0-9]$/.test(key)) {
         event.preventDefault();
         return;
       }
     }
-
-    if (rawValue.length >= 6 && !/^[0-9]$/.test(key)) {
-      event.preventDefault();
-      control?.setErrors({ digitExpected: true });
-      return;
+  
+    if (rawValue.length >= 6 && rawValue.length < 10) {
+      if (!/^[0-9]$/.test(key)) {
+        event.preventDefault();
+        control?.setErrors({ digitExpected: true });
+        return;
+      }
     }
   
     if (rawValue.length >= 10) {
