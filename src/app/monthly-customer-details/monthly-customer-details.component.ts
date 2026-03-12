@@ -185,43 +185,37 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   
     control?.setErrors(null);
   
-    // First 2 letters
     if (rawValue.length < 2 && !/^[A-Za-z]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ letterExpected: true });
       return;
     }
   
-    // Next 2 digits
     if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ digitExpected: true });
       return;
     }
   
-    // First series letter
     if (rawValue.length === 4 && !/^[A-Za-z]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ letterExpected: true });
       return;
     }
-  
-    // Optional second letter OR start digits
+
     if (rawValue.length === 5) {
       if (!/^[A-Za-z0-9]$/.test(key)) {
         event.preventDefault();
         return;
       }
     }
-  
-    // After digits start → only digits allowed
+
     if (rawValue.length >= 6 && !/^[0-9]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ digitExpected: true });
       return;
     }
   
-    // Max length
     if (rawValue.length >= 10) {
       event.preventDefault();
     }

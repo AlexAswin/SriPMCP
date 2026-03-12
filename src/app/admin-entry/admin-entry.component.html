@@ -1,143 +1,153 @@
-<div class="parent-container">
-    <button [routerLink]="['/dashBoard']">
+<div class="admin-wrapper">
+    <header class="admin-header">
+      <button mat-icon-button [routerLink]="['/dashBoard']" class="back-btn">
         <mat-icon>arrow_back</mat-icon>
-    </button>
-
-    <div class="left-container">
-    <h1>Entry Details</h1>
-
-        <mat-accordion class="example-headers-align" multiple>
-            <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                    <mat-panel-title> Vehicle Details</mat-panel-title>
-                </mat-expansion-panel-header>
-                <form [formGroup]="vehicleForm" (ngSubmit)="saveVehicle()">
-        
-                    <mat-form-field class="example-full-width" appearance="outline">
-                      <mat-label>Vehicle Type</mat-label>
-                      <input matInput placeholder="Vehicle" formControlName="vehicleType">
+      </button>
+      <h1>Management Console</h1>
+    </header>
+  
+    <mat-tab-group dynamicHeight animationDuration="200ms">
+      
+      <mat-tab label="Vehicles">
+        <div class="tab-content">
+          <div class="master-detail-grid">
+            
+            <div class="form-column">
+              <mat-card appearance="outlined">
+                <mat-card-header>
+                  <mat-card-title>Add Vehicle Type</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <form [formGroup]="vehicleForm" (ngSubmit)="saveVehicle()" class="vertical-form">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Vehicle Name</mat-label>
+                      <input matInput placeholder="e.g. Hatchback" formControlName="vehicleType">
                     </mat-form-field>
-                  
-                    <mat-form-field class="example-full-width">
-                      <mat-label>Monthly Cost</mat-label>
-                      <input matInput type="number" formControlName="monthlyCost">
-                    </mat-form-field>
-                  
-                    <mat-form-field class="example-full-width">
-                      <mat-label>Daily Cost</mat-label>
-                      <input matInput type="number" formControlName="dailyCost">
-                    </mat-form-field>
-
-                    <app-button
-                      label="Edit"
-                      variant="primary"
-                      type="submit">
-                    </app-button>
-                  
-                    <app-button
-                      label="ADD"
-                      variant="primary"
-                      type="submit">
-                    </app-button>
-                  
+                    
+                    <div class="row">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Monthly Rate</mat-label>
+                        <input matInput type="number" formControlName="monthlyCost">
+                        <span matTextPrefix>₹&nbsp;</span>
+                      </mat-form-field>
+                      
+                      <mat-form-field appearance="outline">
+                        <mat-label>Daily Rate</mat-label>
+                        <input matInput type="number" formControlName="dailyCost">
+                        <span matTextPrefix>₹&nbsp;</span>
+                      </mat-form-field>
+                    </div>
+  
+                    <app-button label="Add Vehicle" variant="primary" type="submit"></app-button>
                   </form>
-                  
-            </mat-expansion-panel>
-        
-            <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                    <mat-panel-title> Expense Catagory </mat-panel-title>
-                </mat-expansion-panel-header>
-                <form [formGroup]="expenseForm" (ngSubmit)="saveExpense()">
-                    <mat-form-field class="example-full-width">
-                        <mat-label>Expense Type</mat-label>
-                        <input matInput placeholder="Expense" formControlName="expenseType">
+                </mat-card-content>
+              </mat-card>
+            </div>
+  
+            <div class="list-column">
+              <mat-card appearance="outlined" *ngIf="!editVehicleDetails()">
+                <mat-card-header>
+                  <mat-card-title>Current Vehicle Rates</mat-card-title>
+                </mat-card-header>
+                <mat-list>
+                  <mat-list-item *ngFor="let vehicle of vehicleTypes()">
+                    <span matListItemTitle>{{ vehicle.vehicleType }}</span>
+                    <span matListItemLine>Monthly: ₹{{ vehicle.monthlyCost }} | Daily: ₹{{ vehicle.dailyCost }}</span>
+                    <div matListItemMeta>
+                      <button mat-icon-button color="primary" (click)="openEditMode(vehicle)">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </div>
+                  </mat-list-item>
+                </mat-list>
+              </mat-card>
+  
+              <mat-card appearance="outlined" class="edit-pane" *ngIf="editVehicleDetails()">
+                <mat-card-header>
+                  <button mat-icon-button (click)="cancelEdit()"><mat-icon>close</mat-icon></button>
+                  <mat-card-title>Update {{ vehicleUpdateForm.get('vehicleType')?.value }}</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <form [formGroup]="vehicleUpdateForm" (ngSubmit)="updateVehicleDetails()">
+                    <mat-form-field  class="full-width">
+                      <mat-label>Select Duration</mat-label>
+                      <mat-select formControlName="duration">
+                        <mat-option value="Monthly">Monthly Price</mat-option>
+                        <mat-option value="Daily">Daily Price</mat-option>
+                      </mat-select>
                     </mat-form-field>
-                    <app-button label="ADD" variant="primary" type="submit">
-                    </app-button>
-                </form>
-            </mat-expansion-panel>
-        
-            <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                    <mat-panel-title> Payment Methods </mat-panel-title>
-                </mat-expansion-panel-header>
-                <form [formGroup]="paymentForm" (ngSubmit)="savePayment()">
-                    <mat-form-field class="example-full-width" appearance="outline">
-                        <mat-label>Payment Methods</mat-label>
-                        <input matInput placeholder="Payment Methods" formControlName="paymentMethod">
+  
+                    <mat-form-field  class="full-width">
+                      <mat-label>New Price</mat-label>
+                      <input matInput type="number" formControlName="updatedPrice">
                     </mat-form-field>
-                    <app-button label="ADD" variant="primary" type="submit">
-                    </app-button>
-                </form>
-            </mat-expansion-panel>
-
-            <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                    <mat-panel-title> Delete Customer Transaction</mat-panel-title>
-                </mat-expansion-panel-header>
-                <form [formGroup]="deleteCustomerForm" (ngSubmit)="deleteCustomerRecord()">
-                    <p>To delete customer current monthly transaction please enter customer vehicle number...</p>
-                    <mat-form-field class="example-full-width" appearance="outline">
-                        <mat-label>Delete Customer Transaction</mat-label>
-                        <input matInput placeholder="Enter Vehicle Number" formControlName="vehicleNumber">
-                    </mat-form-field>
-                    <app-button label="Delete" variant="primary" type="submit">
-                    </app-button>
-                </form>
-            </mat-expansion-panel>
-        </mat-accordion>
-    </div>
-     <div class="right-container" *ngIf="editVehicleDetails">
-        <form [formGroup]="vehicleUpdateForm" (ngSubmit)="updateVehicleDetails()" >
-            <mat-label>Select Vehicle</mat-label>
-        
-            <mat-form-field>
-                <mat-label>Vehicle Types</mat-label>
-                <mat-select placeholder="select Vehicle" formControlName="vehicleType">
-                    <mat-option *ngFor="let types of vehicleTypes" [value]="types.vehicleType">{{types.vehicleType}}</mat-option>
-                </mat-select>
-            </mat-form-field>
-
-            <mat-label>Select Duration</mat-label>
-            <mat-form-field>
-                <mat-label>Duration</mat-label>
-                <mat-select placeholder="Type" formControlName="duration">
-                    <mat-option value="Monthly">Monthly</mat-option>
-                    <mat-option value="Daily">Daily</mat-option>
-                </mat-select>
-            </mat-form-field>
-
-            <mat-label>Updated Price</mat-label>
-            <mat-form-field class="example-full-width">
-                <mat-label>Price</mat-label>
-                <input matInput formControlName="updatedPrice">
-            </mat-form-field>
-
-            <div class="button-group">
-                <app-button label="Delete Vehicle" variant="secondary" (clicked)="deleteVehicle()" type="button"></app-button>
-                <app-button label="Update Price" variant="primary" type="submit"></app-button>
-              </div>
-        </form>
-
-        <div class="expense-container" *ngIf="expenses$ && showExpenses">
-            <div class="expense-list" >
-              <h3>Expense List</h3>
-              <div class="expense-cards">
-                <div class="expense-card" *ngFor="let expense of expenses$ | async">
-                  <span class="expense-name">{{ expense.expenseType }}</span>
-                  <button mat-icon-button color="warn" (click)="deleteExpense(expense.id)">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </div>
-              </div>
+  
+                    <div class="button-row">
+                      <app-button label="Delete Vehicle" variant="secondary" (clicked)="deleteVehicle()"></app-button>
+                      <app-button label="Apply Changes" variant="primary" type="submit"></app-button>
+                    </div>
+                  </form>
+                </mat-card-content>
+              </mat-card>
             </div>
           </div>
-    </div> 
-</div>
+        </div>
+      </mat-tab>
   
-
-
-
-
-
+      <mat-tab label="Expenses & Methods">
+        <div class="tab-content dual-grid">
+          <mat-card appearance="outlined">
+            <mat-card-header><mat-card-title>Expense Categories</mat-card-title></mat-card-header>
+            <mat-card-content>
+              <form [formGroup]="expenseForm" (ngSubmit)="saveExpense()" class="inline-form">
+                <mat-form-field appearance="outline">
+                  <input matInput placeholder="New Expense Type" formControlName="expenseType">
+                </mat-form-field>
+                <button mat-mini-fab color="primary"><mat-icon>add</mat-icon></button>
+              </form>
+  
+              <mat-chip-set class="expense-chips">
+                <mat-chip-row *ngFor="let expense of expenses$ | async" (removed)="deleteExpense(expense.id)">
+                  {{ expense.expenseType }}
+                  <button matChipRemove><mat-icon>cancel</mat-icon></button>
+                </mat-chip-row>
+              </mat-chip-set>
+            </mat-card-content>
+          </mat-card>
+  
+          <mat-card appearance="outlined">
+            <mat-card-header><mat-card-title>Payment Methods</mat-card-title></mat-card-header>
+            <mat-card-content>
+              <form [formGroup]="paymentForm" (ngSubmit)="savePayment()" class="inline-form">
+                <mat-form-field appearance="outline">
+                  <input matInput placeholder="e.g. UPI, Cash" formControlName="paymentMethod">
+                </mat-form-field>
+                <button mat-mini-fab color="primary"><mat-icon>add</mat-icon></button>
+              </form>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+  
+      <mat-tab label="Maintenance">
+        <div class="tab-content centered">
+          <mat-card appearance="outlined" class="danger-card">
+            <mat-card-header>
+              <mat-card-title>Delete Transaction Record</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <p>This will permanently remove the current month's transaction for the customer.</p>
+              <form [formGroup]="deleteCustomerForm" (ngSubmit)="deleteCustomerRecord()" class="vertical-form">
+                <mat-form-field appearance="outline">
+                  <mat-label>Vehicle Number</mat-label>
+                  <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber">
+                </mat-form-field>
+                <app-button label="Delete Record" variant="secondary" type="submit"></app-button>
+              </form>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+  
+    </mat-tab-group>
+  </div>
