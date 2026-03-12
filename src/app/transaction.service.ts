@@ -254,7 +254,6 @@ export class TransactionService {
       const customerData = customerDoc.data();
       const fullHistory = customerData['FullTransactionHistory'] || [];
   
-      // GATE 1: Check if already in Firestore data
       if (fullHistory.some((h: any) => h.id === `${currentMonthId}_IDLE`)) {
         continue;
       }
@@ -273,8 +272,6 @@ export class TransactionService {
       if (!isTransactionMade) {
         const customerRef = doc(this.firestore, 'CustomerEntry', customerId);
         
-        // FIX: Use a stable timestamp (Start of the month) 
-        // This allows arrayUnion to recognize the object as a duplicate
         const stableDate = new Date(date);
         stableDate.setHours(0, 0, 0, 0);
   

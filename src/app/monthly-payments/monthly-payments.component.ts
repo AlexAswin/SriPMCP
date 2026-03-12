@@ -32,10 +32,13 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   payingAmount = new FormControl<number | null>(null);
   transactionDate = new FormControl<string | null>(null);
 
+  existingPending: number = (0);
+
   readonly dialog = inject(MatDialog);
 
   paymentMethods$!: Observable<any[]>;
   private destroy$ = new Subject<void>();
+  isSubmitting: boolean = false;
 
   
 
@@ -88,16 +91,20 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const formatedVehicleNbr = this.formateVehicleNumber(vehicleNumber);
 
     const customerDetails = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
+
+
+    console.log(customerDetails);
     if(!customerDetails) {
       this.clearDetails();
       return;
     }
+    this.existingPending = customerDetails.Transactions.currentPending;
     if(customerDetails && customerDetails.customerType === 'Monthly') {
       this.monthlyPaymentForm.patchValue({
         vehicleNumber: customerDetails.vehicleNumber,
         vehicleType: customerDetails.vehicleType,
         customerName: customerDetails.customerName,
-        amount: customerDetails.amount,
+        amount: customerDetails.Transactions.currentPending,
         advance: customerDetails.advance
       });
       // this.existingPending = ''
@@ -109,6 +116,12 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
       .toUpperCase()
       // .replace(/\s+/g, '')
       .trim();
+  }
+
+  restrictNegativeInput(event: KeyboardEvent) {
+    if (['-', 'e', '+'].includes(event.key)) {
+      event.preventDefault();
+    }
   }
 
   onVehicleNumberInput(event: Event) {
@@ -205,54 +218,88 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   }
 
   openDialog() {
+    if (this.monthlyPaymentForm.invalid) {
+      this.monthlyPaymentForm.markAllAsTouched(); 
+      this.snackBar.open('Please fill all required fields correctly.', 'Close', {
+        duration: 3000,
+        panelClass: ['snackbar-error']
+      });
+      return;
+    }
+  
+    const formData = this.monthlyPaymentForm.getRawValue();
+    const paying = Number(formData.payingAmount);
+    const due = Number(formData.amount);
+  
+    if (paying > due) {
+      this.snackBar.open('Paying amount cannot exceed the Total Due.', 'Close', {
+        duration: 3000,
+        panelClass: ['snackbar-error']
+      });
+      return; 
+    }
+    
     const dialogRef = this.dialog.open(PaymentConfirmationComponent, {
-      width: '500px',
-      height: '220px',
-      data: { customer: this.searchWithVehicleNbr.value,
-              amount: this.payingAmount.value,
-              transactionDate: this.transactionDate.value } 
+      width: '700px',
+      height: '350px',
+      data: { 
+        customer: formData.customerName, 
+        vehicle: formData.vehicleNumber,
+        payingAmount: paying,  
+        totalDue: due,        
+        transactionDate: formData.transactionDate 
+      } 
     });
-
+  
     dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe(result => {
-      if (result === 'confirm') {
+      if (result === true || result === 'confirm') {
         this.proceedTransaction();
-      } else {
-        console.log('Transaction cancelled');
       }
     });
   }
 
-  proceedTransaction = async() => {
+  proceedTransaction = async () => {
+    if (this.isSubmitting) return;
+  
     try {
-      const customer = this.searchWithVehicleNbr.value;
+      this.isSubmitting = true;
 
+      const rawForm = this.monthlyPaymentForm.getRawValue();
+      const customer = this.searchWithVehicleNbr.value;
+  
       const transactionData = {
-        monthlyCost: this.monthlyPaymentForm.get('amount')?.value,
-        advance: this.monthlyPaymentForm.get('advance')?.value,
-        paymentMethod: this.monthlyPaymentForm.get('paymentMethod')?.value,
-        transactionAmount: this.payingAmount.value,
-        transactionDate: this.transactionDate.value 
-      }
+        monthlyCost: rawForm.amount, 
+        advance: rawForm.advance,       
+        paymentMethod: rawForm.paymentMethod,
+        transactionAmount: rawForm.payingAmount,
+        transactionDate: rawForm.transactionDate 
+      };
   
       await this.transactionService.customerMonthlyTransactionDetails(customer, transactionData);
-      this.monthlyPaymentForm.reset();
-      this.payingAmount.setValue(0);
-      this.transactionDate.setValue('');
-      this.searchWithVehicleNbr.setValue('');
-      this.snackBar.open('Transaction successfull!', 'Close', {
-        duration: 4000,     
+  
+      this.resetAllFormStates();
+  
+      this.snackBar.open('Transaction successful!', 'Close', {
+        duration: 4000,
         horizontalPosition: 'center',
         verticalPosition: 'bottom',
         panelClass: ['snackbar-success'],
       });
+  
     } catch (error) {
+      console.error('Transaction Error:', error);
       this.snackBar.open('Transaction Failed. Try again!', 'Close', {
         duration: 4000,
-        horizontalPosition: 'center',
-        verticalPosition: 'bottom',
         panelClass: ['snackbar-error'],
       });
+    } finally {
+      this.isSubmitting = false;
     }
+  };
+  
+  private resetAllFormStates() {
+    this.monthlyPaymentForm.reset();
+    this.searchWithVehicleNbr.setValue('');
   }
 
   clearDetails() {

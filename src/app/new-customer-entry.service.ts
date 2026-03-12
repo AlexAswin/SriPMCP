@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { addDoc, collectionData, doc, setDoc, updateDoc, writeBatch } from '@angular/fire/firestore';
+import { addDoc, collectionData, doc, getDoc, setDoc, updateDoc, writeBatch } from '@angular/fire/firestore';
 import { Firestore, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { TransactionService } from './transaction.service';
@@ -34,7 +34,6 @@ export class NewCustomerEntryService {
                 );
               
                 const transactionData = {
-                  // advance: Number(customerDetails.advance) || 0,
                   monthlyCost: Number(customerDetails.amount) || 0,
                   currentPending: Number(customerDetails.amount) || 0,
                   isTransactionMade: false,
@@ -52,41 +51,45 @@ export class NewCustomerEntryService {
                 }
               }
 
-  async getVehicleByNumber(vehicleNumber: string, identifier: string) {
-    if (!vehicleNumber) return null;
+              async getVehicleByNumber(vehicleNumber: string, identifier: string) {
+                if (!vehicleNumber) return null;
+              
+                const vehiclesRef = collection(this.firestore, 'CustomerEntry');
+                const currentMonth = this.getCurrentMonth();
 
-    const vehiclesRef = collection(this.firestore, 'CustomerEntry');
-    let q
-    if (identifier === 'vehicleNbr') {
-       q = query(
-        vehiclesRef,
-        where('vehicleNumber', '==', vehicleNumber)
-      );
-    } else {
-       q = query(
-        vehiclesRef,
-        where('billNumber', '==', vehicleNumber)
-      );
-    }
-    
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-      this.setVehicle(null);
-      return null;
-    }
-
-    const docSnap = snapshot.docs[0];
-    const data = {
-      id: docSnap.id,
-      ...docSnap.data()
-    }as any;
-
-    this.setVehicle(data);
-
-    return data;
-  }
-
+                const q = query(
+                  vehiclesRef,
+                  where(identifier === 'vehicleNbr' ? 'vehicleNumber' : 'billNumber', '==', vehicleNumber)
+                );
+                
+                const snapshot = await getDocs(q);
+              
+                if (snapshot.empty) {
+                  this.setVehicle(null);
+                  return null;
+                }
+              
+                const docSnap = snapshot.docs[0];
+                const customerId = docSnap.id;
+                const customerData = docSnap.data();
+              
+                const transactionDocRef = doc(
+                  this.firestore, 
+                  `CustomerEntry/${customerId}/Transactions/${currentMonth}`
+                );
+                
+                const transactionSnap = await getDoc(transactionDocRef);
+                const transactionData = transactionSnap.exists() ? transactionSnap.data() : {};
+              
+                const finalData = {
+                  id: customerId,
+                  ...customerData,
+                  Transactions: transactionData
+                } as any;
+              
+                this.setVehicle(finalData);
+                return finalData;
+              }
   setVehicle(data: any) {
     this.vehicleSource.next(data);
   }
@@ -132,6 +135,13 @@ export class NewCustomerEntryService {
     );
   
     return collectionData(q);
+  }
+
+  private getCurrentMonth(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    // return `2026-04`;
   }
 
 }

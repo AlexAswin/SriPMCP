@@ -10,7 +10,7 @@
         <h1>Monthly Payments</h1>
       </div>
   
-      <div class="search-row">
+      <!-- <div class="search-row">
         <h2 class="search-label">Vehicle Number</h2>
   
         <mat-form-field appearance="outline" class="search-input">
@@ -22,7 +22,7 @@
           (click)="checkExistingUser()">
   
         </app-button>
-      </div>
+      </div> -->
   
     </div>
   
@@ -33,7 +33,8 @@
         <div class="vehicle-info">
           <div class="form-group">
             <label>Vehicle Number</label>
-            <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" readonly />
+            <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" maxlength="13" [formControl]="searchWithVehicleNbr" (input)="onVehicleNumberInput($event)"
+          (keydown)="restrictVehicleInput($event)" />
           </div>
   
           <div class="form-group">
@@ -55,22 +56,36 @@
             <label>Advance Paid</label>
             <input type="text" placeholder="Advance" formControlName="advance" readonly />
           </div>
-          <div class="form-group">
-            <label>Transaction Date</label>
-            <input type="date" [formControl]="transactionDate" />
+
+            <div class="form-group">
+              <label>Transaction Date</label>
+              <input type="date" formControlName="transactionDate" />
+              <div class="error-msg" *ngIf="monthlyPaymentForm.get('transactionDate')?.touched && monthlyPaymentForm.get('transactionDate')?.invalid">
+                <small>Please select a valid payment date.</small>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="transactionDate">
-          <label>Payment Methods</label>
-          <mat-select placeholder="Payment Methods" formControlName="paymentMethod">
-            <mat-option *ngFor="let types of paymentMethods$ | async"
-              [value]="types.paymentMethod">{{types.paymentMethod}}</mat-option>
-          </mat-select>
-        </div>
-        <div class="paymentInput">
-          <label>Amount</label>
-          <input type="number" placeholder="Paying Amount" [formControl]="payingAmount" min="1" (keydown)="restrictVehicleInput($event)"/>
-        </div>
+      
+          <div class="transactionDate">
+            <label>Payment Methods</label>
+            <mat-select placeholder="Payment Methods" formControlName="paymentMethod">
+              <mat-option *ngFor="let types of paymentMethods$ | async" [value]="types.paymentMethod">
+                {{types.paymentMethod}}
+              </mat-option>
+            </mat-select>
+            <div class="error-msg" *ngIf="monthlyPaymentForm.get('paymentMethod')?.touched && monthlyPaymentForm.get('paymentMethod')?.invalid">
+              <small>Please select a payment method (UPI, Cash, etc.).</small>
+            </div>
+          </div>
+      
+          <div class="paymentInput">
+            <label>Amount</label>
+            <input type="number" placeholder="Paying Amount" formControlName="payingAmount" min="1" (keydown)="restrictNegativeInput($event)"/>
+            <div class="error-msg" *ngIf="monthlyPaymentForm.get('payingAmount')?.touched && monthlyPaymentForm.get('payingAmount')?.invalid">
+              <small *ngIf="monthlyPaymentForm.get('payingAmount')?.errors?.['required']">Paying amount is required.</small>
+              <small *ngIf="monthlyPaymentForm.get('payingAmount')?.errors?.['min']">Amount must be greater than 0.</small>
+            </div>
+          </div>
         <div class="button-group">
           <app-button label="Proceed Transaction" width="180px" variant="primary" type="submit"
             (click)="openDialog()"></app-button>
