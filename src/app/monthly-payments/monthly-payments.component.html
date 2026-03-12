@@ -14,7 +14,8 @@
         <h2 class="search-label">Vehicle Number</h2>
   
         <mat-form-field appearance="outline" class="search-input">
-          <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr" />
+          <input matInput placeholder="Enter Vehicle Number" maxlength="13" [formControl]="searchWithVehicleNbr" (input)="onVehicleNumberInput($event)"
+          (keydown)="restrictVehicleInput($event)"/>
         </mat-form-field>
   
         <app-button variant="primary" label="Search" width="20%" mat-raised-button color="primary"

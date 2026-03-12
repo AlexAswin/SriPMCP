@@ -12,19 +12,6 @@
             <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>
             <span class="message">{{ message }}</span>
         </mat-card>
-
-        <!-- <div class="search-row">
-            <h2 class="search-label">Vehicle Number</h2>
-        
-            <mat-form-field appearance="outline" class="search-input">
-              <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr" />
-            </mat-form-field>
-        
-            <app-button variant="primary" label="Search" width="20%" style="min-height: 50px;" mat-raised-button color="primary"
-              (click)="getCustomerDetails()">
-        
-            </app-button>
-          </div> -->
     
         <div *ngIf="!dailyCustomerUnpaid" class="main-content">
             <div class="section vehicleDetails">
