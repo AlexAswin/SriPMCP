@@ -91,11 +91,14 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const formatedVehicleNbr = this.formateVehicleNumber(vehicleNumber);
 
     const customerDetails = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
-
-
-    console.log(customerDetails);
     if(!customerDetails) {
-      this.clearDetails();
+      this.monthlyPaymentForm.patchValue({
+        vehicleNumber: formatedVehicleNbr,
+        vehicleType: '',
+        customerName: '',
+        amount: '',
+        advance: ''
+      });
       return;
     }
     this.existingPending = customerDetails.Transactions.currentPending;
@@ -107,8 +110,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
         amount: customerDetails.Transactions.currentPending,
         advance: customerDetails.advance
       });
-      // this.existingPending = ''
-    }
+    } 
   }
 
   private formateVehicleNumber(value: string): string {
@@ -303,7 +305,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   }
 
   clearDetails() {
-    this.monthlyPaymentForm.reset();
+    // this.monthlyPaymentForm.reset();
   }
 
   

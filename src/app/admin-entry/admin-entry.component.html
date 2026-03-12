@@ -27,13 +27,13 @@
                     <div class="row">
                       <mat-form-field appearance="outline">
                         <mat-label>Monthly Rate</mat-label>
-                        <input matInput type="number" formControlName="monthlyCost" min="1" (keydown)="restrictVehicleInput($event)">
+                        <input matInput type="number" formControlName="monthlyCost" min="1" (keydown)="restrictNegativeVehicleInput($event)">
                         <span matTextPrefix>₹&nbsp;</span>
                       </mat-form-field>
                       
                       <mat-form-field appearance="outline">
                         <mat-label>Daily Rate</mat-label>
-                        <input matInput type="number" formControlName="dailyCost" min="1" (keydown)="restrictVehicleInput($event)">
+                        <input matInput type="number" formControlName="dailyCost" min="1" (keydown)="restrictNegativeVehicleInput($event)">
                         <span matTextPrefix>₹&nbsp;</span>
                       </mat-form-field>
                     </div>
@@ -79,7 +79,7 @@
   
                     <mat-form-field  class="full-width">
                       <mat-label>New Price</mat-label>
-                      <input matInput type="number" formControlName="updatedPrice" (keydown)="restrictVehicleInput($event)">
+                      <input matInput type="number" formControlName="updatedPrice" (keydown)="restrictNegativeVehicleInput($event)">
                     </mat-form-field>
   
                     <div class="button-row">
@@ -137,7 +137,8 @@
             </mat-card-header>
             <mat-card-content>
               <p>This will permanently remove the current month's transaction for the customer.</p>
-              <form [formGroup]="deleteCustomerForm" (ngSubmit)="deleteCustomerRecord()" class="vertical-form">
+              <form [formGroup]="deleteCustomerForm" (ngSubmit)="deleteCustomerRecord()" class="vertical-form" maxlength="13" (keydown)="restrictVehicleInput($event)"
+              (input)="onVehicleNumberInput($event)" >
                 <mat-form-field appearance="outline">
                   <mat-label>Vehicle Number</mat-label>
                   <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber">
