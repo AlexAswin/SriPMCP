@@ -134,6 +134,12 @@ async updateVehicleDetails() {
   }
 }
 
+restrictVehicleInput(event: KeyboardEvent) {
+  if (['-', 'e', '+'].includes(event.key)) {
+    event.preventDefault();
+  }
+}
+
 async deleteVehicle() {
   // 1. Get the type from the form (using getRawValue because it might be disabled)
   const vehicleType = this.vehicleUpdateForm.getRawValue().vehicleType;

@@ -9,7 +9,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { MatDialog } from '@angular/material/dialog';
 import { PaymentConfirmationComponent } from '../payment-confirmation/payment-confirmation.component';
 import { TransactionService } from '../transaction.service';
-import { Observable, Subject, take, takeUntil } from 'rxjs';
+import { Observable, Subject, debounceTime, distinctUntilChanged, take, takeUntil } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { AdminService } from '../admin.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -42,6 +42,21 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.monthlyPaymentFormDetails();
     this.paymentMethods$ = this.adminService.getPaymentMethods().pipe(take(1));
+
+    const vehicleCtrl = this.searchWithVehicleNbr;
+
+    vehicleCtrl?.valueChanges
+      .pipe(
+        debounceTime(500),
+        distinctUntilChanged(),
+        // filter(value => value?.length >= 9 ),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((value) => {
+        if (value) {
+          this.checkExistingUser(value);
+        }
+      });
   }
 
   constructor (private fb: FormBuilder,
@@ -64,8 +79,8 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     })
   }
 
-  checkExistingUser = async() => {
-    const vehicleNumber = this.searchWithVehicleNbr.value?.trim();
+  checkExistingUser = async(vehicleNbr?: string) => {
+    const vehicleNumber = vehicleNbr? vehicleNbr : this.searchWithVehicleNbr.value?.trim();
 
     if (!vehicleNumber) {
       return;
@@ -73,6 +88,10 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const formatedVehicleNbr = this.formateVehicleNumber(vehicleNumber);
 
     const customerDetails = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
+    if(!customerDetails) {
+      this.clearDetails();
+      return;
+    }
     if(customerDetails && customerDetails.customerType === 'Monthly') {
       this.monthlyPaymentForm.patchValue({
         vehicleNumber: customerDetails.vehicleNumber,
@@ -81,6 +100,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
         amount: customerDetails.amount,
         advance: customerDetails.advance
       });
+      // this.existingPending = ''
     }
   }
 
@@ -233,6 +253,10 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
         panelClass: ['snackbar-error'],
       });
     }
+  }
+
+  clearDetails() {
+    this.monthlyPaymentForm.reset();
   }
 
   

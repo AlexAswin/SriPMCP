@@ -70,7 +70,7 @@ export class EntryFormComponent {
     
     } else {
       this.show = true;
-      this.message = 'New Customer... Please Add Customer Details';
+      this.message = 'Customer not exists....';
     }
   }    
 

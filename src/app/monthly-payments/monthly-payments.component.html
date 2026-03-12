@@ -69,7 +69,7 @@
         </div>
         <div class="paymentInput">
           <label>Amount</label>
-          <input type="number" placeholder="Paying Amount" [formControl]="payingAmount" />
+          <input type="number" placeholder="Paying Amount" [formControl]="payingAmount" min="1" (keydown)="restrictVehicleInput($event)"/>
         </div>
         <div class="button-group">
           <app-button label="Proceed Transaction" width="180px" variant="primary" type="submit"
