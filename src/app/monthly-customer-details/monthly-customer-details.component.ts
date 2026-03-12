@@ -434,7 +434,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     if (!fromDate || !endDate) return null;
   
     return {
-      vehicleNumber: this.currentCustomer, // The ID link
+      vehicleNumber: this.currentCustomer,
       startDate: fromDate,
       endDate: endDate,
       amountPaid: this.vehicleDetailsForm.get('amount')?.value,

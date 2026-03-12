@@ -7,7 +7,7 @@ import { BehaviorSubject, Observable, Subject, combineLatest, firstValueFrom, fo
 import { TransactionService } from '../transaction.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenavModule} from '@angular/material/sidenav';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import autoTable from 'jspdf-autotable';
 import jsPDF from 'jspdf';
@@ -76,6 +76,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
 
   events: string[] = [];
   opened = false;
+
+  searchWithVehicleNbr = new FormControl<string | null>('');
 
   sortKey: SortKey | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
@@ -278,6 +280,99 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
     this.showFooter = vehicleNumber === '';
   };
+
+  onVehicleNumberInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+  
+    let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    raw = raw.substring(0, 10);
+
+  
+    let formatted = '';
+  
+    if (raw.length > 0) formatted += raw.substring(0, 2);
+    if (raw.length > 2) formatted += ' ' + raw.substring(2, 4);
+  
+    if (raw.length > 4) {
+      const remainder = raw.substring(4);
+  
+      const digitMatch = remainder.match(/\d/);
+      const firstDigitIndex = digitMatch
+        ? remainder.indexOf(digitMatch[0])
+        : -1;
+  
+      if (firstDigitIndex === -1) {
+        formatted += ' ' + remainder.substring(0, 2);
+      } else {
+        const series = remainder.substring(0, firstDigitIndex);
+  
+        const digits = remainder
+          .substring(firstDigitIndex)
+          .replace(/[^0-9]/g, '')
+          .substring(0, 4);
+  
+        formatted += ' ' + series + ' ' + digits;
+      }
+    }
+  
+    input.value = formatted.trim();
+  
+  }
+
+  restrictVehicleInput(event: KeyboardEvent) {
+    const input = event.target as HTMLInputElement;
+    const key = event.key;
+  
+    const rawValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const control = this.searchWithVehicleNbr;
+  
+    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key))
+      return;
+  
+    if (!/^[a-zA-Z0-9]$/.test(key)) {
+      event.preventDefault();
+      return;
+    }
+  
+    control?.setErrors(null);
+  
+    if (rawValue.length < 2 && !/^[A-Za-z]$/.test(key)) {
+      event.preventDefault();
+      control?.setErrors({ letterExpected: true });
+      return;
+    }
+  
+    if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
+      event.preventDefault();
+      control?.setErrors({ digitExpected: true });
+      return;
+    }
+  
+    if (rawValue.length === 4 && !/^[A-Za-z]$/.test(key)) {
+      event.preventDefault();
+      control?.setErrors({ letterExpected: true });
+      return;
+    }
+  
+    if (rawValue.length === 5) {
+      if (!/^[a-zA-Z0-9]$/.test(key)) {
+        event.preventDefault();
+        return;
+      }
+    }
+  
+    if (rawValue.length >= 6 && rawValue.length < 10) {
+      if (!/^[0-9]$/.test(key)) {
+        event.preventDefault();
+        control?.setErrors({ digitExpected: true });
+        return;
+      }
+    }
+  
+    if (rawValue.length >= 10) {
+      event.preventDefault();
+    }
+  }
 
   expandRow(row: any) {
     this.expandedElement = this.isExpanded(row) ? null : row;
