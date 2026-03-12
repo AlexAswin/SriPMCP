@@ -53,6 +53,8 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   note = new FormControl<string>('', [Validators.required]);
 
   isStatusInActive: boolean = false;
+  searchWithVehicleNbr = new FormControl<string | null>('');
+
 
   isNewMonthlyCustomer: boolean = true;
   isMonthlyActiveCustomer: boolean = false;
@@ -228,6 +230,11 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   
     let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     raw = raw.substring(0, 10);
+
+    if(raw === '') {
+      this.cancelEntry();
+      return;
+    }
   
     let formatted = '';
   
@@ -289,90 +296,101 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  getCustomerDetails = async (vehicleNbr: string) => {
-    const vehicleNumber = vehicleNbr;
-
-    if (!vehicleNumber) {
+  getCustomerDetails = async (vehicleNbr?: string) => {
+    if (!vehicleNbr){
+      this.cancelEntry();
       return;
     }
-    const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNumber);
+  
+    const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNbr);
     const res = await this.newCustomerEntryService.getVehicleByNumber(
       formatedVehicleNbr,
       'vehicleNbr'
     );
-
+  
     this.currentCustomer = res?.vehicleNumber;
+  
 
-    if (res && res.monthlyStatus === 'Active') {
-      this.isNewMonthlyCustomer = false;
-      this.isMonthlyInActiveCustomer = false;
-      this.isMonthlyActiveCustomer = true;
+    if (res && res.monthlyStatus) {
+      this.cancelEntry();
 
-      this.isStatusInActive = false;
+      this.handleMonthlyCustomer(res);
+    } 
+    
+    else if (res && res.dailyStatus) {
+      this.handleDailyCustomer(res);
+    } 
+    
+    else {
+      this.handleNewCustomer();
+    }
+  
+    this.finalizeFormState();
+  };
+  
+  private handleMonthlyCustomer(res: any) {
+    const isActive = res.monthlyStatus === 'Active';
+    this.isNewMonthlyCustomer = false;
+    this.isMonthlyActiveCustomer = isActive;
+    this.isMonthlyInActiveCustomer = !isActive;
+    this.isStatusInActive = !isActive;
+  
+    if (isActive) {
       this.endDateMonthly.reset();
-
-      this.vehicleDetailsForm.patchValue({
-        vehicleNumber: res.vehicleNumber,
-        vehicleType: res.vehicleType,
-
-        customerName: res.customerName,
-        customerPhoneNbr: res.customerPhoneNbr,
-        customerType: res.customerType,
-        address: res.address,
-        amount: res.amount,
-      });
-      this.advance.setValue(res.advance);
-      this.monthlyStatus.setValue(res.monthlyStatus);
-      this.fromDateMonthly.setValue(res.fromDateMonthly),
-        this.note.setValue(res.note);
-    } else if (res && res.monthlyStatus === 'InActive') {
-      this.isNewMonthlyCustomer = false;
-      this.isMonthlyInActiveCustomer = true;
-      this.isMonthlyActiveCustomer = false;
-
-      this.isStatusInActive = true;
-      this.vehicleDetailsForm.patchValue({
-        vehicleNumber: res.vehicleNumber,
-        vehicleType: res.vehicleType,
-
-        customerName: res.customerName,
-        customerPhoneNbr: res.customerPhoneNbr,
-        customerType: res.customerType,
-        address: res.address,
-
-        amount: res.amount,
-      });
-      this.advance.setValue(res.advance);
-      this.monthlyStatus.setValue(res.monthlyStatus);
-      this.fromDateMonthly.setValue(res.fromDateMonthly);
+    } else {
       this.endDateMonthly.setValue(res.endDateMonthly);
-      this.note.setValue(res.note);
-    } else if (res && res.dailyStatus === 'paid') {
-      this.isNewMonthlyCustomer = false;
-      this.isMonthlyActiveCustomer = false;
-      this.isMonthlyInActiveCustomer = false;
+    }
+  
+    this.vehicleDetailsForm.patchValue({
+      vehicleNumber: res.vehicleNumber,
+      vehicleType: res.vehicleType,
+      customerName: res.customerName,
+      customerPhoneNbr: res.customerPhoneNbr,
+      customerType: res.customerType,
+      address: res.address,
+      amount: res.amount,
+    });
+  
+    this.advance.setValue(res.advance);
+    this.monthlyStatus.setValue(res.monthlyStatus);
+    this.fromDateMonthly.setValue(res.fromDateMonthly);
+    this.note.setValue(res.note);
+  }
+  
+  private handleDailyCustomer(res: any) {
+    this.isNewMonthlyCustomer = false;
+    this.isMonthlyActiveCustomer = false;
+    this.isMonthlyInActiveCustomer = false;
+    this.showAlert = true;
+  
+    if (res.dailyStatus === 'paid') {
       this.dailyToMonthlyCustomer = true;
-      this.showAlert = true;
       this.type = 'warning';
-      this.message = 'This customer is an paid Daily Customer...';
-
+      this.message = 'This customer is a paid Daily Customer...';
       this.vehicleDetailsForm.patchValue({
         vehicleNumber: res.vehicleNumber,
         vehicleType: res.vehicleType,
-
         customerName: res.customerName,
         customerPhoneNbr: res.customerPhoneNbr,
         address: res.address,
       });
-    } else if (res && res.dailyStatus === 'Unpaid') {
+    } else {
       this.dailyCustomerUnpaid = true;
-      this.showAlert = true;
       this.type = 'error';
       this.message = 'Sorry... This customer is an Unpaid Daily Customer...';
-    } else {
-      this.isNewMonthlyCustomer = true;
-      this.isMonthlyActiveCustomer = false;
-      this.isMonthlyInActiveCustomer = false;
+    }
+  }
+  
+  private handleNewCustomer() {
+    this.isNewMonthlyCustomer = true;
+    this.isMonthlyActiveCustomer = false;
+    this.isMonthlyInActiveCustomer = false;
+  
+    const isUserTyping = this.vehicleDetailsForm.get('customerName')?.dirty || 
+                         this.vehicleDetailsForm.get('customerPhoneNbr')?.dirty||
+                         this.vehicleDetailsForm.get('vehicleType')?.dirty;
+  
+    if (!isUserTyping) {
       this.resetStandaloneControls();
       this.vehicleDetailsForm.patchValue({
         vehicleType: '',
@@ -380,13 +398,15 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
         customerPhoneNbr: '',
         address: '',
         amount: '',
-      });
+      }, { emitEvent: false }); 
     }
-
+  }
+  
+  private finalizeFormState() {
     this.vehicleDetailsForm.markAsUntouched();
     this.markStandalonesAsUntouched();
     this.vehicleDetailsForm.updateValueAndValidity();
-  };
+  }
 
   private markStandalonesAsUntouched() {
     [
