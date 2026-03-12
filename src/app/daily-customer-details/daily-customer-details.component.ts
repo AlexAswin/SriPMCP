@@ -141,82 +141,91 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   restrictVehicleInput(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
     const key = event.key;
-
+  
     const rawValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const control = this.vehicleDetailsForm.get('vehicleNumber');
-
+  
     if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(key))
       return;
-
+  
     if (!/^[a-zA-Z0-9]$/.test(key)) {
       event.preventDefault();
       return;
     }
-
+  
     control?.setErrors(null);
-
-    if (rawValue.length < 2 && !/^[a-zA-Z]$/.test(key)) {
+  
+    if (rawValue.length < 2 && !/^[A-Za-z]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ letterExpected: true });
       return;
     }
-
+  
     if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ digitExpected: true });
       return;
     }
-
-    if (rawValue.length === 4 && !/^[a-zA-Z]$/.test(key)) {
+  
+    if (rawValue.length === 4 && !/^[A-Za-z]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ letterExpected: true });
       return;
     }
 
-    if (rawValue.length >= 9) {
-      const hasTwoLetterSeries = /^[A-Z]{2}[0-9]{2}[A-Z]{2}/.test(rawValue);
-      if (!hasTwoLetterSeries && rawValue.length === 9 && /^[0-9]$/.test(key)) {
-        if (/^[0-9]$/.test(rawValue[5])) {
-          event.preventDefault();
-        }
-      }
-
-      if (rawValue.length >= 10) {
+    if (rawValue.length === 5) {
+      if (!/^[A-Za-z0-9]$/.test(key)) {
         event.preventDefault();
+        return;
       }
+    }
+
+    if (rawValue.length >= 6 && !/^[0-9]$/.test(key)) {
+      event.preventDefault();
+      control?.setErrors({ digitExpected: true });
+      return;
+    }
+  
+    if (rawValue.length >= 10) {
+      event.preventDefault();
     }
   }
 
   onVehicleNumberInput(event: Event) {
     const input = event.target as HTMLInputElement;
+  
     let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
     raw = raw.substring(0, 10);
-
+  
     let formatted = '';
+  
     if (raw.length > 0) formatted += raw.substring(0, 2);
     if (raw.length > 2) formatted += ' ' + raw.substring(2, 4);
-
+  
     if (raw.length > 4) {
       const remainder = raw.substring(4);
+  
       const digitMatch = remainder.match(/\d/);
       const firstDigitIndex = digitMatch
         ? remainder.indexOf(digitMatch[0])
         : -1;
-
+  
       if (firstDigitIndex === -1) {
         formatted += ' ' + remainder.substring(0, 2);
       } else {
         const series = remainder.substring(0, firstDigitIndex);
-        const digits = remainder.substring(
-          firstDigitIndex,
-          firstDigitIndex + 4
-        );
+  
+        const digits = remainder
+          .substring(firstDigitIndex)
+          .replace(/[^0-9]/g, '')
+          .substring(0, 4);
+  
         formatted += ' ' + series + ' ' + digits;
       }
     }
-
+  
     input.value = formatted.trim();
+  
     this.vehicleDetailsForm
       .get('vehicleNumber')
       ?.setValue(input.value, { emitEvent: false });

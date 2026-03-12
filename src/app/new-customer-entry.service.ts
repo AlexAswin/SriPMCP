@@ -34,7 +34,7 @@ export class NewCustomerEntryService {
                 );
               
                 const transactionData = {
-                  advance: Number(customerDetails.advance) || 0,
+                  // advance: Number(customerDetails.advance) || 0,
                   monthlyCost: Number(customerDetails.amount) || 0,
                   currentPending: Number(customerDetails.amount) || 0,
                   isTransactionMade: false,
