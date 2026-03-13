@@ -1,7 +1,7 @@
 <div class="dialog-container">
     <h2 mat-dialog-title>Confirm Transaction</h2>
       <mat-dialog-content>
-        <p>Are you sure you want to proceed with the transaction for<strong>{{ data.customer }}</strong>with amount<strong>₹{{ data.payingAmount }}</strong>?</p>
+        <p>Are you sure you want to proceed with the transaction for &nbsp;&nbsp;&nbsp;<strong>{{ data.vehicle }}</strong>&nbsp;&nbsp;&nbsp;with amount &nbsp;&nbsp;&nbsp;<strong>₹{{ data.payingAmount }}</strong>?</p>
       </mat-dialog-content>
       <mat-dialog-actions>
           <app-button label="Cancel" width="180px" variant="secondary" (clicked)="onCancel()"></app-button>
