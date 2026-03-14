@@ -149,6 +149,15 @@ mat-list-item {
     font-size: 14px;
     margin-bottom: 20px;
   }
+
+  .settlementDetails {
+    display: flex;
+    flex-direction: column;
+
+    mat-form-field {
+      padding: 20px 0px;
+    }
+  }
 }
 
 

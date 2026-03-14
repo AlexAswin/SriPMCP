@@ -131,23 +131,58 @@
   
       <mat-tab label="Maintenance">
         <div class="tab-content centered">
-          <mat-card appearance="outlined" class="danger-card">
-            <mat-card-header>
-              <mat-card-title>Delete Transaction Record</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <p>This will permanently remove the current month's transaction for the customer.</p>
-              <form [formGroup]="deleteCustomerForm" (ngSubmit)="deleteCustomerRecord()" class="vertical-form" maxlength="13" (keydown)="restrictVehicleInput($event)"
-              (input)="onVehicleNumberInput($event)" >
-                <mat-form-field appearance="outline">
-                  <mat-label>Vehicle Number</mat-label>
-                  <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber">
-                </mat-form-field>
-                <app-button label="Delete Record" variant="secondary" type="submit"></app-button>
-              </form>
-            </mat-card-content>
-          </mat-card>
-        </div>
+            <mat-card appearance="outlined" class="danger-card">
+              <mat-card-header>
+                <mat-card-title>Delete Transaction Record</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <p>This will permanently remove the current month's transaction for the customer.</p>
+                
+                <form [formGroup]="deleteCustomerForm" (ngSubmit)="getCustomerRecord()" class="vertical-form">
+                  
+                  <mat-form-field appearance="outline">
+                    <mat-label>Vehicle Number</mat-label>
+                    <input 
+                      matInput 
+                      placeholder="TN 01 AB 1234" 
+                      formControlName="vehicleNumber"
+                      (keydown)="restrictVehicleInput($event)"
+                      (input)="onVehicleNumberInput($event)"
+                      style="text-transform: uppercase"
+                    >
+                  </mat-form-field>
+
+                  <app-button label="Get Customer Record" variant="secondary" type="submit"></app-button>
+
+                  <div *ngIf="showSettlementDetails" class="settlementDetails">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Current Pending</mat-label>
+                      <input matInput type="number" formControlName="currentPending" placeholder="0.00" readonly>
+                    </mat-form-field>
+            
+                    <mat-form-field appearance="outline">
+                      <mat-label>Settlement Amount</mat-label>
+                      <input matInput type="number" formControlName="settlementAmount" placeholder="0.00">
+                    </mat-form-field>
+            
+                    <div class="button-group">
+                      
+                      <app-button 
+                        label="Adjust Current Pending" 
+                        variant="primary" 
+                        type="button" 
+                        (click)="adjustPending()">
+                      </app-button>
+                    </div>
+                  </div>
+
+          
+                  
+          
+                </form>
+              </mat-card-content>
+            </mat-card>
+          </div>
       </mat-tab>
   
     </mat-tab-group>

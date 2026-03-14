@@ -245,47 +245,50 @@ export class TransactionService {
     const d = new Date(date);
     d.setMonth(d.getMonth() - 1);
     const prevMonthId = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    // const prevMonthId ='2026-03'
   
-    const batch = writeBatch(this.firestore);
+    let batch = writeBatch(this.firestore);
+    let operationCount = 0;
   
     for (const customerDoc of customersSnap.docs) {
-      const customerId = customerDoc.id;
-      const customerData = customerDoc.data();
-      const fullHistory = customerData['FullTransactionHistory'] || [];
-  
-      if (fullHistory.some((h: any) => h.id === `${currentMonthId}_IDLE`)) {
-        continue;
+      if (operationCount >= 480) {
+        await batch.commit();
+        batch = writeBatch(this.firestore);
+        operationCount = 0;
       }
   
+      const customerId = customerDoc.id;
+      const customerData = customerDoc.data();
       const transactionsRef = collection(this.firestore, `CustomerEntry/${customerId}/Transactions`);
+  
       const prevLedgerRef = doc(transactionsRef, prevMonthId);
       const prevSnap = await getDoc(prevLedgerRef);
   
-      const prevPending = prevSnap.exists() ? (prevSnap.data()?.['currentPending'] ?? 0) : 0;
-      const monthlyCost = prevSnap.exists() ? (prevSnap.data()?.['monthlyCost'] ?? 0) : 0;
-      const isTransactionMade = prevSnap.exists() ? (prevSnap.data()?.['isTransactionMade'] ?? false) : false;
-      const advance = prevSnap.exists() ? (prevSnap.data()?.['advance'] ?? 0) : 0;
+      const prevData = prevSnap.exists() ? prevSnap.data() : {};
+      const prevPending = prevData['currentPending'] ?? 0;
+      const monthlyCost = prevData['monthlyCost'] ?? 0;
+      const isTransactionMade = prevData['isTransactionMade'] ?? false;
+      const advance = prevData['advance'] ?? 0;
   
       const newPending = prevPending + monthlyCost;
+      const idleMarkerId = `${prevMonthId}_IDLE`;
+      
+      const fullHistory = customerData['FullTransactionHistory'] || [];
+      const alreadyHasIdle = fullHistory.some((h: any) => h.id === idleMarkerId);
   
-      if (!isTransactionMade) {
+      if (!isTransactionMade && !alreadyHasIdle) {
         const customerRef = doc(this.firestore, 'CustomerEntry', customerId);
-        
-        const stableDate = new Date(date);
-        stableDate.setHours(0, 0, 0, 0);
-  
         batch.update(customerRef, {
           FullTransactionHistory: arrayUnion({
-            id: `${currentMonthId}_IDLE`,
+            id: idleMarkerId,
             transactionType: 'No Transactions',
             transactionAmount: 0,
             existingPending: prevPending,
             newPending: newPending,
-            transactionDate:null,
-            timestamp: stableDate 
+            transactionDate: null,
+            timestamp: new Date() 
           }),
         });
+        operationCount++;
       }
   
       const newLedgerRef = doc(transactionsRef, currentMonthId);
@@ -293,11 +296,14 @@ export class TransactionService {
         advance: advance,
         currentPending: newPending,
         monthlyCost: monthlyCost,
-        isTransactionMade: false,
+        isTransactionMade: false, 
       }, { merge: true });
+      operationCount++;
     }
-  
-    await batch.commit();
+
+    if (operationCount > 0) {
+      await batch.commit();
+    }
   }
 
   getMonthIdFromDate(dateStr: string): string {
@@ -322,6 +328,26 @@ export class TransactionService {
 
     await deleteDoc(transactionRef);
     console.log('Deleted successfully');
+  }
+
+  async updateVehicleCurrentMonthPending(vehicleNumber: string, settlementAmount: number) {
+    const currentMonth = this.getCurrentMonth();
+
+  try {
+
+    const transactionRef = doc(
+      this.firestore, 
+      `CustomerEntry/${vehicleNumber}/Transactions/${currentMonth}`
+    );
+
+    await updateDoc(transactionRef, {
+      currentPending: settlementAmount 
+    });
+    return true;
+  } catch (error) {
+    console.error("Firebase Update Error:", error);
+    throw error;
+  }
   }
 
   addDailyTransactionsToNewCustomer = async (customerDetails: any) => {
