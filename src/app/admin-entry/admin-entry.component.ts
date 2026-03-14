@@ -17,6 +17,7 @@ import { TransactionService } from '../transaction.service';
 import { MatCard, MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
+import { NewCustomerEntryService } from '../new-customer-entry.service';
 
 @Component({
   selector: 'app-admin-entry',
@@ -38,13 +39,17 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   vehicleUpdateForm!: FormGroup;
   deleteCustomerForm!: FormGroup;
 
+  showSettlementDetails: boolean = false;
+
   expenses$!: Observable<any[]>;
   private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private adminService: AdminService,
-    private transactionService: TransactionService
+    private transactionService: TransactionService,
+    private newCustomerEntryService: NewCustomerEntryService,
+
   ) {}
 
   ngOnInit() {
@@ -77,7 +82,9 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     });
   
     this.deleteCustomerForm = this.fb.group({
-      vehicleNumber: ['', Validators.required]
+      vehicleNumber: ['', [Validators.required]],
+      currentPending: [0],
+      settlementAmount: [0]
     });
   }
 
@@ -119,13 +126,9 @@ async saveVehicle() {
 
 async updateVehicleDetails() {
   if (this.vehicleUpdateForm.invalid) return;
-
   const { vehicleType, updatedPrice, duration } = this.vehicleUpdateForm.getRawValue();
-
   try {
     await this.adminService.updateVehiclePrice(vehicleType, Number(updatedPrice), duration);
-    this.cancelEdit();
-    // Show success message here
   } catch (err) {
     console.error("Update failed:", err);
   }
@@ -134,101 +137,87 @@ async updateVehicleDetails() {
 restrictVehicleInput(event: KeyboardEvent) {
   const input = event.target as HTMLInputElement;
   const key = event.key;
+  if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) return;
 
-  const rawValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const control = this.deleteCustomerForm.get('vehicleNumber');
+  const control = this.vehicleUpdateForm.get('vehicleNumber');
 
-  if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key))
-    return;
-
-  if (!/^[a-zA-Z0-9]$/.test(key)) {
-    event.preventDefault();
-    return;
+  const currentErrors = control?.errors;
+  if (currentErrors) {
+    delete currentErrors['letterExpected'];
+    delete currentErrors['digitExpected'];
+    control?.setErrors(Object.keys(currentErrors).length ? currentErrors : null);
   }
 
-  control?.setErrors(null);
+  const cursor = input.selectionStart ?? 0;
+  const isDigit = /^[0-9]$/.test(key);
+  const isLetter = /^[a-zA-Z]$/.test(key);
+  
+  const rawTotal = input.value.replace(/\s/g, '');
+  const rawBefore = input.value.substring(0, cursor).replace(/\s/g, '');
+  const rawIndex = rawBefore.length;
 
-  if (rawValue.length < 2 && !/^[A-Za-z]$/.test(key)) {
-    event.preventDefault();
-    control?.setErrors({ letterExpected: true });
-    return;
+  if (!isDigit && !isLetter) return event.preventDefault();
+
+  if (rawIndex < 2 && !isLetter) {
+    control?.setErrors({ ...control.errors, letterExpected: true });
+    return event.preventDefault();
+  } 
+  
+  if (rawIndex >= 2 && rawIndex < 4 && !isDigit) {
+    control?.setErrors({ ...control.errors, digitExpected: true });
+    return event.preventDefault();
   }
 
-  if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
-    event.preventDefault();
-    control?.setErrors({ digitExpected: true });
-    return;
-  }
+  if (rawIndex >= 4 && rawIndex < 6) {
+    const remainder = rawTotal.substring(4);
+    const digitCount = (remainder.match(/\d/g) || []).length;
 
-  if (rawValue.length === 4 && !/^[A-Za-z]$/.test(key)) {
-    event.preventDefault();
-    control?.setErrors({ letterExpected: true });
-    return;
-  }
+    if (isDigit && digitCount >= 4) {
+      control?.setErrors({ ...control.errors, letterExpected: true });
+      return event.preventDefault();
+    }
 
-  if (rawValue.length === 5) {
-    if (!/^[a-zA-Z0-9]$/.test(key)) {
-      event.preventDefault();
-      return;
+    if (rawIndex === 4 && !isLetter) {
+      control?.setErrors({ ...control.errors, letterExpected: true });
+      return event.preventDefault();
     }
   }
 
-  if (rawValue.length >= 6 && rawValue.length < 10) {
-    if (!/^[0-9]$/.test(key)) {
-      event.preventDefault();
-      control?.setErrors({ digitExpected: true });
-      return;
-    }
-  }
 
-  if (rawValue.length >= 10) {
-    event.preventDefault();
+  if (rawIndex >= 6 && isLetter) {
+    control?.setErrors({ ...control.errors, digitExpected: true });
+    return event.preventDefault();
   }
 }
 
 onVehicleNumberInput(event: Event) {
   const input = event.target as HTMLInputElement;
+  const oldCursor = input.selectionStart || 0;
+  const oldVal = input.value;
+
 
   let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  raw = raw.substring(0, 10);
 
-  if(raw === '') {
-    // this.cancelEntry();
-    return;
-  }
+  let state = raw.substring(0, 2);
+  let dist = raw.substring(2, 4);
+  let rest = raw.substring(4);
 
-  let formatted = '';
+  const seriesMatch = rest.match(/^[A-Z]+/);
+  const series = seriesMatch ? seriesMatch[0].substring(0, 2) : '';
 
-  if (raw.length > 0) formatted += raw.substring(0, 2);
-  if (raw.length > 2) formatted += ' ' + raw.substring(2, 4);
+  const digitsMatch = rest.match(/\d+$/);
+  const digits = digitsMatch ? digitsMatch[0].substring(0, 4) : '';
 
-  if (raw.length > 4) {
-    const remainder = raw.substring(4);
-
-    const digitMatch = remainder.match(/\d/);
-    const firstDigitIndex = digitMatch
-      ? remainder.indexOf(digitMatch[0])
-      : -1;
-
-    if (firstDigitIndex === -1) {
-      formatted += ' ' + remainder.substring(0, 2);
-    } else {
-      const series = remainder.substring(0, firstDigitIndex);
-
-      const digits = remainder
-        .substring(firstDigitIndex)
-        .replace(/[^0-9]/g, '')
-        .substring(0, 4);
-
-      formatted += ' ' + series + ' ' + digits;
-    }
-  }
+  let formatted = state;
+  if (dist) formatted += ' ' + dist;
+  if (series) formatted += ' ' + series;
+  if (digits) formatted += ' ' + digits;
 
   input.value = formatted.trim();
+  this.vehicleUpdateForm.get('vehicleNumber')?.setValue(input.value, { emitEvent: false });
 
-  this.deleteCustomerForm
-    .get('vehicleNumber')
-    ?.setValue(input.value, { emitEvent: false });
+  const diff = input.value.length - oldVal.length;
+  input.setSelectionRange(oldCursor + diff, oldCursor + diff);
 }
 
 restrictNegativeVehicleInput(event: KeyboardEvent) {
@@ -270,13 +259,8 @@ async savePayment() {
   }
 
   try {
-
     const payload = this.paymentForm.value;
-
-
     await this.adminService.addPaymentMethod(payload);
-
-
     this.paymentForm.reset();
     this.paymentForm.markAsPristine();
     this.paymentForm.markAsUntouched();
@@ -310,20 +294,54 @@ async deleteExpense(id: string) {
   }
 }
 
-async deleteCustomerRecord() {
+async getCustomerRecord() {
   if (this.deleteCustomerForm.invalid) return;
   
   const vNbr = this.deleteCustomerForm.value.vehicleNumber;
-  if (confirm(`Are you sure you want to delete transactions for ${vNbr}?`)) {
+  this.showSettlementDetails = true;
+
     try {
-      await this.transactionService.deleteCustomerCurrentMonthTransaction(vNbr);
-      this.deleteCustomerForm.reset();
-      alert('Record deleted successfully');
+      const customerCurrentMonthDetails = await this.newCustomerEntryService.getVehicleByNumber(vNbr, 'vehicleNbr');
+      console.log(customerCurrentMonthDetails);
+      this.deleteCustomerForm.patchValue({
+        currentPending: customerCurrentMonthDetails.Transactions.currentPending,
+        // monthlyCost: customerCurrentMonthDetails.Transactions.monthlyCost,
+      });
     } catch (err) {
-      alert('Error deleting record');
+      console.log('Error deleting record');
     }
   }
-}
+
+
+  async adjustPending() {
+
+    if (this.deleteCustomerForm.invalid) return;
+  
+    const { vehicleNumber, settlementAmount } = this.deleteCustomerForm.getRawValue();
+  
+    if (!settlementAmount && settlementAmount !== 0) {
+      alert('Please enter a valid settlement amount.');
+      return;
+    }
+  
+    const confirmMsg = `Are you sure you want to update the pending amount for ${vehicleNumber} to ${settlementAmount}?`;
+    
+    if (confirm(confirmMsg)) {
+      try {
+        await this.transactionService.updateVehicleCurrentMonthPending(vehicleNumber, settlementAmount);
+        
+        alert('Pending amount updated successfully!');
+
+        this.deleteCustomerForm.get('settlementAmount')?.reset();
+        
+        await this.getCustomerRecord();
+        
+      } catch (err) {
+        console.error(err);
+        alert('Failed to update the pending amount.');
+      }
+    }
+  }
 
   ngOnDestroy() {
     this.destroy$.next();
