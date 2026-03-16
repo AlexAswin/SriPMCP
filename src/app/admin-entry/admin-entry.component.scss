@@ -1,45 +1,43 @@
+
+$primary-color: #3f51b5;
+$danger-color: #b91c1c;
+$border-color: #f3f4f6;
+$text-main: #111827;
+$text-muted: #6b7280;
+
 .admin-wrapper {
   padding: 24px;
   background-color: #f9fafb;
   min-height: 100vh;
-}
 
-.admin-header {
-  display: flex;
-  align-items: center;
-  gap: 50px;
-  margin-bottom: 24px;
-
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    color: #111827;
-  }
-
-  .back-btn {
-    color: #6b7280;
-    &:hover { background-color: #f3f4f6; }
-  }
-}
-
-.tab-content {
-  padding: 24px 0;
-  
-  &.centered {
+  .admin-header {
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: $text-main;
+    }
+
+    .back-btn {
+      color: $text-muted;
+      &:hover { background-color: #f3f4f6; }
+    }
   }
 }
+
 
 .master-detail-grid {
   display: grid;
-  grid-template-columns: 500px 1fr;
-  gap: 50px;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
   align-items: start;
 
-  @media (max-width: 900px) {
+  @media (max-width: 950px) {
     grid-template-columns: 1fr;
   }
 }
@@ -57,13 +55,10 @@
 mat-card {
   border-radius: 12px !important;
   background: #ffffff;
-  padding: 0px 20px;
+  padding: 8px 16px 20px 16px; 
   
   mat-card-header {
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    margin-bottom: 20px;
     
     mat-card-title {
       font-size: 18px;
@@ -76,21 +71,36 @@ mat-card {
 .vertical-form {
   display: flex;
   flex-direction: column;
-  gap: 50px;
+  gap: 16px;
 
   .row {
     display: flex;
+    flex-direction: row;
     gap: 12px;
-    flex-direction: column;
-    
+    width: 100%;
+
     mat-form-field {
       flex: 1;
     }
-  }
-}
 
-.full-width {
-  width: 100%;
+    @media (max-width: 480px) {
+      flex-direction: column;
+    }
+  }
+
+  .button-row {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    width: 100%;
+
+    app-button {
+      flex: 1;
+      width: 100%;
+    }
+  }
 }
 
 .inline-form {
@@ -101,38 +111,17 @@ mat-card {
 
   mat-form-field {
     flex: 1;
-    margin-bottom: -1.25em; 
+    margin-bottom: -1.25em;
   }
 }
 
-mat-list-item {
-  border-bottom: 1px solid #f3f4f6;
-  height: auto !important;
-  padding: 12px 0 !important;
-
-  &:last-child { border-bottom: none; }
-
-  [matListItemTitle] {
-    font-weight: 600;
-    color: #111827;
-  }
+.tab-content {
+  padding: 24px 0;
   
-  [matListItemLine] {
-    color: #6b7280;
-    font-size: 14px;
-  }
-}
-
-.edit-pane {
-  border: 1px solid #3f51b5 !important; 
-  background-color: #f5f7ff;
-  animation: fadeIn 0.3s ease-in-out;
-
-  .button-row {
+  &.centered {
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 16px;
+    justify-content: center;
+    align-items: flex-start;
   }
 }
 
@@ -141,25 +130,34 @@ mat-list-item {
   border: 1px solid #fee2e2 !important;
   
   mat-card-title {
-    color: #b91c1c !important;
-  }
-
-  p {
-    color: #6b7280;
-    font-size: 14px;
-    margin-bottom: 20px;
+    color: $danger-color !important;
   }
 
   .settlementDetails {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 16px;
+    background: #fff5f5;
+    border-radius: 8px;
 
-    mat-form-field {
-      padding: 20px 0px;
+    .button-group {
+      margin-top: 8px;
     }
   }
 }
 
+.full-width {
+  width: 100%;
+}
+
+.hint-text {
+  text-align: center;
+  color: $text-muted;
+  font-size: 14px;
+  margin-top: 12px;
+}
 
 .expense-chips {
   margin-top: 16px;
@@ -168,4 +166,8 @@ mat-list-item {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.edit-pane {
+  animation: fadeIn 0.3s ease-in-out;
 }
