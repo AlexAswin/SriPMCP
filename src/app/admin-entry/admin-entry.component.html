@@ -45,47 +45,54 @@
             </div>
   
             <div class="list-column">
-              <mat-card appearance="outlined" *ngIf="!editVehicleDetails()">
+              <mat-card appearance="outlined">
                 <mat-card-header>
-                  <mat-card-title>Current Vehicle Rates</mat-card-title>
+                  <mat-card-title>Manage Existing Vehicles</mat-card-title>
                 </mat-card-header>
-                <mat-list>
-                  <mat-list-item *ngFor="let vehicle of vehicleTypes()">
-                    <span matListItemTitle>{{ vehicle.vehicleType }}</span>
-                    <span matListItemLine>Monthly: ₹{{ vehicle.monthlyCost }} | Daily: ₹{{ vehicle.dailyCost }}</span>
-                    <div matListItemMeta>
-                      <button mat-icon-button color="primary" (click)="openEditMode(vehicle)">
-                        <mat-icon>edit</mat-icon>
-                      </button>
-                    </div>
-                  </mat-list-item>
-                </mat-list>
-              </mat-card>
-  
-              <mat-card appearance="outlined" class="edit-pane" *ngIf="editVehicleDetails()">
-                <mat-card-header>
-                  <button mat-icon-button (click)="cancelEdit()"><mat-icon>close</mat-icon></button>
-                  <mat-card-title>Update {{ vehicleUpdateForm.get('vehicleType')?.value }}</mat-card-title>
-                </mat-card-header>
+                
                 <mat-card-content>
-                  <form [formGroup]="vehicleUpdateForm" (ngSubmit)="updateVehicleDetails()">
-                    <mat-form-field  class="full-width">
-                      <mat-label>Select Duration</mat-label>
-                      <mat-select formControlName="duration">
-                        <mat-option value="Monthly">Monthly Price</mat-option>
-                        <mat-option value="Daily">Daily Price</mat-option>
+                  <form [formGroup]="vehicleUpdateForm" class="vertical-form">
+                    
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Select Vehicle Type</mat-label>
+                      <mat-select (selectionChange)="onVehicleSelect($event.value)" formControlName="selectedVehicleId">
+                        <mat-option *ngFor="let vehicle of vehicleTypes()" [value]="vehicle.id">
+                          {{ vehicle.vehicleType }}
+                        </mat-option>
                       </mat-select>
                     </mat-form-field>
-  
-                    <mat-form-field  class="full-width">
-                      <mat-label>New Price</mat-label>
-                      <input matInput type="number" formControlName="updatedPrice" (keydown)="restrictNegativeVehicleInput($event)">
-                    </mat-form-field>
-  
-                    <div class="button-row">
-                      <app-button label="Delete Vehicle" variant="secondary" (clicked)="deleteVehicle()"></app-button>
-                      <app-button label="Apply Changes" variant="primary" type="submit"></app-button>
+            
+                    <div class="row" *ngIf="vehicleUpdateForm.get('selectedVehicleId')?.value">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Monthly Rate</mat-label>
+                        <input matInput type="number" formControlName="monthlyCost" (keydown)="restrictNegativeVehicleInput($event)">
+                        <span matTextPrefix>₹&nbsp;</span>
+                      </mat-form-field>
+            
+                      <mat-form-field appearance="outline">
+                        <mat-label>Daily Rate</mat-label>
+                        <input matInput type="number" formControlName="dailyCost" (keydown)="restrictNegativeVehicleInput($event)">
+                        <span matTextPrefix>₹&nbsp;</span>
+                      </mat-form-field>
                     </div>
+            
+                    <div class="button-row" *ngIf="vehicleUpdateForm.get('selectedVehicleId')?.value">
+                      <app-button 
+                        label="Delete" 
+                        variant="secondary" 
+                        (click)="deleteVehicle()">
+                      </app-button>
+                      
+                      <app-button 
+                        label="Update Prices" 
+                        variant="primary" 
+                        (click)="updateVehicleDetails()">
+                      </app-button>
+                    </div>
+                    
+                    <p class="hint-text" *ngIf="!vehicleUpdateForm.get('selectedVehicleId')?.value">
+                      Please select a vehicle to edit or delete.
+                    </p>
                   </form>
                 </mat-card-content>
               </mat-card>

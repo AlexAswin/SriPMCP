@@ -76,9 +76,11 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     });
   
     this.vehicleUpdateForm = this.fb.group({
-      vehicleType: [{ value: '', disabled: true }, Validators.required],
-      duration: ['Monthly', Validators.required],
-      updatedPrice: ['', priceValidators]
+      // Match the formControlName in your HTML mat-select
+      selectedVehicleId: ['', Validators.required],
+      // Match the formControlNames in your price inputs
+      monthlyCost: ['', priceValidators],
+      dailyCost: ['', priceValidators]
     });
   
     this.deleteCustomerForm = this.fb.group({
@@ -125,12 +127,16 @@ async saveVehicle() {
 }
 
 async updateVehicleDetails() {
-  if (this.vehicleUpdateForm.invalid) return;
-  const { vehicleType, updatedPrice, duration } = this.vehicleUpdateForm.getRawValue();
-  try {
-    await this.adminService.updateVehiclePrice(vehicleType, Number(updatedPrice), duration);
-  } catch (err) {
-    console.error("Update failed:", err);
+  const { selectedVehicleId, monthlyCost, dailyCost } = this.vehicleUpdateForm.value;
+  
+  const vehicle = this.vehicleTypes().find(v => v.id === selectedVehicleId);
+  
+  if (vehicle && vehicle.vehicleType) {
+    try {
+      await this.adminService.updateVehiclePriceBatch(vehicle.vehicleType, monthlyCost, dailyCost);
+    } catch (error) {
+      console.error("Update failed", error);
+    }
   }
 }
 
@@ -248,6 +254,23 @@ async deleteVehicle() {
       console.error('Error deleting vehicle:', err);
       alert('Could not delete vehicle. Please try again.');
     }
+  }
+}
+
+onVehicleSelect(vehicleId: string) {
+  const selectedVehicle = this.vehicleTypes().find(v => v.id === vehicleId);
+
+  if (selectedVehicle) {
+    this.editVehicleDetails.set(true);
+
+    this.vehicleUpdateForm.patchValue({
+      selectedVehicleId: vehicleId, 
+      monthlyCost: selectedVehicle.monthlyCost,
+      dailyCost: selectedVehicle.dailyCost
+    });
+  } else {
+    this.editVehicleDetails.set(false);
+    this.vehicleUpdateForm.reset();
   }
 }
 

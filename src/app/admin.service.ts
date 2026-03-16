@@ -42,25 +42,28 @@ export class AdminService {
     return collectionData(ref, { idField: 'id' }) as Observable<VehicleType[]>;
   }
 
-  async updateVehiclePrice(vehicleType: string, newCost: number, duration: string) {
+  async updateVehiclePriceBatch(vehicleType: string, monthly: number, daily: number) {
     try {
       const vehicleCollection = collection(this.firestore, 'vehicles');
-  
       const q = query(vehicleCollection, where('vehicleType', '==', vehicleType));
       const querySnapshot = await getDocs(q);
   
-      if (querySnapshot.empty) {
-        return;
-      }
+      if (querySnapshot.empty) return;
 
-      const updateData =
-        duration === 'Monthly' ? { monthlyCost: newCost } : { dailyCost: newCost };
-  
-      querySnapshot.forEach(async docSnap => {
-        await updateDoc(docSnap.ref, updateData);
-      });
+      const updateData = { 
+        monthlyCost: monthly, 
+        dailyCost: daily 
+      };
+
+      const updatePromises = querySnapshot.docs.map(docSnap => 
+        updateDoc(docSnap.ref, updateData)
+      );
+      
+      await Promise.all(updatePromises);
+      console.log('Prices updated successfully!');
     } catch (error) {
       console.error('Error updating vehicle price:', error);
+      throw error;
     }
   }
 
