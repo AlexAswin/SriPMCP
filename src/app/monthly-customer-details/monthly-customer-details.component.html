@@ -129,10 +129,19 @@
                     </div>
             
                     <div class="billing-row mt-20"> <div class="form-group">
-                            <div class="input-row">
-                                <label>From Date</label>
-                                <input type="date" [min]="minDate" [formControl]="fromDateMonthly" />
+                        <div class="input-row">
+                            <label>From Date</label>
+                            <input 
+                                type="date" 
+                                [formControl]="fromDateMonthly" 
+                                [min]="minDate" 
+                                [max]="maxDate" />
+                            
+                            <div *ngIf="fromDateMonthly.value && (fromDateMonthly.value < minDate || fromDateMonthly.value > maxDate)" 
+                                 style="color: red; font-size: 12px;">
+                                Only current month allowed
                             </div>
+                        </div>
                             <div class="error-container" *ngIf="fromDateMonthly.invalid && (fromDateMonthly.dirty || fromDateMonthly.touched)">
                                 <small>Start date is required</small>
                             </div>

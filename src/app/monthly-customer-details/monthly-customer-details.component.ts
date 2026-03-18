@@ -69,6 +69,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   currentCustomer: string = '';
 
   minDate!: string;
+  maxDate!: string;
 
   ngOnInit() {
     this.vehicleTypes$ = this.adminService.getVehicleTypes().pipe(take(1));
@@ -176,15 +177,27 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   getMinDate = () => {
     const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    this.minDate = this.formatToISO(firstDay);
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    this.minDate = this.formatToISO(new Date(year, month, 1));
+    this.maxDate = this.formatToISO(new Date(year, month + 1, 0));
+
+    this.fromDateMonthly.valueChanges.subscribe(value => {
+      if (value) {
+        if (value < this.minDate || value > this.maxDate) {
+          alert("Please select a date within the current month.");
+          this.fromDateMonthly.setValue('');
+        }
+      }
+    });
   }
 
   formatToISO(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}` || `${d}-${m}-${y}` || `${m}-${d}-${y}`;
+    return `${y}-${m}-${d}`;
   }
 
   restrictVehicleInput(event: KeyboardEvent) {
