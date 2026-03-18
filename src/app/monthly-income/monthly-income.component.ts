@@ -186,12 +186,14 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               customerName: c.customerName,
               vehicleNumber: c.id,
               monthlyStatus: c.monthlyStatus,
+              advance: c.advance,
               Transactions: {
                 advance: c.Transactions?.advance,
                 lastTransactionDate: tx.transactionDate,
                 monthlyCost: c.Transactions?.monthlyCost,
                 transactionAmount: tx.transactionAmount,
                 currentPending: tx.newPending,
+                paymentMethod: tx.transactionType
               },
             }));
           });
