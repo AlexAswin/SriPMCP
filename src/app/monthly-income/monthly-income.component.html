@@ -70,13 +70,11 @@
 
       <app-button variant="primary" label="Reset" (click)="resetFilters(from, to)"></app-button>
 
-    </div>
+      <div class="filter-section">
+        <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
+      </div>
 
-    <div class="filter-section">
-      <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
-      <!-- <app-button variant="secondary" label="Download InActive Customers"></app-button> -->
     </div>
-
 
   </mat-sidenav>
 
