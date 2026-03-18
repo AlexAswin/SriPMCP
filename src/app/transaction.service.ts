@@ -209,7 +209,7 @@ export class TransactionService {
             docData(transactionDocRef),
             collectionData(fullHistoryRef, { idField: 'id' }),
           ]).pipe(
-            map(([ledger, fullHistory]) => {
+            map(([ledger]) => {
               if (!ledger) {
                 this.createNewMonthLedgerForActiveCustomers(currentMonth);
               }
