@@ -176,23 +176,15 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   getMinDate = () => {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    this.minDate = this.formatDate(firstDay);
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    this.minDate = this.formatToISO(firstDay);
   }
 
-  formatDate(date: Date) {
-    const d = new Date(date);
-    let month = '' + (d.getMonth() + 1);
-    let day = '' + d.getDate();
-    const year = d.getFullYear();
-
-    if (month.length < 2) month = '0' + month;
-    if (day.length < 2) day = '0' + day;
-
-    return [year, month, day].join('-');
+  formatToISO(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   restrictVehicleInput(event: KeyboardEvent) {
