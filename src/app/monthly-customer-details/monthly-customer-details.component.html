@@ -131,7 +131,7 @@
                     <div class="billing-row mt-20"> <div class="form-group">
                             <div class="input-row">
                                 <label>From Date</label>
-                                <input type="date" [formControl]="fromDateMonthly" />
+                                <input type="date" [min]="minDate" [formControl]="fromDateMonthly" />
                             </div>
                             <div class="error-container" *ngIf="fromDateMonthly.invalid && (fromDateMonthly.dirty || fromDateMonthly.touched)">
                                 <small>Start date is required</small>
