@@ -482,6 +482,10 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.note.valid &&
       (isEndDateRequired ? this.endDateMonthly.valid : true);
 
+      if(this.advance.value && (this.advance.value! > (this.vehicleDetailsForm?.get('amount')?.value))) {
+        return false
+      }
+
     if (!isMainValid || !areStandalonesValid) {
 
       this.vehicleDetailsForm.markAllAsTouched();

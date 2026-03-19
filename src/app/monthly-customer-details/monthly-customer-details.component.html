@@ -103,10 +103,15 @@
                         <div class="form-group">
                             <div class="input-row">
                                 <label>Advance</label>
-                                <input type="text" [formControl]="advance" (keydown)="restrictDigits($event)"/>
+                                <input type="text" [formControl]="advance" (keydown)="restrictDigits($event)" />
                             </div>
                             <div class="error-container" *ngIf="advance.invalid && (advance.dirty || advance.touched)">
                                 <small>Advance is required</small>
+                            </div>
+                            <div class="error-container" *ngIf="advance.value && (advance.value > (vehicleDetailsForm.get('amount')?.value))">
+                                <span style="color: red; font-size: 12px;">
+                                    Advance cannot be greater than the total amount
+                                </span>
                             </div>
                             <div class="error-container" *ngIf="advance.errors?.['pattern']">
                                 <small>Only digit is allowed.</small>
