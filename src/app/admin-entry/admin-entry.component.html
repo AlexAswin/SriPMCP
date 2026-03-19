@@ -160,6 +160,8 @@
                   </mat-form-field>
 
                   <app-button label="Get Customer Record" variant="secondary" type="submit"></app-button>
+                  <app-button label="Delete Last Record" variant="secondary" (click)="deleteLastTransaction()"></app-button>
+
 
                   <div *ngIf="showSettlementDetails" class="settlementDetails">
                     <mat-form-field appearance="outline">

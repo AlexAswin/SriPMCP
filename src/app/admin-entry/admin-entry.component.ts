@@ -335,6 +335,12 @@ async getCustomerRecord() {
     }
   }
 
+  deleteLastTransaction =() => {
+  const vNbr = this.deleteCustomerForm.value.vehicleNumber;
+
+    this.transactionService.deleteCustomerCurrentMonthTransaction(vNbr);
+  }
+
 
   async adjustPending() {
 
