@@ -135,7 +135,7 @@
                                 type="date" 
                                 [formControl]="fromDateMonthly" 
                                 [min]="minDate" 
-                                [max]="maxDate" />
+                                [max]="maxDate"/>
                             
                             <div *ngIf="fromDateMonthly.value && (fromDateMonthly.value < minDate || fromDateMonthly.value > maxDate)" 
                                  style="color: red; font-size: 12px;">
