@@ -186,7 +186,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.fromDateMonthly.valueChanges.subscribe(value => {
       if (value) {
         if (value < this.minDate || value > this.maxDate) {
-          alert("Please select a date within the current month.");
+          // alert("Please select a date within the current month.");
           this.fromDateMonthly.setValue('');
         }
       }
