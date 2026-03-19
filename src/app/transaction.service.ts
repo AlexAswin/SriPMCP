@@ -12,88 +12,81 @@ export class TransactionService {
     customer: string | null,
     transactionData: any
   ) => {
-    if (!customer) {
-      console.error('Customer is null');
-      return;
-    }
-
+    if (!customer) return;
+  
     try {
       const customerQuery = query(
         collection(this.firestore, 'CustomerEntry'),
         where('vehicleNumber', '==', customer)
       );
-
       const snapshot = await getDocs(customerQuery);
-
-      if (snapshot.empty) {
-        console.error('Customer not found');
-        return;
-      }
-
+      if (snapshot.empty) return;
+  
       const customerDoc = snapshot.docs[0];
       const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
-
-      const date = new Date(transactionData.transactionDate);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const currentMonth = `${year}-${String(month).padStart(2, '0')}`;
-      // const currentMonth = `2026-02`;
-
-      const transactionRef = doc(customerRef, 'Transactions', currentMonth);
-      const monthlyTransactionDetails = await getDoc(transactionRef);
-
-      if (!monthlyTransactionDetails.exists()) {
-        console.error('Monthly ledger does not exist');
-        return;
+  
+      const dateParts = transactionData.transactionDate.split('-');
+      const targetMonthId = `${dateParts[0]}-${dateParts[1]}`; 
+  
+      const targetMonthRef = doc(customerRef, 'Transactions', targetMonthId);
+      const targetMonthSnap = await getDoc(targetMonthRef);
+  
+      const now = new Date();
+      const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  
+      if (!targetMonthSnap.exists()) {
+        console.error(`Ledger for ${targetMonthId} missing. Cannot post backdated payment.`);
+        return; 
       }
-
-      const existing = monthlyTransactionDetails.data();
-
-      const previousTotal = existing['transactionAmount'] || 0;
-      const newPayment = transactionData.transactionAmount || 0;
-      const updatedAmount = previousTotal + newPayment;
-      const currentPending =
-        existing['currentPending'] ?? existing['monthlyCost'] ?? 0;
-      const pending = Math.max(currentPending - newPayment, 0);
-
-      let history = existing['transactionHistory'];
-      if (!Array.isArray(history)) {
-        history = history ? [history] : [];
-      }
-
+  
+      const existing = targetMonthSnap.data();
+      const newPayment = Number(transactionData.transactionAmount) || 0;
+      
+      const oldPending = Number(existing['currentPending'] ?? existing['monthlyCost'] ?? 0);
+      const updatedPending = Math.max(oldPending - newPayment, 0);
+      const updatedTotalPaid = (existing['transactionAmount'] || 0) + newPayment;
+  
       const newEntry = {
         transactionAmount: newPayment,
         transactionDate: transactionData.transactionDate,
-        transactionType: transactionData.paymentMethod,
-        existingPending: currentPending,
-        newPending: pending,
+        transactionType: transactionData.paymentMethod || 'Backdated Payment',
+        existingPending: oldPending,
+        newPending: updatedPending,
       };
-
-      const updatedHistory = [...history, newEntry];
-
-      await updateDoc(transactionRef, {
-        transactionHistory: updatedHistory,
-        transactionAmount: updatedAmount,
-        currentPending: pending,
-        lastTransactionDate: transactionData.transactionDate,
-        paymentMethod: transactionData.paymentMethod,
+  
+      let history = existing['transactionHistory'] || [];
+      await updateDoc(targetMonthRef, {
+        transactionHistory: arrayUnion(newEntry),
+        transactionAmount: updatedTotalPaid,
+        currentPending: updatedPending,
         isTransactionMade: true,
+        lastTransactionDate: transactionData.transactionDate
       });
-
-      const uniqueDocId = `${currentMonth}_${Date.now()}`;
-      const fullHistoryRef = doc(
-        transactionRef,
-        'FullTransactionHistory',
-        uniqueDocId
-      );
-
+  
+      if (targetMonthId !== currentMonthId) {
+        const currentMonthRef = doc(customerRef, 'Transactions', currentMonthId);
+        const currentSnap = await getDoc(currentMonthRef);
+        
+        if (currentSnap.exists()) {
+          const currentData = currentSnap.data();
+          const currentOpeningPending = Number(currentData['currentPending'] || 0);
+          
+          await updateDoc(currentMonthRef, {
+            currentPending: Math.max(currentOpeningPending - newPayment, 0)
+          });
+        }
+      }
+  
       await updateDoc(customerRef, {
         FullTransactionHistory: arrayUnion({
           ...newEntry,
           timestamp: new Date(),
-          id: `${currentMonth}_${Date.now()}`,
+          id: `${targetMonthId}_${Date.now()}`,
         }),
       });
+  
+      console.log(`Updated ${targetMonthId} and adjusted current balances.`);
+  
     } catch (error) {
       console.error('Transaction Error:', error);
     }
@@ -239,18 +232,26 @@ export class TransactionService {
     const customersRef = collection(this.firestore, 'CustomerEntry');
     const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
     const customersSnap = await getDocs(q);
-    if (customersSnap.empty) return;
+    
+    if (customersSnap.empty) {
+      console.log('No active customers found.');
+      return;
+    }
   
-    const currentMonthId = this.getMonthIdFromDate(date);
-    const d = new Date(date);
-    d.setMonth(d.getMonth() - 1);
-    const prevMonthId = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const dateParts = date.split('-');
+    const year = parseInt(dateParts[0]);
+    const month = parseInt(dateParts[1]) - 1;
+  
+    const currentMonthId = `${year}-${String(month + 1).padStart(2, '0')}`;
+    
+    const prevDateObj = new Date(year, month - 1, 1);
+    const prevMonthId = `${prevDateObj.getFullYear()}-${String(prevDateObj.getMonth() + 1).padStart(2, '0')}`;
   
     let batch = writeBatch(this.firestore);
     let operationCount = 0;
   
     for (const customerDoc of customersSnap.docs) {
-      if (operationCount >= 480) {
+      if (operationCount >= 400) {
         await batch.commit();
         batch = writeBatch(this.firestore);
         operationCount = 0;
@@ -260,22 +261,30 @@ export class TransactionService {
       const customerData = customerDoc.data();
       const transactionsRef = collection(this.firestore, `CustomerEntry/${customerId}/Transactions`);
   
+      const currentLedgerRef = doc(transactionsRef, currentMonthId);
+      const currentSnap = await getDoc(currentLedgerRef);
+      
+      if (currentSnap.exists()) {
+        console.log(`Skipping ${customerId}: Ledger ${currentMonthId} already exists.`);
+        continue; 
+      }
+  
       const prevLedgerRef = doc(transactionsRef, prevMonthId);
       const prevSnap = await getDoc(prevLedgerRef);
-  
       const prevData = prevSnap.exists() ? prevSnap.data() : {};
-      const prevPending = prevData['currentPending'] ?? 0;
-      const monthlyCost = prevData['monthlyCost'] ?? 0;
+  
+      const monthlyCost = Number(prevData['monthlyCost'] ?? customerData['monthlyCost'] ?? 0);
+      const prevPending = Number(prevData['currentPending'] ?? 0);
+      const advance = Number(prevData['advance'] ?? customerData['advance'] ?? 0);
       const isTransactionMade = prevData['isTransactionMade'] ?? false;
-      const advance = prevData['advance'] ?? 0;
   
       const newPending = prevPending + monthlyCost;
+  
       const idleMarkerId = `${prevMonthId}_IDLE`;
-      
       const fullHistory = customerData['FullTransactionHistory'] || [];
       const alreadyHasIdle = fullHistory.some((h: any) => h.id === idleMarkerId);
   
-      if (!isTransactionMade && !alreadyHasIdle) {
+      if (!isTransactionMade && !alreadyHasIdle && prevSnap.exists()) {
         const customerRef = doc(this.firestore, 'CustomerEntry', customerId);
         batch.update(customerRef, {
           FullTransactionHistory: arrayUnion({
@@ -291,18 +300,18 @@ export class TransactionService {
         operationCount++;
       }
   
-      const newLedgerRef = doc(transactionsRef, currentMonthId);
-      batch.set(newLedgerRef, {
-        advance: advance,
+      batch.set(currentLedgerRef, {
         currentPending: newPending,
         monthlyCost: monthlyCost,
-        isTransactionMade: false, 
+        isTransactionMade: false,
       }, { merge: true });
+  
       operationCount++;
     }
-
+  
     if (operationCount > 0) {
       await batch.commit();
+      console.log('Monthly Ledger generation complete.');
     }
   }
 
