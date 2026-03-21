@@ -23,9 +23,30 @@ $text-muted: #6b7280;
       color: $text-main;
     }
 
-    .back-btn {
-      color: $text-muted;
-      &:hover { background-color: #f3f4f6; }
+    button {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      margin-right: 20px;
+      flex-shrink: 0;
+  
+      &:hover {
+        background-color: #fff;
+        transform: translateX(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+  
+      mat-icon {
+        color: #555;
+      }
     }
   }
 }
@@ -170,4 +191,38 @@ mat-card {
 
 .edit-pane {
   animation: fadeIn 0.3s ease-in-out;
+}
+
+.alert-container {
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px !important;
+}
+
+.alert-content span {
+  flex: 1;
+  font-weight: 500;
+}
+
+.success-alert {
+  background-color: #e8f5e9; 
+  color: #2e7d32;
+  border-left: 5px solid #2e7d32;
+}
+
+.error-alert {
+  background-color: #ffebee; 
+  color: #c62828;
+  border-left: 5px solid #c62828;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

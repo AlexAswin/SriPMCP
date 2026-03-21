@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
-import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, FormGroupDirective, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import { ButtonComponent } from '../Common/button/button.component';
 import {ChangeDetectionStrategy, signal} from '@angular/core';
 import {MatExpansionModule} from '@angular/material/expansion';
@@ -43,6 +43,9 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
 
   expenses$!: Observable<any[]>;
   private destroy$ = new Subject<void>();
+
+  alertMessage: string = '';
+  alertType: 'success' | 'error' = 'success';
 
   constructor(
     private fb: FormBuilder,
@@ -115,28 +118,51 @@ cancelEdit() {
   this.vehicleUpdateForm.reset({ duration: 'Monthly' });
 }
 
-async saveVehicle() {
+async saveVehicle(formDirective: FormGroupDirective) {
   if (this.vehicleForm.invalid) return;
   
   try {
     await this.adminService.addVehicle(this.vehicleForm.value);
+    this.showAlert('Vehicle added successfully!');
+
+    formDirective.resetForm();
+
     this.vehicleForm.reset();
+    
   } catch (err) {
     console.error("Error adding vehicle:", err);
+    this.showAlert('Failed to add vehicle.', 'error');
   }
 }
 
 async updateVehicleDetails() {
   const { selectedVehicleId, monthlyCost, dailyCost } = this.vehicleUpdateForm.value;
   
+  if (this.vehicleUpdateForm.invalid) {
+    this.showAlert('Please enter valid prices.', 'error');
+    return;
+  }
+
   const vehicle = this.vehicleTypes().find(v => v.id === selectedVehicleId);
   
   if (vehicle && vehicle.vehicleType) {
     try {
-      await this.adminService.updateVehiclePriceBatch(vehicle.vehicleType, monthlyCost, dailyCost);
+      await this.adminService.updateVehiclePriceBatch(
+        vehicle.vehicleType, 
+        monthlyCost, 
+        dailyCost
+      );
+
+      this.showAlert(`Prices for ${vehicle.vehicleType} updated successfully!`);
+
+      this.vehicleUpdateForm.reset();
+      
     } catch (error) {
       console.error("Update failed", error);
+      this.showAlert('Failed to update vehicle prices. Please try again.', 'error');
     }
+  } else {
+    this.showAlert('Please select a valid vehicle first.', 'error');
   }
 }
 
@@ -234,25 +260,24 @@ restrictNegativeVehicleInput(event: KeyboardEvent) {
 
 
 async deleteVehicle() {
-
-  const vehicleType = this.vehicleUpdateForm.getRawValue().vehicleType;
+  const vehicleType = this.vehicleUpdateForm.getRawValue().selectedVehicleId;
   
-  if (!vehicleType) return;
+  if (!vehicleType) {
+    this.showAlert('No vehicle selected to delete.', 'error');
+    return;
+  }
 
-
-  const confirmDelete = confirm(`Are you sure you want to delete "${vehicleType}"? This will remove it from the selection list.`);
+  const confirmDelete = true;
   
   if (confirmDelete) {
     try {
-
       await this.adminService.deleteVehicle(vehicleType);
-      
       this.cancelEdit(); 
-         
-      console.log(`${vehicleType} deleted successfully`);
+      this.showAlert(`Vehicle "${vehicleType}" deleted successfully!`);
+        
     } catch (err) {
-      console.error('Error deleting vehicle:', err);
-      alert('Could not delete vehicle. Please try again.');
+      console.error("Error deleting vehicle:", err);
+      this.showAlert('Failed to delete vehicle. Please try again.', 'error');
     }
   }
 }
@@ -370,6 +395,15 @@ async getCustomerRecord() {
         alert('Failed to update the pending amount.');
       }
     }
+  }
+
+  showAlert(message: string, type: 'success' | 'error' = 'success') {
+    this.alertMessage = message;
+    this.alertType = type;
+  
+    setTimeout(() => {
+      this.alertMessage = '';
+    }, 3000);
   }
 
   ngOnDestroy() {

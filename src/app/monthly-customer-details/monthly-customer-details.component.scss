@@ -6,6 +6,8 @@ $error-red: #c62828;
 $border-color: #ccc;
 $label-width: 120px;
 $input-gap: 10px;
+$text-main: #111827;
+
 
 @mixin flex-row-layout {
   display: flex;
@@ -23,17 +25,47 @@ body {
 .parent-container {
   display: flex;
   background-color: #fdfdfd;
+  flex-direction: column;
 
-  .back-btn {
-    border: none;
-    background: transparent;
-    min-width: 80px;
-    min-height: 100vh;
-    cursor: pointer;
-    color: #333;
-    transition: color 0.2s;
+  .admin-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 32px;
 
-    &:hover { color: $primary-blue; }
+    h1 {
+      margin: 0 auto;
+      font-size: 24px;
+      font-weight: 600;
+      color: $text-main;
+    }
+
+    button {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      margin-right: 20px;
+      margin-left: 40px;
+      flex-shrink: 0;
+  
+      &:hover {
+        background-color: #fff;
+        transform: translateX(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+  
+      mat-icon {
+        color: #555;
+      }
+    }
   }
 
   .form-container {
@@ -42,12 +74,7 @@ body {
     margin: 40px auto;
     padding: 0 20px;
 
-    h1 {
-      text-align: center;
-      font-weight: 500;
-      margin-bottom: 30px;
-      color: #222;
-    }
+    
 
     .section {
       background: #fff;
