@@ -1,12 +1,14 @@
 <div class="parent-container">
-    <button (click)="closeForm()" class="back-btn">
-        <mat-icon>arrow_back</mat-icon>
-    </button>
+
+    <header class="admin-header">
+        <button mat-icon-button (click)="closeForm()" class="back-btn">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h1>Monthly Customer Details</h1>
+    </header>
 
     <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
-        <div class="header-title">
-            <h1>Monthly Customer Details</h1>
-        </div>
+       
 
         <mat-card class="alert-card" *ngIf="showAlert" [ngClass]="type">
             <mat-icon>{{ type === 'success' ? 'person_add' : type === 'error' ? 'error' : 'warning' }}</mat-icon>

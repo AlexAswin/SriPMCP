@@ -59,7 +59,7 @@
 
             <div class="form-group">
               <label>Transaction Date</label>
-              <input type="date" formControlName="transactionDate" />
+              <input type="date" formControlName="transactionDate" [max]="maxDate" />
               <div class="error-msg" *ngIf="monthlyPaymentForm.get('transactionDate')?.touched && monthlyPaymentForm.get('transactionDate')?.invalid">
                 <small>Please select a valid payment date.</small>
               </div>

@@ -40,6 +40,8 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   isSubmitting: boolean = false;
 
+  maxDate!: string;
+
   
 
   ngOnInit() {
@@ -60,6 +62,9 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
           this.checkExistingUser(value);
         }
       });
+
+    this.getMaxDate();
+
   }
 
   constructor (private fb: FormBuilder,
@@ -305,6 +310,29 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
 
   closeForm() {
     this.router.navigate(['/dashBoard']);
+  }
+
+  getMaxDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    this.maxDate = this.formatToISO(new Date(year, month + 1, 0));
+
+    this.transactionDate.valueChanges.subscribe(value => {
+      if (value) {
+        if (value > this.maxDate) {
+          this.transactionDate.setValue('');
+        }
+      }
+    });
+  }
+
+  formatToISO(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   ngOnDestroy() {
