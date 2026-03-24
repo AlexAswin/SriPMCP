@@ -45,6 +45,8 @@ export class TransactionService {
       const oldPending = Number(existing['currentPending'] ?? existing['monthlyCost'] ?? 0);
       const updatedPending = Math.max(oldPending - newPayment, 0);
       const updatedTotalPaid = (existing['transactionAmount'] || 0) + newPayment;
+      const currentMonthTotal = existing['currentMonthTotal']?? (existing['currentPending'] || 0) + existing['monthlyCost'] ;
+
   
       const newEntry = {
         transactionAmount: newPayment,
@@ -60,7 +62,9 @@ export class TransactionService {
         transactionAmount: updatedTotalPaid,
         currentPending: updatedPending,
         isTransactionMade: true,
-        lastTransactionDate: transactionData.transactionDate
+        currentMonthTotal: currentMonthTotal,
+        lastTransactionDate: transactionData.transactionDate,
+
       });
   
       if (targetMonthId !== currentMonthId) {
@@ -72,7 +76,8 @@ export class TransactionService {
           const currentOpeningPending = Number(currentData['currentPending'] || 0);
           
           await updateDoc(currentMonthRef, {
-            currentPending: Math.max(currentOpeningPending - newPayment, 0)
+            currentPending: Math.max(currentOpeningPending - newPayment, 0),
+            currentMonthTotal: Math.max(currentOpeningPending - newPayment, 0)
           });
         }
       }
@@ -302,8 +307,9 @@ export class TransactionService {
   
       batch.set(currentLedgerRef, {
         currentPending: newPending,
-        monthlyCost: monthlyCost,
+        currentMonthTotal: newPending,
         isTransactionMade: false,
+        monthlyCost: monthlyCost,
       }, { merge: true });
   
       operationCount++;
