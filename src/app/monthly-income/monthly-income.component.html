@@ -131,7 +131,7 @@
 
           <ng-container matColumnDef="monthlyCost">
             <th mat-header-cell *matHeaderCellDef>Amount</th>
-            <td mat-cell *matCellDef="let Customers">₹{{ Customers.Transactions.monthlyCost }}</td>
+            <td mat-cell *matCellDef="let Customers">₹{{ Customers.Transactions.currentMonthTotal }}</td>
             <td mat-footer-cell *matFooterCellDef>
               ₹{{totalMonthlyCost$ | async }}
             </td>

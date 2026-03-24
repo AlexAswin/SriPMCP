@@ -53,6 +53,7 @@ export class NewCustomerEntryService {
     );
 
     const transactionData = {
+      currentMonthTotal: Number(customerDetails.amount) || 0,
       monthlyCost: Number(customerDetails.amount) || 0,
       currentPending: Number(customerDetails.amount) || 0,
       isTransactionMade: false,
