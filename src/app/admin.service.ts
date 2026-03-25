@@ -81,4 +81,9 @@ export class AdminService {
     const docRef = doc(this.firestore, `expenses/${expenseId}`);
     return deleteDoc(docRef);
   }
+
+  deletePaymentMethod(expenseId: string) {
+    const docRef = doc(this.firestore, `paymentMethods/${expenseId}`);
+    return deleteDoc(docRef);
+  }
 }

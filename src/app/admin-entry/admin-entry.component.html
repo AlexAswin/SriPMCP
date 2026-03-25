@@ -129,6 +129,13 @@
               </mat-form-field>
               <button mat-mini-fab color="primary"><mat-icon>add</mat-icon></button>
             </form>
+
+            <mat-chip-set class="expense-chips">
+              <mat-chip-row *ngFor="let methods of paymentMethods$ | async" (removed)="deletePaymentMethods(methods.id)">
+                {{ methods.paymentMethod }}
+                <button matChipRemove><mat-icon>cancel</mat-icon></button>
+              </mat-chip-row>
+            </mat-chip-set>
           </mat-card-content>
         </mat-card>
       </div>
