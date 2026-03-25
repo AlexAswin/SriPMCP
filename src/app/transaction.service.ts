@@ -187,40 +187,57 @@ export class TransactionService {
 
   getAllCustomersWithTransactions(): Observable<any[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
+
     const q = query(customersRef, where('customerType', '==', 'Monthly'));
     const currentMonth = this.getCurrentMonth();
-
+  
     return collectionData(q, { idField: 'id' }).pipe(
       switchMap((customers: any[]) => {
+        if (!customers.length) return of([]);
+  
         const customerStreams = customers.map((customer) => {
-          const transactionDocRef = doc(
-            this.firestore,
-            `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
-          );
 
-          const fullHistoryRef = collection(
-            this.firestore,
-            `CustomerEntry/${customer.id}/Transactions/${currentMonth}/FullTransactionHistory`
-          );
-
-          return combineLatest([
-            docData(transactionDocRef),
-            collectionData(fullHistoryRef, { idField: 'id' }),
-          ]).pipe(
-            map(([ledger]) => {
-              if (!ledger) {
-                this.createNewMonthLedgerForActiveCustomers(currentMonth);
-              }
-
-              return {
-                ...customer,
-                Transactions: ledger || {},
-                // FullTransactionHistory: fullHistory || []
-              };
-            })
-          );
+          if (customer.monthlyStatus !== 'InActive') {
+            const transactionDocRef = doc(
+              this.firestore,
+              `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
+            );
+  
+            return docData(transactionDocRef).pipe(
+              map((ledger: any) => {
+                if (!ledger) {
+                  this.createNewMonthLedgerForActiveCustomers(currentMonth);
+                }
+                return {
+                  ...customer,
+                  Transactions: ledger || {}
+                };
+              })
+            );
+          } 
+          
+          else {
+            const txRef = collection(
+              this.firestore,
+              `CustomerEntry/${customer.id}/Transactions`
+            );
+  
+            return collectionData(txRef, { idField: 'monthId' }).pipe(
+              map((txns: any[]) => {
+                let lastTxn = {};
+                if (txns && txns.length > 0) {
+                  txns.sort((a, b) => a.monthId.localeCompare(b.monthId));
+                  lastTxn = txns[txns.length - 1];
+                }
+                return {
+                  ...customer,
+                  Transactions: lastTxn
+                };
+              })
+            );
+          }
         });
-
+  
         return combineLatest(customerStreams);
       })
     );
