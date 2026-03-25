@@ -356,7 +356,8 @@ export class TransactionService {
     );
 
     await updateDoc(transactionRef, {
-      currentPending: settlementAmount 
+      currentPending: settlementAmount,
+      currentMonthTotal: settlementAmount 
     });
     return true;
   } catch (error) {
