@@ -42,6 +42,8 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   showSettlementDetails: boolean = false;
 
   expenses$!: Observable<any[]>;
+  paymentMethods$!: Observable<any[]>;
+
   private destroy$ = new Subject<void>();
 
   alertMessage: string = '';
@@ -102,6 +104,7 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
       });
 
     this.expenses$ = this.adminService.getExpenses();
+    this.paymentMethods$ = this.adminService.getPaymentMethods();
   }
 
 openEditMode(vehicle: any) {
@@ -336,6 +339,16 @@ async deleteExpense(id: string) {
   if (confirm('Delete this expense category?')) {
     try {
       await this.adminService.deleteExpense(id);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+
+async deletePaymentMethods(id: string) {
+  if (confirm('Delete this Payment Method?')) {
+    try {
+      await this.adminService.deletePaymentMethod(id);
     } catch (err) {
       console.error(err);
     }
