@@ -226,3 +226,55 @@ mat-card {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.maintenance-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 10px;
+
+  .vehicle-input { flex: 1; margin-bottom: -1.25em; } // Aligns with button height
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 20px;
+}
+
+.danger-zone-card {
+  border: 1px solid #ffcdd2;
+  background-color: #fff9f9;
+  
+  .warning-text { color: #d32f2f; font-size: 0.9rem; margin: 10px 0; }
+}
+
+.balance-amount {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #3f51b5;
+  margin: 10px 0 20px 0;
+  border: none;
+}
+
+.uppercase-bold {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.full-width { width: 100%; }
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
