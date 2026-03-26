@@ -381,31 +381,34 @@ async getCustomerRecord() {
 
 
   async adjustPending() {
-
-    if (this.deleteCustomerForm.invalid) return;
-  
     const { vehicleNumber, settlementAmount } = this.deleteCustomerForm.getRawValue();
   
-    if (!settlementAmount && settlementAmount !== 0) {
-      alert('Please enter a valid settlement amount.');
+    // 1. Validation check
+    if (settlementAmount === null || settlementAmount === undefined || settlementAmount < 0) {
+      this.showAlert('Please enter a valid settlement amount.', 'error');
       return;
     }
   
-    const confirmMsg = `Are you sure you want to update the pending amount for ${vehicleNumber} to ${settlementAmount}?`;
+    const confirmMsg = `Update pending amount for ${vehicleNumber} to ₹${settlementAmount}?`;
     
     if (confirm(confirmMsg)) {
       try {
+        // 2. Perform the update
         await this.transactionService.updateVehicleCurrentMonthPending(vehicleNumber, settlementAmount);
         
-        alert('Pending amount updated successfully!');
-
+        // 3. Success Alert
+        this.showAlert(`Balance for ${vehicleNumber} updated to ₹${settlementAmount} successfully!`);
+  
+        // 4. Cleanup
         this.deleteCustomerForm.get('settlementAmount')?.reset();
         
+        // 5. Refresh the UI data
         await this.getCustomerRecord();
         
       } catch (err) {
-        console.error(err);
-        alert('Failed to update the pending amount.');
+        console.error('Adjustment Error:', err);
+        // 6. Error Alert
+        this.showAlert('Failed to update the pending amount. Please try again.', 'error');
       }
     }
   }
