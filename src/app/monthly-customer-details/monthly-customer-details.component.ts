@@ -47,7 +47,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     Validators.pattern('^[0-9]*$'),
   ]);
   customerType = new FormControl<string>('monthly', [Validators.required]);
-  monthlyStatus = new FormControl<string>('', [Validators.required]);
+  monthlyStatus = new FormControl<string>('Active', [Validators.required]);
   fromDateMonthly = new FormControl<string>('', [Validators.required]);
   endDateMonthly = new FormControl<string>('', [Validators.required]);
   note = new FormControl<string>('', [Validators.required]);
@@ -324,8 +324,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       'vehicleNbr'
     );
   
-    this.currentCustomer = res?.vehicleNumber;
-  
+    this.currentCustomer = res?.vehicleNumber;  
 
     if (res && res.monthlyStatus) {
       this.cancelEntry();
@@ -401,6 +400,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.isNewMonthlyCustomer = true;
     this.isMonthlyActiveCustomer = false;
     this.isMonthlyInActiveCustomer = false;
+
   
     const isUserTyping = this.vehicleDetailsForm.get('customerName')?.dirty || 
                          this.vehicleDetailsForm.get('customerPhoneNbr')?.dirty||
@@ -408,6 +408,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   
     if (!isUserTyping) {
       this.resetStandaloneControls();
+      this.monthlyStatus.setValue('Active');
       this.vehicleDetailsForm.patchValue({
         vehicleType: '',
         customerName: '',
