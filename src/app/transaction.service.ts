@@ -54,6 +54,7 @@ export class TransactionService {
         transactionType: transactionData.paymentMethod || 'Backdated Payment',
         existingPending: oldPending,
         newPending: updatedPending,
+        id: `${customer}-${targetMonthId}-${(existing['transactionHistory']?.length + 1 || 1)}`,
       };
   
       let history = existing['transactionHistory'] || [];
@@ -86,7 +87,7 @@ export class TransactionService {
         FullTransactionHistory: arrayUnion({
           ...newEntry,
           timestamp: new Date(),
-          id: `${targetMonthId}_${Date.now()}`,
+          id: `${customer}-${targetMonthId}-${(existing['transactionHistory']?.length + 1 || 1)}`,
         }),
       });
   
