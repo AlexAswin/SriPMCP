@@ -223,6 +223,7 @@
                           <th>Paid</th>
                           <th>Balance</th>
                           <th>Payment Type</th>
+                          <th>Transaction Id</th>
                         </tr>
                       </thead>
                       <tbody>                
@@ -232,6 +233,7 @@
                             <td>₹{{ t.transactionAmount }}</td>
                             <td>{{ t.newPending }}</td>
                             <td>{{ t.transactionType  }}</td>
+                            <td>{{ t.id  }}</td>
                           </tr>
 
                           <tr *ngIf="!row.FullTransactionHistory?.length">
