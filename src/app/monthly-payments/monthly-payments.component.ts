@@ -81,7 +81,9 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
       customerName: [{ value: '', disabled: false }, Validators.required],
       amount: [{ value: '', disabled: false }, Validators.required],
       advance: [{ value: '', disabled: false }, Validators.required],
-      transactionDate: [{ value: '', disabled: false }, Validators.required],
+      transactionDate: [{ value: '', disabled: false }, [Validators.required,(control: any) => {
+        return control.value > this.maxDate ? { futureMonth: true } : null;
+      }]],
       paymentMethod: [{ value: '', disabled: false }, Validators.required],
       payingAmount: [{ value: '', disabled: false }, Validators.required],
     })
@@ -334,6 +336,8 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   }
+
+
 
   ngOnDestroy() {
     this.destroy$.next();
