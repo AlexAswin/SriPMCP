@@ -63,6 +63,9 @@
               <div class="error-msg" *ngIf="monthlyPaymentForm.get('transactionDate')?.touched && monthlyPaymentForm.get('transactionDate')?.invalid">
                 <small>Please select a valid payment date.</small>
               </div>
+              <small *ngIf="monthlyPaymentForm.get('transactionDate')?.value > maxDate">
+                Please select a date within the current month.
+              </small>
             </div>
           </div>
       
