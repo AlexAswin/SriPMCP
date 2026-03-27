@@ -193,7 +193,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                 monthlyCost: c.Transactions?.monthlyCost,
                 transactionAmount: tx.transactionAmount,
                 currentPending: tx.newPending,
-                paymentMethod: tx.transactionType
+                paymentMethod: tx.transactionType,
+                currentMonthTotal: c.Transactions.currentMonthTotal
               },
             }));
           });
@@ -216,6 +217,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
             return sort.direction === 'asc' ? valueA - valueB : valueB - valueA;
           });
         }
+    console.log(filteredList)
+
         return filteredList;
       })
     );

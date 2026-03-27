@@ -49,6 +49,8 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   alertMessage: string = '';
   alertType: 'success' | 'error' = 'success';
 
+  monthlyStatus: string = ''
+
   constructor(
     private fb: FormBuilder,
     private adminService: AdminService,
@@ -363,6 +365,8 @@ async getCustomerRecord() {
 
     try {
       const customerCurrentMonthDetails = await this.newCustomerEntryService.getVehicleByNumber(vNbr, 'vehicleNbr');
+      this.monthlyStatus = customerCurrentMonthDetails.monthlyStatus
+
       console.log(customerCurrentMonthDetails);
       this.deleteCustomerForm.patchValue({
         currentPending: customerCurrentMonthDetails.Transactions.currentPending,
@@ -373,17 +377,32 @@ async getCustomerRecord() {
     }
   }
 
-  deleteLastTransaction =() => {
-  const vNbr = this.deleteCustomerForm.value.vehicleNumber;
-
-    this.transactionService.deleteCustomerCurrentMonthTransaction(vNbr);
+  async deleteLastTransaction() {
+    const vNbr = this.deleteCustomerForm.value.vehicleNumber;
+    
+    try {
+      if (this.monthlyStatus === 'InActive') {
+         this.transactionService.deleteCustomerCurrentMonthTransaction(vNbr);
+        
+        this.showAlert(`Last month transaction history for ${vNbr} deleted successfully!`);
+        await this.getCustomerRecord(); 
+        
+      } else if (this.monthlyStatus === 'Active') {
+        this.showAlert(
+          `Vehicle ${vNbr} is currently active. Please Inactive the customer to delete records!`, 
+          'error'
+        );
+      }
+    } catch (err) {
+      console.error("Deletion failed:", err);
+      this.showAlert('Failed to delete the record. Please try again.', 'error');
+    }
   }
 
 
   async adjustPending() {
     const { vehicleNumber, settlementAmount } = this.deleteCustomerForm.getRawValue();
   
-    // 1. Validation check
     if (settlementAmount === null || settlementAmount === undefined || settlementAmount < 0) {
       this.showAlert('Please enter a valid settlement amount.', 'error');
       return;
@@ -393,21 +412,16 @@ async getCustomerRecord() {
     
     if (confirm(confirmMsg)) {
       try {
-        // 2. Perform the update
         await this.transactionService.updateVehicleCurrentMonthPending(vehicleNumber, settlementAmount);
         
-        // 3. Success Alert
         this.showAlert(`Balance for ${vehicleNumber} updated to ₹${settlementAmount} successfully!`);
   
-        // 4. Cleanup
         this.deleteCustomerForm.get('settlementAmount')?.reset();
         
-        // 5. Refresh the UI data
         await this.getCustomerRecord();
         
       } catch (err) {
         console.error('Adjustment Error:', err);
-        // 6. Error Alert
         this.showAlert('Failed to update the pending amount. Please try again.', 'error');
       }
     }
@@ -428,3 +442,8 @@ async getCustomerRecord() {
   }
 
 }  
+
+function elseIf() {
+  throw new Error('Function not implemented.');
+}
+
