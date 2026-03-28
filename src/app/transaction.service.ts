@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, addDoc, arrayUnion, collection, collectionData, deleteDoc, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from '@angular/fire/firestore';
+import { Firestore, addDoc, arrayRemove, arrayUnion, collection, collectionData, deleteDoc, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from '@angular/fire/firestore';
 import { Observable, combineLatest, from, map, of, switchMap, tap } from 'rxjs';
 
 @Injectable({
@@ -65,6 +65,7 @@ export class TransactionService {
         isTransactionMade: true,
         currentMonthTotal: currentMonthTotal,
         lastTransactionDate: transactionData.transactionDate,
+        paymentMethod: transactionData.paymentMethod
 
       });
   
@@ -361,6 +362,40 @@ export class TransactionService {
 
     await deleteDoc(transactionRef);
     console.log('Deleted successfully');
+  }
+
+  async deleteTransactionByID(vehicleNumber: string, transactionId: string) {
+    const currentMonth = this.getCurrentMonth();
+    const transactionRef = doc(
+      this.firestore,
+      `CustomerEntry/${vehicleNumber}/Transactions/${currentMonth}`
+    );
+  
+    try {
+
+      const docSnap = await getDoc(transactionRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const transactionToRemoveFull = data['FullTransactionHistory']?.find(
+          (t: any) => t.id === transactionId
+        );
+        
+        const transactionToRemoveShort = data['Transactions']?.['transactionHistory']?.find(
+          (t: any) => t.id === transactionId
+        );
+  
+        await updateDoc(transactionRef, {
+          "FullTransactionHistory": arrayRemove(transactionToRemoveFull),
+          "Transactions.transactionHistory": arrayRemove(transactionToRemoveShort),
+          // "Transactions.transactionAmount": data['Transactions'].transactionAmount - (transactionToRemoveFull?.transactionAmount || 0)
+        });
+  
+        console.log("Transaction deleted successfully");
+      }
+    } catch (error) {
+      console.error("Error deleting transaction: ", error);
+    }
   }
 
   async updateVehicleCurrentMonthPending(vehicleNumber: string, settlementAmount: number) {

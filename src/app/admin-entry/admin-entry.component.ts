@@ -399,6 +399,10 @@ async getCustomerRecord() {
     }
   }
 
+  deleteTransactionById = async () => {
+    await this.transactionService.deleteTransactionByID('AA 11 A 1111','AA 11 A 1111-2026-03-1')
+  }
+
 
   async adjustPending() {
     const { vehicleNumber, settlementAmount } = this.deleteCustomerForm.getRawValue();

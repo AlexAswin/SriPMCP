@@ -178,6 +178,13 @@
             <mat-card-actions align="end">
               <app-button label="Delete" variant="secondary" (click)="deleteLastTransaction()" class="warn-btn"></app-button>
             </mat-card-actions>
+
+            <input matInput placeholder="ID...."
+                       class="uppercase-bold">
+
+            <mat-card-actions align="end">
+              <app-button label="Delete Transaction" variant="primary" (click)="deleteTransactionById()" class="warn-btn"></app-button>
+            </mat-card-actions>
           </mat-card>
     
           <mat-card appearance="outlined" class="adjustment-card">
