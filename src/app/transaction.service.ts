@@ -87,7 +87,7 @@ export class TransactionService {
       await updateDoc(customerRef, {
         FullTransactionHistory: arrayUnion({
           ...newEntry,
-          timestamp: new Date(),
+          // timestamp: new Date(),
           id: `${customer}-${targetMonthId}-${(existing['transactionHistory']?.length + 1 || 1)}`,
         }),
       });

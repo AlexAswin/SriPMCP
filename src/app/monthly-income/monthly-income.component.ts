@@ -137,7 +137,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.allCustomers$ = this.transactionService
       .getAllCustomersWithTransactions()
       .pipe(shareReplay(1));
-
+  
     this.filteredCustomers$ = combineLatest([
       this.allCustomers$,
       this.showActive$,
@@ -151,103 +151,103 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     ]).pipe(
       map(([customers, showActive, showInactive, min, max, start, end, sort, vehicle]) => {
         let filteredList = customers.filter((c) => {
-
-          if (vehicle && !c.vehicleNumber.toUpperCase().includes(vehicle)) return false;
-          
-
+          if (vehicle && !c.vehicleNumber?.toUpperCase().includes(vehicle.toUpperCase())) return false;
+  
           const statusMatch =
             (showActive && c.monthlyStatus === 'Active') ||
             (showInactive && c.monthlyStatus === 'InActive');
-          if (!statusMatch) return false;
-
-          const bal = c.Transactions?.currentPending ?? 0;
-          const minVal = min ?? 0;
-          const maxVal = max ?? Number.MAX_SAFE_INTEGER;
-
-          return bal >= minVal && bal <= maxVal;
+          
+          return statusMatch;
         });
-        
+  
+        const minVal = min ?? 0;
+        const maxVal = max ?? Number.MAX_SAFE_INTEGER;
+  
         if (start && end) {
           const fromTime = new Date(start).getTime();
           const toTime = new Date(end).setHours(23, 59, 59, 999);
-        
+  
           return filteredList.flatMap((c) => {
-        
             const fullTransactions = c.FullTransactionHistory || [];
-        
-            const filteredHistory = fullTransactions.filter((tx: any) => {
-              if (!tx.transactionDate) return false;
-              const txTime = new Date(tx.transactionDate).getTime();
-              return txTime >= fromTime && txTime <= toTime;
-            });
-        
-            return filteredHistory.map((tx: any) => ({
-              ...tx,
-              customerName: c.customerName,
-              vehicleNumber: c.id,
-              monthlyStatus: c.monthlyStatus,
-              advance: c.advance,
-              Transactions: {
-                advance: c.Transactions?.advance,
-                lastTransactionDate: tx.transactionDate,
-                monthlyCost: c.Transactions?.monthlyCost,
-                transactionAmount: tx.transactionAmount,
-                currentPending: tx.newPending,
-                paymentMethod: tx.transactionType,
-                currentMonthTotal: c.Transactions.currentMonthTotal
-              },
-            }));
+  
+            return fullTransactions
+              .filter((tx: any) => {
+                if (!tx.transactionDate) return false;
+                const txTime = new Date(tx.transactionDate).getTime();
+                
+                const isDateMatch = txTime >= fromTime && txTime <= toTime;
+                const isPendingMatch = tx.newPending >= minVal && tx.newPending <= maxVal;
+  
+                return isDateMatch && isPendingMatch;
+              })
+              .map((tx: any) => ({
+                ...tx,
+                customerName: c.customerName,
+                vehicleNumber: c.vehicleNumber,
+                monthlyStatus: c.monthlyStatus,
+                advance: c.advance,
+                Transactions: {
+                  ...c.Transactions,
+                  transactionAmount: tx.transactionAmount,
+                  currentPending: tx.newPending,
+                  lastTransactionDate: tx.transactionDate,
+                  paymentMethod: tx.transactionType,
+                },
+              }));
+          }).sort((a, b) => {
+            if (sort?.key === 'pending') {
+              const valA = a.Transactions.currentPending;
+              const valB = b.Transactions.currentPending;
+              return sort.direction === 'asc' ? valA - valB : valB - valA;
+            }
+            return 0; 
           });
         }
+
+        filteredList = filteredList.filter(c => {
+          const bal = c.Transactions?.currentPending ?? 0;
+          return bal >= minVal && bal <= maxVal;
+        });
+  
         if (sort?.key) {
           filteredList = [...filteredList].sort((a, b) => {
             let valueA: any;
             let valueB: any;
-      
+  
             if (sort.key === 'pending') {
               valueA = a.Transactions?.currentPending ?? 0;
               valueB = b.Transactions?.currentPending ?? 0;
-            }
-      
-            if (sort.key === 'date') {
+            } else if (sort.key === 'date') {
               valueA = new Date(a.Transactions?.lastTransactionDate || 0).getTime();
               valueB = new Date(b.Transactions?.lastTransactionDate || 0).getTime();
             }
-      
+  
             return sort.direction === 'asc' ? valueA - valueB : valueB - valueA;
           });
         }
-    console.log(filteredList)
-
+  
         return filteredList;
       })
     );
-
+  
     this.totalMonthlyCost$ = this.filteredCustomers$.pipe(
       map((customers) =>
-        customers.reduce((acc, c) => {
-          const cost = c.Transactions?.currentMonthTotal || 0;
-          return acc + Number(cost);
-        }, 0)
+        customers.reduce((acc, c) => acc + Number(c.Transactions?.currentMonthTotal || 0), 0)
       )
     );
-
+  
     this.totalPaid$ = this.filteredCustomers$.pipe(
       map((customers) =>
         customers.reduce((acc, c) => {
-          const paid =
-            c.Transactions?.transactionAmount || c.transactionAmount || 0;
+          const paid = c.transactionAmount || c.Transactions?.transactionAmount || 0;
           return acc + Number(paid);
         }, 0)
       )
     );
-
+  
     this.totalBalance$ = this.filteredCustomers$.pipe(
       map((items) =>
-        items.reduce((acc, item) => {
-          const balance = item?.Transactions?.currentPending ?? 0;
-          return acc + Number(balance);
-        }, 0)
+        items.reduce((acc, item) => acc + Number(item?.Transactions?.currentPending ?? 0), 0)
       )
     );
   }
