@@ -226,7 +226,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.totalMonthlyCost$ = this.filteredCustomers$.pipe(
       map((customers) =>
         customers.reduce((acc, c) => {
-          const cost = c.Transactions?.monthlyCost || 0;
+          const cost = c.Transactions?.currentMonthTotal || 0;
           return acc + Number(cost);
         }, 0)
       )

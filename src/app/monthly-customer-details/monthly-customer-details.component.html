@@ -157,7 +157,9 @@
                         <div class="form-group" *ngIf="isStatusInActive">
                             <div class="input-row">
                                 <label>End Date</label>
-                                <input type="date" [formControl]="endDateMonthly" />
+                                <input type="date"
+                                       [formControl]="endDateMonthly"
+                                       [min]="fromDateMonthly.value" />
                             </div>
                             <div class="error-container" *ngIf="endDateMonthly.invalid && (endDateMonthly.dirty || endDateMonthly.touched)">
                                 <small>End date is required</small>

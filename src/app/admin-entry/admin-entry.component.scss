@@ -255,6 +255,13 @@ mat-card {
   background-color: #fff9f9;
   
   .warning-text { color: #d32f2f; font-size: 0.9rem; margin: 10px 0; }
+
+  .delete-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px 0px;
+  }
 }
 
 .balance-amount {
