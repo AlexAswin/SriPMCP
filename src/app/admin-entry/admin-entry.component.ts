@@ -51,6 +51,8 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
 
   monthlyStatus: string = ''
 
+  isDeleting = false;
+
   constructor(
     private fb: FormBuilder,
     private adminService: AdminService,
@@ -399,8 +401,16 @@ async getCustomerRecord() {
     }
   }
 
-  deleteTransactionById = async () => {
-    await this.transactionService.deleteTransactionByID('AA 11 A 1111','AA 11 A 1111-2026-03-1')
+  deleteTransactionById = async (id: string) => {
+    const vehicleNbr = this.deleteCustomerForm.value.vehicleNumber;
+    const tnxId = id
+
+    try {
+      await this.transactionService.deleteTransactionByID(vehicleNbr, tnxId)
+      this.showAlert('Transaction deleted successfully...');
+    } catch (error) {
+      this.showAlert('Something went wrong, Please try again.', 'error');
+    }
   }
 
 

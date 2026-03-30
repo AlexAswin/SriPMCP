@@ -365,36 +365,47 @@ export class TransactionService {
   }
 
   async deleteTransactionByID(vehicleNumber: string, transactionId: string) {
-    const currentMonth = this.getCurrentMonth();
-    const transactionRef = doc(
-      this.firestore,
-      `CustomerEntry/${vehicleNumber}/Transactions/${currentMonth}`
-    );
-  
     try {
+      const customerQuery = query(
+        collection(this.firestore, 'CustomerEntry'),
+        where('vehicleNumber', '==', vehicleNumber)
+      );
+      const snapshot = await getDocs(customerQuery);
+      if (snapshot.empty) return;
+  
+      const customerDoc = snapshot.docs[0];
+      const customerData = customerDoc.data();
+      const customerRef = customerDoc.ref;
 
-      const docSnap = await getDoc(transactionRef);
-      
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const transactionToRemoveFull = data['FullTransactionHistory']?.find(
-          (t: any) => t.id === transactionId
-        );
-        
-        const transactionToRemoveShort = data['Transactions']?.['transactionHistory']?.find(
-          (t: any) => t.id === transactionId
-        );
+      const monthId = transactionId.split('-').slice(1, 3).join('-'); 
+      const monthDocRef = doc(this.firestore, `CustomerEntry/${customerDoc.id}/Transactions/${monthId}`);
+      const monthSnap = await getDoc(monthDocRef);
   
-        await updateDoc(transactionRef, {
-          "FullTransactionHistory": arrayRemove(transactionToRemoveFull),
-          "Transactions.transactionHistory": arrayRemove(transactionToRemoveShort),
-          // "Transactions.transactionAmount": data['Transactions'].transactionAmount - (transactionToRemoveFull?.transactionAmount || 0)
-        });
+      const fullHistory = customerData['FullTransactionHistory'] || [];
+      const toRemoveFull = fullHistory.find((t: any) => t.id === transactionId);
   
-        console.log("Transaction deleted successfully");
+      let toRemoveShort = null;
+      if (monthSnap.exists()) {
+        const monthData = monthSnap.data();
+        const shortHistory = monthData['transactionHistory'] || [];
+        toRemoveShort = shortHistory.find((t: any) => t.id === transactionId);
       }
+  
+      if (toRemoveFull) {
+        await updateDoc(customerRef, {
+          FullTransactionHistory: arrayRemove(toRemoveFull)
+        });
+      }
+      if (toRemoveShort) {
+        await updateDoc(monthDocRef, {
+          transactionHistory: arrayRemove(toRemoveShort),
+          transactionAmount: (monthSnap.data()?.['transactionAmount'] || 0) - toRemoveShort.transactionAmount
+        });
+      }
+  
     } catch (error) {
-      console.error("Error deleting transaction: ", error);
+      console.error("Error during double deletion:", error);
+      throw error;
     }
   }
 

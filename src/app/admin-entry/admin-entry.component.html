@@ -165,26 +165,46 @@
           </mat-card-content>
         </mat-card>
     
-        <div *ngIf="showSettlementDetails" class="action-grid" [@fadeIn]>
+        <div *ngIf="showSettlementDetails" class="action-grid">
           
           <mat-card appearance="outlined" class="danger-zone-card">
             <mat-card-header>
-              <!-- <mat-icon mat-card-avatar color="warn">delete_forever</mat-icon> -->
-              <mat-card-title>Delete last Month Transaction</mat-card-title>
+              <mat-card-title class="warn-text">Danger Zone</mat-card-title>
             </mat-card-header>
+          
             <mat-card-content>
-              <p class="warning-text">Permanently remove <strong>Current Month's</strong> transaction record.</p>
+              <div class="delete-section">
+                <p class="warning-text">
+                  <strong>Option A:</strong> Remove the <strong>most recent</strong> transaction from this month.
+                </p>
+                <app-button 
+                  label="Delete Last Transaction" 
+                  variant="secondary" 
+                  (click)="deleteLastTransaction()" 
+                  class="warn-btn">
+                </app-button>
+              </div>
+          
+              <hr class="section-divider">
+          
+              <div class="delete-section">
+                <p><strong>Option B:</strong> Remove a specific record by its Unique ID.</p>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Transaction ID</mat-label>
+                  <input matInput #idInput placeholder="Ex: AA 11 AA 1111-2026-03-1" class="uppercase-bold">
+                </mat-form-field>
+                
+                <div class="action-right">
+                  <app-button 
+                    [label]="isDeleting ? 'Processing...' : 'Delete by ID'" 
+                    [disabled]="isDeleting"
+                    variant="primary" 
+                    (click)="deleteTransactionById(idInput.value)" 
+                    class="warn-btn">
+                  </app-button>
+                </div>
+              </div>
             </mat-card-content>
-            <mat-card-actions align="end">
-              <app-button label="Delete" variant="secondary" (click)="deleteLastTransaction()" class="warn-btn"></app-button>
-            </mat-card-actions>
-
-            <input matInput placeholder="ID...."
-                       class="uppercase-bold">
-
-            <mat-card-actions align="end">
-              <app-button label="Delete Transaction" variant="primary" (click)="deleteTransactionById()" class="warn-btn"></app-button>
-            </mat-card-actions>
           </mat-card>
     
           <mat-card appearance="outlined" class="adjustment-card">
