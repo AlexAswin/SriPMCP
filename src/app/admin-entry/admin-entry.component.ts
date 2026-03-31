@@ -404,7 +404,7 @@ async getCustomerRecord() {
 
   deleteTransactionById = async (id: string) => {
     const vehicleNbr = this.deleteCustomerForm.value.vehicleNumber;
-    const tnxId = id
+    const tnxId = id.trim()
 
     try {
       this.transactionService.deleteTransactionByID(vehicleNbr, tnxId)

@@ -164,6 +164,12 @@
                             <div class="error-container" *ngIf="endDateMonthly.invalid && (endDateMonthly.dirty || endDateMonthly.touched)">
                                 <small>End date is required</small>
                             </div>
+                            <!-- <div *ngIf="endDateMonthly.value 
+                            && fromDateMonthly.value 
+                            && (new Date(endDateMonthly.value) < new Date(fromDateMonthly.value))" 
+                            style="color: red; font-size: 12px;">
+                            End date cannot be less than From date
+                          </div> -->
                             </div>
                     </div>
                 </div>
