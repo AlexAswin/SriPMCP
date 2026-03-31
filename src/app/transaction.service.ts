@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, addDoc, arrayRemove, arrayUnion, collection, collectionData, deleteDoc, doc, docData, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from '@angular/fire/firestore';
+import { Firestore, addDoc, arrayRemove, arrayUnion, collection, collectionData, deleteDoc, deleteField, doc, docData, getDoc, getDocs, increment, query, setDoc, updateDoc, where, writeBatch } from '@angular/fire/firestore';
 import { Observable, combineLatest, from, map, of, switchMap, tap } from 'rxjs';
 
 @Injectable({
@@ -374,37 +374,53 @@ export class TransactionService {
       if (snapshot.empty) return;
   
       const customerDoc = snapshot.docs[0];
-      const customerData = customerDoc.data();
-      const customerRef = customerDoc.ref;
-
       const monthId = transactionId.split('-').slice(1, 3).join('-'); 
       const monthDocRef = doc(this.firestore, `CustomerEntry/${customerDoc.id}/Transactions/${monthId}`);
       const monthSnap = await getDoc(monthDocRef);
   
-      const fullHistory = customerData['FullTransactionHistory'] || [];
-      const toRemoveFull = fullHistory.find((t: any) => t.id === transactionId);
+      if (!monthSnap.exists()) return;
   
-      let toRemoveShort = null;
-      if (monthSnap.exists()) {
-        const monthData = monthSnap.data();
-        const shortHistory = monthData['transactionHistory'] || [];
-        toRemoveShort = shortHistory.find((t: any) => t.id === transactionId);
-      }
+      const monthData = monthSnap.data();
+      const shortHistory: any[] = monthData['transactionHistory'] || [];
+      const toRemoveShort = shortHistory.find((t: any) => t.id === transactionId);
   
-      if (toRemoveFull) {
-        await updateDoc(customerRef, {
-          FullTransactionHistory: arrayRemove(toRemoveFull)
+      if (!toRemoveShort) return;
+  
+      if (shortHistory.length === 1) {
+        const amount = toRemoveShort.transactionAmount;
+
+        await updateDoc(monthDocRef, {
+          lastTransactionDate: deleteField(),
+          paymentMethod: deleteField(),
+          transactionHistory: deleteField(),
+          transactionAmount: deleteField(),
+          isTransactionMade: false,
+          currentPending: increment(amount),
+        });
+      } else {
+        const amount = toRemoveShort.transactionAmount;
+
+        await updateDoc(monthDocRef, {
+          transactionAmount: increment(-amount),
+          currentPending: increment(amount),
+          transactionHistory: arrayRemove(toRemoveShort),
         });
       }
-      if (toRemoveShort) {
-        await updateDoc(monthDocRef, {
-          transactionHistory: arrayRemove(toRemoveShort),
-          transactionAmount: (monthSnap.data()?.['transactionAmount'] || 0) - toRemoveShort.transactionAmount
+  
+      const fullHistory = customerDoc.data()['FullTransactionHistory'] || [];
+      const toRemoveFull = fullHistory.find((t: any) => t.id === transactionId);
+      if (fullHistory && fullHistory.length === 1) {
+        await updateDoc(customerDoc.ref, {
+          FullTransactionHistory: deleteField()
+        });
+      } else {
+        await updateDoc(customerDoc.ref, {
+          FullTransactionHistory: arrayRemove(toRemoveFull)
         });
       }
   
     } catch (error) {
-      console.error("Error during double deletion:", error);
+      console.error("Error during conditional deletion:", error);
       throw error;
     }
   }
