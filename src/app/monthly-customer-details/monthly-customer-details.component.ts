@@ -171,7 +171,6 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     return (
       value
         .toUpperCase()
-        // .replace(/\s+/g, '')
         .trim()
     );
   }
@@ -185,9 +184,8 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.maxDate = this.formatToISO(new Date(year, month + 1, 0));
 
     this.fromDateMonthly.valueChanges.subscribe(value => {
-      if (value) {
+      if (value && this.isNewMonthlyCustomer) {
         if (value < this.minDate || value > this.maxDate) {
-          // alert("Please select a date within the current month.");
           this.fromDateMonthly.setValue('');
         }
       }

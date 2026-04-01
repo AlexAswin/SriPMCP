@@ -31,9 +31,9 @@ export class TransactionService {
       const targetMonthRef = doc(customerRef, 'Transactions', targetMonthId);
       const targetMonthSnap = await getDoc(targetMonthRef);
   
-      // const now = new Date();
-      // const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      const currentMonthId = '2026-04'
+      const now = new Date();
+      const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      // const currentMonthId = '2026-04'
   
       if (!targetMonthSnap.exists()) {
         console.error(`Ledger for ${targetMonthId} missing. Cannot post backdated payment.`);
@@ -88,7 +88,6 @@ export class TransactionService {
       await updateDoc(customerRef, {
         FullTransactionHistory: arrayUnion({
           ...newEntry,
-          // timestamp: new Date(),
           id: `${customer}-${targetMonthId}-${(existing['transactionHistory']?.length + 1 || 1)}`,
         }),
       });
@@ -247,15 +246,15 @@ export class TransactionService {
   }
 
   private getCurrentMonth(): string {
-    // const d = new Date();
-    // return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-    return `2026-04`;
+    // return `2026-04`;
   }
 
   createNewMonthLedger = () => {
-    const currentMonth = '2026-04';
-    // const currentMonth = this.getCurrentMonth();
+    // const currentMonth = '2026-04';
+    const currentMonth = this.getCurrentMonth();
     this.createNewMonthLedgerForActiveCustomers(currentMonth)
   }
 
@@ -459,7 +458,6 @@ export class TransactionService {
     await updateDoc(transactionRef, {
       currentPending: settlementAmount,
       currentMonthTotal: settlementAmount,
-      // transactionAmount: 0 y
     });
     return true;
   } catch (error) {

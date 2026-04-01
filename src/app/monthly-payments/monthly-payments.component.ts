@@ -54,7 +54,6 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
       .pipe(
         debounceTime(500),
         distinctUntilChanged(),
-        // filter(value => value?.length >= 9 ),
         takeUntil(this.destroy$)
       )
       .subscribe((value) => {
@@ -123,7 +122,6 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   private formateVehicleNumber(value: string): string {
     return value
       .toUpperCase()
-      // .replace(/\s+/g, '')
       .trim();
   }
 
@@ -319,9 +317,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const year = now.getFullYear();
     const month = now.getMonth();
 
-    // this.maxDate = this.formatToISO(new Date(year, month + 1, 0));
-    this.maxDate = '2026-04-31';
-
+    this.maxDate = this.formatToISO(new Date(year, month + 1, 0));
 
     this.transactionDate.valueChanges.subscribe(value => {
       if (value) {
@@ -336,8 +332,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
-    // return `${y}-${m}-${d}`;
-    return `'2026-04-'${d}`
+    return `${y}-${m}-${d}`;
   }
 
 
