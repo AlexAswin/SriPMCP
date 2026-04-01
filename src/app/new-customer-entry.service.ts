@@ -75,8 +75,8 @@ export class NewCustomerEntryService {
     if (!vehicleNumber) return null;
 
     const vehiclesRef = collection(this.firestore, 'CustomerEntry');
-    const currentMonth = this.getCurrentMonth();
-    // const currentMonth = '2026-02';
+    // const currentMonth = this.getCurrentMonth();
+    const currentMonth = '2026-04';
 
     const q = query(
       vehiclesRef,

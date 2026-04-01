@@ -403,6 +403,10 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.showInactive$.next(false);
   }
 
+  createNewLedger = () => {
+    this.transactionService.createNewMonthLedger();
+  } 
+
   async downloadActiveCustomerPDF() {
     const doc = new jsPDF('l', 'mm', 'a4');
 
