@@ -31,8 +31,9 @@ export class TransactionService {
       const targetMonthRef = doc(customerRef, 'Transactions', targetMonthId);
       const targetMonthSnap = await getDoc(targetMonthRef);
   
-      const now = new Date();
-      const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      // const now = new Date();
+      // const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const currentMonthId = '2026-04'
   
       if (!targetMonthSnap.exists()) {
         console.error(`Ledger for ${targetMonthId} missing. Cannot post backdated payment.`);
@@ -208,7 +209,7 @@ export class TransactionService {
             return docData(transactionDocRef).pipe(
               map((ledger: any) => {
                 if (!ledger) {
-                  this.createNewMonthLedgerForActiveCustomers(currentMonth);
+                  // this.createNewMonthLedgerForActiveCustomers(currentMonth);
                 }
                 return {
                   ...customer,
@@ -246,10 +247,16 @@ export class TransactionService {
   }
 
   private getCurrentMonth(): string {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    // const d = new Date();
+    // return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-    // return `2026-04`;
+    return `2026-04`;
+  }
+
+  createNewMonthLedger = () => {
+    const currentMonth = '2026-04';
+    // const currentMonth = this.getCurrentMonth();
+    this.createNewMonthLedgerForActiveCustomers(currentMonth)
   }
 
   async createNewMonthLedgerForActiveCustomers(date: string): Promise<void> {
@@ -374,21 +381,23 @@ export class TransactionService {
       if (snapshot.empty) return;
   
       const customerDoc = snapshot.docs[0];
-      const monthId = transactionId.split('-').slice(1, 3).join('-'); 
-      const monthDocRef = doc(this.firestore, `CustomerEntry/${customerDoc.id}/Transactions/${monthId}`);
-      const monthSnap = await getDoc(monthDocRef);
+      const customerRef = customerDoc.ref;
+      
+      const parts = transactionId.split('-');
+      const monthId = parts.slice(parts.length - 3, parts.length - 1).join('-'); 
   
+      const monthDocRef = doc(this.firestore, `${customerRef.path}/Transactions/${monthId}`);
+      const monthSnap = await getDoc(monthDocRef);
       if (!monthSnap.exists()) return;
   
       const monthData = monthSnap.data();
-      const shortHistory: any[] = monthData['transactionHistory'] || [];
-      const toRemoveShort = shortHistory.find((t: any) => t.id === transactionId);
+      const history: any[] = monthData['transactionHistory'] || [];
+      const toRemove = history.find((t: any) => t.id === transactionId);
+      if (!toRemove) return;
   
-      if (!toRemoveShort) return;
-  
-      if (shortHistory.length === 1) {
-        const amount = toRemoveShort.transactionAmount;
+      const amount = toRemove.transactionAmount;
 
+      if (history.length === 1) {
         await updateDoc(monthDocRef, {
           lastTransactionDate: deleteField(),
           paymentMethod: deleteField(),
@@ -398,29 +407,41 @@ export class TransactionService {
           currentPending: increment(amount),
         });
       } else {
-        const amount = toRemoveShort.transactionAmount;
-
         await updateDoc(monthDocRef, {
           transactionAmount: increment(-amount),
           currentPending: increment(amount),
-          transactionHistory: arrayRemove(toRemoveShort),
+          transactionHistory: arrayRemove(toRemove),
         });
       }
+  
+      const allMonthsQuery = query(collection(this.firestore, `${customerRef.path}/Transactions`));
+      const allMonthsSnap = await getDocs(allMonthsQuery);
+  
+      const batch = writeBatch(this.firestore);
+  
+      allMonthsSnap.docs.forEach(docSnap => {
+        if (docSnap.id > monthId) {
+          batch.update(docSnap.ref, {
+            // existingPending: increment(amount),
+            currentPending: increment(amount),
+            currentMonthTotal: increment(amount)
+          });
+        }
+      });
   
       const fullHistory = customerDoc.data()['FullTransactionHistory'] || [];
       const toRemoveFull = fullHistory.find((t: any) => t.id === transactionId);
-      if (fullHistory && fullHistory.length === 1) {
-        await updateDoc(customerDoc.ref, {
-          FullTransactionHistory: deleteField()
-        });
+      
+      if (fullHistory.length === 1) {
+        batch.update(customerRef, { FullTransactionHistory: deleteField() });
       } else {
-        await updateDoc(customerDoc.ref, {
-          FullTransactionHistory: arrayRemove(toRemoveFull)
-        });
+        batch.update(customerRef, { FullTransactionHistory: arrayRemove(toRemoveFull) });
       }
   
+      await batch.commit();
+  
     } catch (error) {
-      console.error("Error during conditional deletion:", error);
+      console.error("Error during cascading deletion:", error);
       throw error;
     }
   }
