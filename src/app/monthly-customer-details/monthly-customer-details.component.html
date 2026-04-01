@@ -53,6 +53,18 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="rightContainer">
+                        <div class="form-group">
+                            <div class="input-row">
+                                <label>Vehicle Name</label>
+                                <input type="text" placeholder="R15" formControlName="vehicleName" />
+                            </div>
+                            <div class="error-container" *ngIf="vehicleDetailsForm.get('vehicleType')?.invalid && (vehicleDetailsForm.get('vehicleType')?.dirty || vehicleDetailsForm.get('vehicleType')?.touched)">
+                                <small>Vehicle type is required</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
     

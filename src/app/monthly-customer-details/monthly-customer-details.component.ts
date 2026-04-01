@@ -139,6 +139,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.vehicleDetailsForm = this.fb.group({
       vehicleNumber: [{ value: '', disabled: false }, [Validators.required, Validators.pattern(/^[A-Z]{2}\s[0-9]{2}\s[A-Z]{1,2}\s[0-9]{4}$/)]],
       vehicleType: [{ value: '', disabled: false }, [Validators.required]],
+      vehicleName: [{value: '', disabled: false}, [Validators.required]],
       customerName: [
         { value: '', disabled: false },
         [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)],
@@ -359,6 +360,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.vehicleDetailsForm.patchValue({
       vehicleNumber: res.vehicleNumber,
       vehicleType: res.vehicleType,
+      vehicleName: res.vehicleName,
       customerName: res.customerName,
       customerPhoneNbr: res.customerPhoneNbr,
       customerType: res.customerType,
@@ -385,6 +387,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.vehicleDetailsForm.patchValue({
         vehicleNumber: res.vehicleNumber,
         vehicleType: res.vehicleType,
+        vehicleName: res.vehicleName,
         customerName: res.customerName,
         customerPhoneNbr: res.customerPhoneNbr,
         address: res.address,
@@ -411,6 +414,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.monthlyStatus.setValue('Active');
       this.vehicleDetailsForm.patchValue({
         vehicleType: '',
+        vehicleName: '',
         customerName: '',
         customerPhoneNbr: '',
         address: '',
