@@ -156,7 +156,7 @@
                                 [min]="minDate" 
                                 [max]="maxDate"/>
                             
-                            <div *ngIf="fromDateMonthly.value && (fromDateMonthly.value < minDate || fromDateMonthly.value > maxDate)" 
+                            <div *ngIf="fromDateMonthly.value && (fromDateMonthly.value < minDate || fromDateMonthly.value > maxDate) && isNewMonthlyCustomer" 
                                  style="color: red; font-size: 12px;">
                                 Only current month allowed
                             </div>
