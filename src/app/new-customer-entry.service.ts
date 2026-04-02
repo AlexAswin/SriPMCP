@@ -40,8 +40,8 @@ export class NewCustomerEntryService {
     );
 
     const dateParts = customerDetails.fromDateMonthly.split('-');
-    const monthId = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
-    // const monthId = `2026-02`;
+    // const monthId = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
+    const monthId = `2026-03`;
 
 
     const transactionRef = doc(

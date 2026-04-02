@@ -68,7 +68,9 @@ export class TransactionService {
         lastTransactionDate: transactionData.transactionDate,
         paymentMethod: transactionData.paymentMethod
 
-      });
+      }); 
+
+      
   
       if (targetMonthId !== currentMonthId) {
         const currentMonthRef = doc(customerRef, 'Transactions', currentMonthId);
@@ -91,6 +93,14 @@ export class TransactionService {
           id: `${customer}-${targetMonthId}-${(existing['transactionHistory']?.length + 1 || 1)}`,
         }),
       });
+
+      if (!existing['isTransactionMade']) {
+      const toRemoveFull = customerDoc.data()['FullTransactionHistory'].find((t: any) => t.id === `${targetMonthId}_IDLE`);
+
+        await updateDoc(customerRef, {
+          FullTransactionHistory: arrayRemove(toRemoveFull),
+        });
+      }
   
       console.log(`Updated ${targetMonthId} and adjusted current balances.`);
   
