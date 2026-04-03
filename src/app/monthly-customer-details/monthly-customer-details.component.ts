@@ -115,7 +115,8 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
     const vehicleNbr = this.route.snapshot.queryParamMap.get('vehicleNbr');
     if (vehicleNbr) {
-      this.getCustomerDetails(vehicleNbr);
+      const formattedVehicleNbr = this.reformatVehicleNumber(vehicleNbr)
+      this.getCustomerDetails(formattedVehicleNbr);
     }
 
     this.getMinDate();

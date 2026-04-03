@@ -27,62 +27,57 @@ export class TransactionService {
   
       const dateParts = transactionData.transactionDate.split('-');
       const targetMonthId = `${dateParts[0]}-${dateParts[1]}`; 
+      const now = new Date();
+      const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   
       const targetMonthRef = doc(customerRef, 'Transactions', targetMonthId);
       const targetMonthSnap = await getDoc(targetMonthRef);
   
-      const now = new Date();
-      const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      // const currentMonthId = '2026-04'
-  
       if (!targetMonthSnap.exists()) {
-        console.error(`Ledger for ${targetMonthId} missing. Cannot post backdated payment.`);
+        console.error(`Ledger for ${targetMonthId} missing.`);
         return; 
       }
   
-      const existing = targetMonthSnap.data();
+      const targetData = targetMonthSnap.data();
       const newPayment = Number(transactionData.transactionAmount) || 0;
       
-      const oldPending = Number(existing['currentPending'] ?? existing['monthlyCost'] ?? 0);
+      const oldPending = Number(targetData['currentPending'] ?? 0);
       const updatedPending = Math.max(oldPending - newPayment, 0);
-      const updatedTotalPaid = (existing['transactionAmount'] || 0) + newPayment;
-      const currentMonthTotal = existing['currentMonthTotal']?? (existing['currentPending'] || 0) + existing['monthlyCost'] ;
-
+      const updatedTotalPaid = (targetData['transactionAmount'] || 0) + newPayment;
   
       const newEntry = {
         transactionAmount: newPayment,
         transactionDate: transactionData.transactionDate,
-        transactionType: transactionData.paymentMethod || 'Backdated Payment',
+        transactionType: transactionData.paymentMethod || 'Payment',
         existingPending: oldPending,
         newPending: updatedPending,
-        id: `${customer}-${targetMonthId}-${(existing['transactionHistory']?.length + 1 || 1)}`,
+        id: `${customer}-${targetMonthId}-${(targetData['transactionHistory']?.length + 1 || 1)}`,
       };
   
-      let history = existing['transactionHistory'] || [];
       await updateDoc(targetMonthRef, {
         transactionHistory: arrayUnion(newEntry),
         transactionAmount: updatedTotalPaid,
         currentPending: updatedPending,
         isTransactionMade: true,
-        currentMonthTotal: currentMonthTotal,
         lastTransactionDate: transactionData.transactionDate,
         paymentMethod: transactionData.paymentMethod
-
-      }); 
-
-      
+      });
   
       if (targetMonthId !== currentMonthId) {
         const currentMonthRef = doc(customerRef, 'Transactions', currentMonthId);
         const currentSnap = await getDoc(currentMonthRef);
-        
+  
         if (currentSnap.exists()) {
           const currentData = currentSnap.data();
-          const currentOpeningPending = Number(currentData['currentPending'] || 0);
-          
+          const monthlyCost = Number(currentData['monthlyCost'] || 0);
+          const paymentsInCurrentMonth = Number(currentData['transactionAmount'] || 0);
+  
+          const newOpeningBalance = updatedPending + monthlyCost;
+          const newClosingBalance = Math.max(newOpeningBalance - paymentsInCurrentMonth, 0);
+  
           await updateDoc(currentMonthRef, {
-            currentPending: Math.max(currentOpeningPending - newPayment, 0),
-            currentMonthTotal: Math.max(currentOpeningPending - newPayment, 0)
+            currentMonthTotal: newOpeningBalance,
+            currentPending: newClosingBalance,
           });
         }
       }
@@ -90,19 +85,22 @@ export class TransactionService {
       await updateDoc(customerRef, {
         FullTransactionHistory: arrayUnion({
           ...newEntry,
-          id: `${customer}-${targetMonthId}-${(existing['transactionHistory']?.length + 1 || 1)}`,
+          id: `${customer}-${targetMonthId}-${(targetData['transactionHistory']?.length + 1 || 1)}`,
         }),
       });
-
-      if (!existing['isTransactionMade']) {
-      const toRemoveFull = customerDoc.data()['FullTransactionHistory'].find((t: any) => t.id === `${targetMonthId}_IDLE`);
-
-        await updateDoc(customerRef, {
-          FullTransactionHistory: arrayRemove(toRemoveFull),
-        });
+  
+      if (!targetData['isTransactionMade']) {
+        const fullHistory = customerDoc.data()['FullTransactionHistory'] || [];
+        const toRemove = fullHistory.find((t: any) => t.id === `${targetMonthId}_IDLE`);
+        
+        if (toRemove) {
+          await updateDoc(customerRef, {
+            FullTransactionHistory: arrayRemove(toRemove),
+          });
+        }
       }
   
-      console.log(`Updated ${targetMonthId} and adjusted current balances.`);
+      console.log(`Transaction complete. Target: ${targetMonthId}, Current Sync: ${targetMonthId !== currentMonthId}`);
   
     } catch (error) {
       console.error('Transaction Error:', error);
