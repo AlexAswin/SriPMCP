@@ -169,10 +169,13 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   private normalizeVehicleNumber(value: string): string {
     return (
-      value
-        .toUpperCase()
-        .trim()
+      this.reformatVehicleNumber(value).toUpperCase().trim()
     );
+  }
+
+  reformatVehicleNumber(value: any): string {
+    if (typeof value !== 'string') return '';
+    return value.toUpperCase().replace(/^([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})$/, '$1 $2 $3 $4');
   }
 
   getMinDate = () => {
