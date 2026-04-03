@@ -120,9 +120,13 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   }
 
   private formateVehicleNumber(value: string): string {
-    return value
-      .toUpperCase()
-      .trim();
+    if (typeof value !== 'string') return '';
+    return value.toUpperCase().replace(/^([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})$/, '$1 $2 $3 $4');
+  }
+
+  reformatVehicleNumber(value: any): string {
+    if (typeof value !== 'string') return '';
+    return value.toUpperCase().replace(/^([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})$/, '$1 $2 $3 $4');
   }
 
   restrictNegativeInput(event: KeyboardEvent) {
