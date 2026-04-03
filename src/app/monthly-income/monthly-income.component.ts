@@ -137,7 +137,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.allCustomers$ = this.transactionService
       .getAllCustomersWithTransactions()
       .pipe(shareReplay(1));
-
+  
     this.filteredCustomers$ = combineLatest([
       this.allCustomers$,
       this.showActive$,
@@ -151,27 +151,31 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     ]).pipe(
       map(([customers, showActive, showInactive, min, max, start, end, sort, vehicle]) => {
         
+        // 1. Basic filtering (Status & Vehicle Number)
         let baseList = customers.filter((c) => {
           const vehicleMatch = !vehicle || c.vehicleNumber?.toUpperCase().includes(vehicle.toUpperCase());
           const statusMatch = (showActive && c.monthlyStatus === 'Active') ||
                              (showInactive && c.monthlyStatus === 'InActive');
           return vehicleMatch && statusMatch;
         });
-
+  
         const minVal = min ?? 0;
         const maxVal = max ?? Number.MAX_SAFE_INTEGER;
-
+  
+        // 2. Historical Logic (When Date Range is selected)
         if (start && end) {
           const fromDate = new Date(start);
           const toDate = new Date(end);
         
           return baseList.flatMap((customer) => {
+            // Sort the history globally first to ensure correct grouping
             const sortedHistory = [...(customer.FullTransactionHistory || [])].sort((a, b) => 
               new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime()
             );
             
             const monthsGroup = new Map<string, any[]>();
             
+            // Group transactions into months (YYYY-MM)
             sortedHistory.forEach(tx => {
               const txDate = new Date(tx.transactionDate);
               if (txDate >= fromDate && txDate <= toDate) {
@@ -181,10 +185,15 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               }
             });
         
+            // Transform groups into rows
             return Array.from(monthsGroup.entries()).map(([monthKey, txs]) => {
               const monthPaid = txs.reduce((sum, tx) => sum + (tx.transactionAmount || 0), 0);
-              const latestTx = txs[txs.length - 1];
-              console.log(customer.Transactions)
+              
+              // In your Firestore, 'txs' are sorted. 
+              // The first transaction has the 'existingPending' (Opening Balance for the month)
+              // The last transaction has the 'newPending' (Closing Balance for the month)
+              const firstTxInMonth = txs[0];
+              const latestTxInMonth = txs[txs.length - 1];
         
               return {
                 ...customer,
@@ -192,11 +201,17 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                 isHistoryView: true,
                 Transactions: {
                   ...customer.Transactions,
-                  currentMonthTotal: customer.amount || customer.Transactions?.currentMonthTotal,
+                  // AMOUNT COLUMN: The balance before payments were made this month
+                  currentMonthTotal: firstTxInMonth.existingPending ?? (customer.amount || 0),
+                  
+                  // PAID COLUMN: Total paid within this specific month
                   transactionAmount: monthPaid,
-                  // currentPending: customer.Transactions,
-                  lastTransactionDate: latestTx.transactionDate,
-                  paymentMethod: txs.length > 1 ? 'Multiple' : latestTx.transactionType
+                  
+                  // PENDING COLUMN: The balance remaining after this month's payments
+                  currentPending: latestTxInMonth.newPending ?? 0, 
+                  
+                  lastTransactionDate: latestTxInMonth.transactionDate,
+                  paymentMethod: txs.length > 1 ? 'Multiple' : latestTxInMonth.transactionType
                 }
               };
             });
@@ -207,7 +222,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           })
           .sort((a, b) => this.applySorting(a, b, sort));
         }
-
+  
+        // 3. Live View (Current State)
         return baseList
           .filter(c => {
             const bal = c.Transactions?.currentPending ?? 0;
@@ -216,7 +232,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           .sort((a, b) => this.applySorting(a, b, sort));
       })
     );
-
+  
     this.setupTotals();
   }
 
