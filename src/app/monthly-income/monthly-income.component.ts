@@ -66,8 +66,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   showActive = true;
   showInactive = false;
 
-  maxPending: number = null || 3000000;
-  minPending = 0;
+  maxPending: any = null;
+  minPending:any = null;
   filterByPending: boolean = false;
 
   filteredByDate = false;
@@ -419,7 +419,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     const tableBody = this.CustomersWithLedgerData?.map((c: any) => [
       c.vehicleNumber,
       c.customerName,
-      `Rs ${c.Transactions?.monthlyCost ?? 0}`,
+      `${c.Transactions?.monthlyCost ?? 0}`,
       '',
       '',
       '',
@@ -503,9 +503,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     const tableBody = this.CustomersWithLedgerData?.map((c: any) => [
       c.vehicleNumber,
       c.customerName,
-      `Rs ${c.Transactions?.monthlyCost ?? 0}`,
-      `Rs ${c.Transactions?.transactionAmount ?? 0}`,
-      `Rs ${c.Transactions?.currentPending ?? 0}`,
+      `${c.Transactions?.monthlyCost ?? 0}`,
+      `${c.Transactions?.transactionAmount ?? 0}`,
+      `${c.Transactions?.currentPending ?? 0}`,
       `${c.Transactions?.lastTransactionDate ?? 'No Transactions'}`,
       `${c.Transactions?.paymentMethod ?? 'Not Done'}`,
     ]);
