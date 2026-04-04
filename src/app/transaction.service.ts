@@ -15,6 +15,7 @@ export class TransactionService {
     if (!customer) return;
   
     try {
+      // 1. SETUP: Identify Customer and Month IDs
       const customerQuery = query(
         collection(this.firestore, 'CustomerEntry'),
         where('vehicleNumber', '==', customer)
@@ -30,6 +31,7 @@ export class TransactionService {
       const now = new Date();
       const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   
+      // 2. TARGET MONTH: Update the specific month being paid (e.g., March)
       const targetMonthRef = doc(customerRef, 'Transactions', targetMonthId);
       const targetMonthSnap = await getDoc(targetMonthRef);
   
@@ -40,20 +42,23 @@ export class TransactionService {
   
       const targetData = targetMonthSnap.data();
       const newPayment = Number(transactionData.transactionAmount) || 0;
-      
       const oldPending = Number(targetData['currentPending'] ?? 0);
       const updatedPending = Math.max(oldPending - newPayment, 0);
       const updatedTotalPaid = (targetData['transactionAmount'] || 0) + newPayment;
   
+      // Create unique ID for the new entry
+      const newTxId = `${customer}-${targetMonthId}-${(targetData['transactionHistory']?.length + 1 || 1)}`;
+  
       const newEntry = {
+        id: newTxId,
         transactionAmount: newPayment,
         transactionDate: transactionData.transactionDate,
         transactionType: transactionData.paymentMethod || 'Payment',
         existingPending: oldPending,
         newPending: updatedPending,
-        id: `${customer}-${targetMonthId}-${(targetData['transactionHistory']?.length + 1 || 1)}`,
       };
   
+      // Update the Target Month Document
       await updateDoc(targetMonthRef, {
         transactionHistory: arrayUnion(newEntry),
         transactionAmount: updatedTotalPaid,
@@ -63,44 +68,86 @@ export class TransactionService {
         paymentMethod: transactionData.paymentMethod
       });
   
+      // 3. DOWNSTREAM SYNC: Update the Current Month if this was a backdated payment
       if (targetMonthId !== currentMonthId) {
         const currentMonthRef = doc(customerRef, 'Transactions', currentMonthId);
         const currentSnap = await getDoc(currentMonthRef);
   
         if (currentSnap.exists()) {
           const currentData = currentSnap.data();
+          const history = [...(currentData['transactionHistory'] || [])];
+          
           const monthlyCost = Number(currentData['monthlyCost'] || 0);
           const paymentsInCurrentMonth = Number(currentData['transactionAmount'] || 0);
   
+          // Recalculate Opening Balance for the current month
           const newOpeningBalance = updatedPending + monthlyCost;
           const newClosingBalance = Math.max(newOpeningBalance - paymentsInCurrentMonth, 0);
+  
+          // Update the FIRST transaction of the current month to match the new opening balance
+          if (history.length > 0) {
+            history[0] = {
+              ...history[0],
+              existingPending: newOpeningBalance,
+              newPending: newOpeningBalance - (history[0].transactionAmount || 0)
+            };
+          }
   
           await updateDoc(currentMonthRef, {
             currentMonthTotal: newOpeningBalance,
             currentPending: newClosingBalance,
+            transactionHistory: history 
           });
         }
       }
   
+      // 4. MASTER LOG: Update FullTransactionHistory on the Customer Document
+// 1. Get the current master list
+const rawFullHistory = customerDoc.data()['FullTransactionHistory'] || [];
+const shiftAmount = oldPending - updatedPending;
+
+if (targetMonthId !== currentMonthId) {
+  // --- BACKDATED FLOW: Modify existing entries to fix the "Ghost Balance" ---
+  const updatedFullHistory = rawFullHistory
+    .filter((t: any) => t.id !== `${targetMonthId}_IDLE`) // Remove placeholder if it exists
+    .map((tx: any) => {
+      // If a transaction belongs to the 'Current Month', we MUST shift its 
+      // existingPending and newPending by the shiftAmount so the math stays correct.
+      if (tx.id.includes(currentMonthId)) {
+        return {
+          ...tx,
+          existingPending: (tx.existingPending || 0) - shiftAmount,
+          newPending: (tx.newPending || 0) - shiftAmount
+        };
+      }
+      return tx;
+    });
+
+  // Add the new backdated entry to the corrected list
+  updatedFullHistory.push(newEntry);
+
+  await updateDoc(customerRef, {
+    FullTransactionHistory: updatedFullHistory
+  });
+
+} else {
+  // --- REGULAR FLOW: Just append the new transaction ---
+  await updateDoc(customerRef, {
+    FullTransactionHistory: arrayUnion(newEntry)
+  });
+
+  // Handle IDLE cleanup separately for regular flow if needed
+  if (!targetData['isTransactionMade']) {
+    const toRemove = rawFullHistory.find((t: any) => t.id === `${targetMonthId}_IDLE`);
+    if (toRemove) {
       await updateDoc(customerRef, {
-        FullTransactionHistory: arrayUnion({
-          ...newEntry,
-          id: `${customer}-${targetMonthId}-${(targetData['transactionHistory']?.length + 1 || 1)}`,
-        }),
+        FullTransactionHistory: arrayRemove(toRemove),
       });
+    }
+  }
+}
   
-      if (!targetData['isTransactionMade']) {
-        const fullHistory = customerDoc.data()['FullTransactionHistory'] || [];
-        const toRemove = fullHistory.find((t: any) => t.id === `${targetMonthId}_IDLE`);
-        
-        if (toRemove) {
-          await updateDoc(customerRef, {
-            FullTransactionHistory: arrayRemove(toRemove),
-          });
-        }
-      }
-  
-      console.log(`Transaction complete. Target: ${targetMonthId}, Current Sync: ${targetMonthId !== currentMonthId}`);
+      console.log(`Sync complete for ${customer}. Shift applied: ${shiftAmount}`);
   
     } catch (error) {
       console.error('Transaction Error:', error);

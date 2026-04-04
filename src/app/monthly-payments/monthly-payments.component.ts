@@ -158,6 +158,10 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const rawIndex = rawBefore.length;
   
     if (!isDigit && !isLetter) return event.preventDefault();
+
+    if (rawIndex >= 9 && isLetter) {
+      return event.preventDefault();
+    }
   
     if (rawIndex < 2 && !isLetter) {
       control?.setErrors({ ...control.errors, letterExpected: true });
@@ -185,10 +189,12 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     }
   
 
-    if (rawIndex >= 6 && isLetter) {
+    if (rawIndex >= 6  && isLetter) {
       control?.setErrors({ ...control.errors, digitExpected: true });
       return event.preventDefault();
     }
+
+    
   }
 
   onVehicleNumberInput(event: Event) {
