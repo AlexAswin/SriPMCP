@@ -72,13 +72,17 @@ export class EntryFormComponent {
       this.show = true;
       this.message = 'Customer not exists....';
     }
-  }    
+  }
 
   private formateVehicleNumber(value: string): string {
-    return value
-      .toUpperCase()
-      // .replace(/\s+/g, '')
-      .trim();
+    return (
+      this.reformatVehicleNumber(value).toUpperCase().trim()
+    );
+  }
+
+  reformatVehicleNumber(value: any): string {
+    if (typeof value !== 'string') return '';
+    return value.toUpperCase().replace(/^([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})$/, '$1 $2 $3 $4');
   }
 
   onVehicleNumberInput(event: Event) {

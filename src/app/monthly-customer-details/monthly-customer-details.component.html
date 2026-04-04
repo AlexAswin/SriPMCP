@@ -60,8 +60,8 @@
                                 <label>Vehicle Name</label>
                                 <input type="text" placeholder="R15" formControlName="vehicleName" />
                             </div>
-                            <div class="error-container" *ngIf="vehicleDetailsForm.get('vehicleType')?.invalid && (vehicleDetailsForm.get('vehicleType')?.dirty || vehicleDetailsForm.get('vehicleType')?.touched)">
-                                <small>Vehicle type is required</small>
+                            <div class="error-container" *ngIf="vehicleDetailsForm.get('vehicleName')?.invalid && (vehicleDetailsForm.get('vehicleName')?.dirty || vehicleDetailsForm.get('vehicleName')?.touched)">
+                                <small>Vehicle Name is required</small>
                             </div>
                         </div>
                     </div>
@@ -171,7 +171,8 @@
                                 <label>End Date</label>
                                 <input type="date"
                                        [formControl]="endDateMonthly"
-                                       [min]="fromDateMonthly.value" />
+                                       [min]="fromDateMonthly.value" 
+                                       [max]="maxDate"/>
                             </div>
                             <div class="error-container" *ngIf="endDateMonthly.invalid && (endDateMonthly.dirty || endDateMonthly.touched)">
                                 <small>End date is required</small>
