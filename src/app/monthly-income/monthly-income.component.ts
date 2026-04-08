@@ -91,7 +91,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     'vehicle',
     'name',
     'Advance',
+    'previousPending',
     'monthlyCost',
+    'amountToPay',
     'paid',
     'balance',
     'date',
@@ -123,6 +125,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   toDate$ = new BehaviorSubject<string | null>(null);
 
   totalMonthlyCost$!: Observable<number>;
+  totalAmountToPay$!: Observable<number>;
+  totalPreviousPending$!: Observable<number>;
   totalPaid$!: Observable<number>;
   totalBalance$!: Observable<number>;
 
@@ -137,6 +141,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.allCustomers$ = this.transactionService
       .getAllCustomersWithTransactions()
       .pipe(shareReplay(1));
+  
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
   
     this.filteredCustomers$ = combineLatest([
       this.allCustomers$,
@@ -164,14 +171,15 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         if (start && end) {
           const fromDate = new Date(start);
           const toDate = new Date(end);
-        
+          // Create a display string for the filter range to use if no transactions exist
+          const filterMonthKey = start.substring(0, 7); 
+  
           return baseList.flatMap((customer) => {
             const sortedHistory = [...(customer.FullTransactionHistory || [])].sort((a, b) => 
               new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime()
             );
             
             const monthsGroup = new Map<string, any[]>();
-            
             sortedHistory.forEach(tx => {
               const txDate = new Date(tx.transactionDate);
               if (txDate >= fromDate && txDate <= toDate) {
@@ -180,39 +188,78 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                 monthsGroup.set(monthKey, [...existing, tx]);
               }
             });
+  
+            // --- FIX: If no transactions in range, return a default row ---
+            if (monthsGroup.size === 0) {
+              const monthlyCost = customer.amount || 600;
+              // On load/default, amountToPay is their current total
+              const amountToPay = customer.Transactions?.currentMonthTotal ?? monthlyCost;
+              
+              return [{
+                ...customer,
+                displayMonth: filterMonthKey,
+                Transactions: {
+                  ...customer.Transactions,
+                  monthlyCost: monthlyCost,
+                  previousPending: (amountToPay - monthlyCost) > 0 ? (amountToPay - monthlyCost) : 0,
+                  amountToPay: amountToPay,
+                  transactionAmount: 0,
+                  currentPending: (filterMonthKey < currentMonthStr) ? 0 : amountToPay,
+                  lastTransactionDate: null,
+                  paymentMethod: 'Not Done'
+                }
+              }];
+            }
         
             return Array.from(monthsGroup.entries()).map(([monthKey, txs]) => {
-              const monthPaid = txs.reduce((sum, tx) => sum + (tx.transactionAmount || 0), 0);
-              const firstTxInMonth = txs[0];
-              const latestTxInMonth = txs[txs.length - 1];
-        
+              const firstTx = txs[0];
+              const lastTx = txs[txs.length - 1];
+              const monthlyCost = customer.amount || 600;
+              const amountToPay = firstTx.existingPending ?? monthlyCost;
+              
+              const isPastMonth = monthKey < currentMonthStr;
+              const displayBalance = isPastMonth ? 0 : (lastTx.newPending ?? 0);
+  
               return {
                 ...customer,
                 displayMonth: monthKey,
-                isHistoryView: true,
                 Transactions: {
                   ...customer.Transactions,
-                  currentMonthTotal: firstTxInMonth.existingPending ?? (customer.amount || 0),
-                  transactionAmount: monthPaid,
-                  currentPending: latestTxInMonth.newPending ?? 0,            
-                  lastTransactionDate: latestTxInMonth.transactionDate,
-                  paymentMethod: txs.length > 1 ? 'Multiple' : latestTxInMonth.transactionType
+                  monthlyCost: monthlyCost,
+                  previousPending: (amountToPay - monthlyCost) > 0 ? (amountToPay - monthlyCost) : 0,
+                  amountToPay: amountToPay,
+                  transactionAmount: txs.reduce((sum, t) => sum + (t.transactionAmount || 0), 0),
+                  currentPending: displayBalance,
+                  lastTransactionDate: lastTx.transactionDate,
+                  paymentMethod: txs.length > 1 ? 'Multiple' : lastTx.transactionType
                 }
               };
             });
           })
-          .filter(row => {
-            const bal = row.Transactions?.currentPending ?? 0;
-            return bal >= minVal && bal <= maxVal;
-          })
+          .filter(row => (row.Transactions?.currentPending ?? 0) >= minVal && (row.Transactions?.currentPending ?? 0) <= maxVal)
           .sort((a, b) => this.applySorting(a, b, sort));
         }
   
+        // Default On-Load Logic (Already includes everyone in baseList)
         return baseList
-          .filter(c => {
-            const bal = c.Transactions?.currentPending ?? 0;
-            return bal >= minVal && bal <= maxVal;
+          .map(c => {
+            const trans = c.Transactions || {};
+            const monthlyCost = c.amount || 600;
+            const amountToPay = trans.currentMonthTotal ?? monthlyCost;
+  
+            return {
+              ...c,
+              Transactions: {
+                ...trans,
+                monthlyCost: monthlyCost,
+                previousPending: (amountToPay - monthlyCost) > 0 ? (amountToPay - monthlyCost) : 0,
+                amountToPay: amountToPay,
+                transactionAmount: trans.transactionAmount || 0,
+                currentPending: trans.currentPending || 0
+              }
+            };
           })
+          .filter(c => (c.Transactions?.currentPending ?? 0) >= minVal && (c.Transactions?.currentPending ?? 0) <= maxVal)
           .sort((a, b) => this.applySorting(a, b, sort));
       })
     );
@@ -234,18 +281,31 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
 
     return sort.direction === 'asc' ? valA - valB : valB - valA;
   }
-
   private setupTotals() {
-    this.totalMonthlyCost$ = this.filteredCustomers$.pipe(
-      map(items => items.reduce((acc, i) => acc + Number(i.Transactions?.currentMonthTotal || 0), 0))
+    const totals$ = this.filteredCustomers$.pipe(
+      map(items => items.reduce((acc, i) => {
+        const trans = i.Transactions;
+        return {
+          monthlyCost: acc.monthlyCost + Number(trans?.monthlyCost || 0),
+          prevPending: acc.prevPending + Number(trans?.previousPending || 0),
+          paid: acc.paid + Number(trans?.transactionAmount || 0),
+          balance: acc.balance + Number(trans?.currentPending || 0)
+        };
+      }, { monthlyCost: 0, prevPending: 0, paid: 0, balance: 0 })),
+      shareReplay(1)
     );
-
-    this.totalPaid$ = this.filteredCustomers$.pipe(
-      map(items => items.reduce((acc, i) => acc + Number(i.Transactions?.transactionAmount || 0), 0))
-    );
-
-    this.totalBalance$ = this.filteredCustomers$.pipe(
-      map(items => items.reduce((acc, i) => acc + Number(i.Transactions?.currentPending ?? 0), 0))
+  
+    this.totalMonthlyCost$ = totals$.pipe(map(t => t.monthlyCost));
+    this.totalPreviousPending$ = totals$.pipe(map(t => t.prevPending));
+    this.totalPaid$ = totals$.pipe(map(t => t.paid));
+    this.totalBalance$ = totals$.pipe(map(t => t.balance));
+  
+    // Now calculate Amount to Pay by combining the relevant streams
+    this.totalAmountToPay$ = combineLatest([
+      this.totalMonthlyCost$,
+      this.totalPreviousPending$
+    ]).pipe(
+      map(([cost, prev]) => cost + prev)
     );
   }
 
