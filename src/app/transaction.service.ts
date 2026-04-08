@@ -377,7 +377,7 @@ if (targetMonthId !== currentMonthId) {
             transactionType: 'No Transactions',
             transactionAmount: 0,
             existingPending: prevPending,
-            newPending: newPending,
+            newPending: prevPending,
             transactionDate: null,
             timestamp: new Date() 
           }),

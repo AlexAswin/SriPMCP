@@ -70,7 +70,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   minPending:any = null;
   filterByPending: boolean = false;
 
-  filteredByDate = false;
+  filteredByDate: boolean = false;
 
   currentMonth: string = '';
 
@@ -90,7 +90,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   CustomersAndBalanceColumns = [
     'vehicle',
     'name',
-    'Advance',
     'previousPending',
     'monthlyCost',
     'amountToPay',
@@ -129,11 +128,14 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   totalPreviousPending$!: Observable<number>;
   totalPaid$!: Observable<number>;
   totalBalance$!: Observable<number>;
+  totalBalanceActiveCustomers$! : Observable<number>;
 
   vehicleFilter$ = new BehaviorSubject<string>('');
 
   private destroy$ = new Subject<void>();
   showHistory: boolean = false;
+
+  // filteredByDate: boolean = true
 
   constructor(private transactionService: TransactionService) {}
 
@@ -141,9 +143,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.allCustomers$ = this.transactionService
       .getAllCustomersWithTransactions()
       .pipe(shareReplay(1));
-  
-    const now = new Date();
-    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
   
     this.filteredCustomers$ = combineLatest([
       this.allCustomers$,
@@ -158,6 +157,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     ]).pipe(
       map(([customers, showActive, showInactive, min, max, start, end, sort, vehicle]) => {
         
+        const now = new Date();
+        const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  
         let baseList = customers.filter((c) => {
           const vehicleMatch = !vehicle || c.vehicleNumber?.toUpperCase().includes(vehicle.toUpperCase());
           const statusMatch = (showActive && c.monthlyStatus === 'Active') ||
@@ -171,96 +173,106 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         if (start && end) {
           const fromDate = new Date(start);
           const toDate = new Date(end);
-          // Create a display string for the filter range to use if no transactions exist
-          const filterMonthKey = start.substring(0, 7); 
+          this.filteredByDate = true;
+  
+          const getMonthsInRange = (d1: Date, d2: Date) => {
+            let months = [];
+            let current = new Date(d1.getFullYear(), d1.getMonth(), 1);
+            const last = new Date(d2.getFullYear(), d2.getMonth(), 1);
+            while (current <= last) {
+              months.push(current.toISOString().substring(0, 7));
+              current.setMonth(current.getMonth() + 1);
+            }
+            return months;
+          };
+  
+          const targetMonths = getMonthsInRange(fromDate, toDate);
   
           return baseList.flatMap((customer) => {
-            const sortedHistory = [...(customer.FullTransactionHistory || [])].sort((a, b) => 
-              new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime()
-            );
-            
+            const history = customer.FullTransactionHistory || [];
             const monthsGroup = new Map<string, any[]>();
-            sortedHistory.forEach(tx => {
-              const txDate = new Date(tx.transactionDate);
-              if (txDate >= fromDate && txDate <= toDate) {
-                const monthKey = tx.transactionDate.substring(0, 7); 
+            
+            history.forEach((tx: any) => {
+              let monthKey = tx.transactionDate ? tx.transactionDate.substring(0, 7) : 
+                             (tx.id?.includes('_IDLE') ? tx.id.split('_')[0] : null);
+              
+              if (monthKey && targetMonths.includes(monthKey)) {
                 const existing = monthsGroup.get(monthKey) || [];
                 monthsGroup.set(monthKey, [...existing, tx]);
               }
             });
   
-            // --- FIX: If no transactions in range, return a default row ---
-            if (monthsGroup.size === 0) {
-              const monthlyCost = customer.amount || 600;
-              // On load/default, amountToPay is their current total
-              const amountToPay = customer.Transactions?.currentMonthTotal ?? monthlyCost;
-              
-              return [{
-                ...customer,
-                displayMonth: filterMonthKey,
-                Transactions: {
-                  ...customer.Transactions,
-                  monthlyCost: monthlyCost,
-                  previousPending: (amountToPay - monthlyCost) > 0 ? (amountToPay - monthlyCost) : 0,
-                  amountToPay: amountToPay,
-                  transactionAmount: 0,
-                  currentPending: (filterMonthKey < currentMonthStr) ? 0 : amountToPay,
-                  lastTransactionDate: null,
-                  paymentMethod: 'Not Done'
-                }
-              }];
-            }
-        
-            return Array.from(monthsGroup.entries()).map(([monthKey, txs]) => {
+            return targetMonths.map(monthKey => {
+              const txs = monthsGroup.get(monthKey);
+              const monthlyCost = customer.amount;
+  
+              if (!txs || txs.length === 0) {
+                const isPastMonth = monthKey < currentMonthStr;
+                const amountToPay = isPastMonth ? monthlyCost : (customer.Transactions?.currentMonthTotal ?? monthlyCost);
+  
+                return {
+                  ...customer,
+                  displayMonth: monthKey,
+                  Transactions: {
+                    ...customer.Transactions,
+                    monthlyCost,
+                    previousPending: isPastMonth ? 0 : (amountToPay - monthlyCost),
+                    amountToPay,
+                    transactionAmount: 0,
+                    currentPending: amountToPay,
+                    lastTransactionDate: null,
+                    paymentMethod: 'Not Done'
+                  }
+                };
+              }
+  
               const firstTx = txs[0];
               const lastTx = txs[txs.length - 1];
-              const monthlyCost = customer.amount || 600;
               const amountToPay = firstTx.existingPending ?? monthlyCost;
-              
-              const isPastMonth = monthKey < currentMonthStr;
-              const displayBalance = isPastMonth ? 0 : (lastTx.newPending ?? 0);
+              const isIdle = txs.every(t => t.transactionType === 'No Transactions' || t.id?.includes('_IDLE'));
   
               return {
                 ...customer,
                 displayMonth: monthKey,
                 Transactions: {
                   ...customer.Transactions,
-                  monthlyCost: monthlyCost,
+                  monthlyCost,
                   previousPending: (amountToPay - monthlyCost) > 0 ? (amountToPay - monthlyCost) : 0,
-                  amountToPay: amountToPay,
+                  amountToPay,
                   transactionAmount: txs.reduce((sum, t) => sum + (t.transactionAmount || 0), 0),
-                  currentPending: displayBalance,
-                  lastTransactionDate: lastTx.transactionDate,
-                  paymentMethod: txs.length > 1 ? 'Multiple' : lastTx.transactionType
+                  currentPending: lastTx.newPending ?? amountToPay,
+                  lastTransactionDate: isIdle ? null : lastTx.transactionDate,
+                  paymentMethod: isIdle ? 'Not Done' : (txs.length > 1 ? 'Multiple' : (lastTx.transactionType || 'Not Done'))
                 }
               };
             });
           })
-          .filter(row => (row.Transactions?.currentPending ?? 0) >= minVal && (row.Transactions?.currentPending ?? 0) <= maxVal)
+          .filter(row => {
+            const bal = row.Transactions?.currentPending ?? 0;
+            return bal >= minVal && bal <= maxVal;
+          })
           .sort((a, b) => this.applySorting(a, b, sort));
         }
   
-        // Default On-Load Logic (Already includes everyone in baseList)
-        return baseList
-          .map(c => {
-            const trans = c.Transactions || {};
-            const monthlyCost = c.amount || 600;
-            const amountToPay = trans.currentMonthTotal ?? monthlyCost;
-  
-            return {
-              ...c,
-              Transactions: {
-                ...trans,
-                monthlyCost: monthlyCost,
-                previousPending: (amountToPay - monthlyCost) > 0 ? (amountToPay - monthlyCost) : 0,
-                amountToPay: amountToPay,
-                transactionAmount: trans.transactionAmount || 0,
-                currentPending: trans.currentPending || 0
-              }
-            };
-          })
-          .filter(c => (c.Transactions?.currentPending ?? 0) >= minVal && (c.Transactions?.currentPending ?? 0) <= maxVal)
-          .sort((a, b) => this.applySorting(a, b, sort));
+        this.filteredByDate = false;
+        return baseList.map(c => {
+          const trans = c.Transactions || {};
+          const monthlyCost = c.amount || 600;
+          const amountToPay = trans.currentMonthTotal ?? monthlyCost;
+          return {
+            ...c,
+            Transactions: {
+              ...trans,
+              monthlyCost,
+              previousPending: (amountToPay - monthlyCost) > 0 ? (amountToPay - monthlyCost) : 0,
+              amountToPay,
+              transactionAmount: trans.transactionAmount || 0,
+              currentPending: trans.currentPending || 0
+            }
+          };
+        })
+        .filter(c => (c.Transactions?.currentPending ?? 0) >= minVal && (c.Transactions?.currentPending ?? 0) <= maxVal)
+        .sort((a, b) => this.applySorting(a, b, sort));
       })
     );
   
@@ -298,9 +310,15 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.totalMonthlyCost$ = totals$.pipe(map(t => t.monthlyCost));
     this.totalPreviousPending$ = totals$.pipe(map(t => t.prevPending));
     this.totalPaid$ = totals$.pipe(map(t => t.paid));
-    this.totalBalance$ = totals$.pipe(map(t => t.balance));
+    this.totalBalance$ = combineLatest([
+      this.totalMonthlyCost$,
+      this.totalPaid$
+    ]).pipe(
+      map(([cost, totalPaid]) => cost - totalPaid)
+    );
+
+    this.totalBalanceActiveCustomers$ = totals$.pipe(map(t => t.balance));
   
-    // Now calculate Amount to Pay by combining the relevant streams
     this.totalAmountToPay$ = combineLatest([
       this.totalMonthlyCost$,
       this.totalPreviousPending$
@@ -448,8 +466,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     fromInput.value = '';
     toInput.value = '';
 
-    this.minPending = 0;
-    this.maxPending = 3000000;
+    this.minPending = null;
+    this.maxPending = null;
 
     this.fromDate$.next(null);
     this.toDate$.next(null);
