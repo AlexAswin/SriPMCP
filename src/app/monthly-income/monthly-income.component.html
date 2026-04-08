@@ -127,11 +127,11 @@
             <td mat-footer-cell *matFooterCellDef></td>
           </ng-container>
 
-          <ng-container matColumnDef="Advance">
+          <!-- <ng-container matColumnDef="Advance">
             <th mat-header-cell *matHeaderCellDef>Advance</th>
             <td mat-cell *matCellDef="let Customers">{{ Customers.advance }}</td>
             <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
+          </ng-container> -->
 
           <ng-container matColumnDef="previousPending">
             <th mat-header-cell *matHeaderCellDef> Previous Pending </th>
@@ -139,7 +139,7 @@
               {{ row.Transactions?.previousPending || 0 }}
             </td>
             <td mat-footer-cell *matFooterCellDef>
-              {{ totalPreviousPending$ | async }}
+              <!-- {{ totalPreviousPending$ | async }} -->
             </td>
           </ng-container>
 
@@ -147,7 +147,7 @@
             <th mat-header-cell *matHeaderCellDef>Amount</th>
             <td mat-cell *matCellDef="let Customers">{{ Customers.Transactions.monthlyCost }}</td>
             <td mat-footer-cell *matFooterCellDef>
-              {{totalMonthlyCost$ | async }}
+              <span *ngIf="filteredByDate">{{totalMonthlyCost$ | async }}</span>
             </td>
           </ng-container>
 
@@ -157,7 +157,7 @@
               {{ row.Transactions?.amountToPay || 0 }}
             </td>
             <td mat-footer-cell *matFooterCellDef>
-              {{ totalAmountToPay$ | async }}
+             <span *ngIf="!filteredByDate">{{ totalAmountToPay$ | async }} </span> 
             </td>
           </ng-container>
 
@@ -183,7 +183,9 @@
             </td>
           
             <td mat-footer-cell *matFooterCellDef>
-              {{ (totalBalance$ | async) || 0 }}
+              <span *ngIf="!filteredByDate">{{ (totalBalanceActiveCustomers$| async) || 0 }}</span>
+              <span *ngIf="filteredByDate">{{ (totalBalance$| async) || 0 }}</span>
+
             </td>
           </ng-container>
 
