@@ -383,10 +383,11 @@ async getCustomerRecord() {
   const vNbr = this.deleteCustomerForm.value.vehicleNumber;
 
   const formatedVehicleNbr = this.normalizeVehicleNumber(vNbr);
-  this.showSettlementDetails = true;
 
     try {
       const customerCurrentMonthDetails = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
+      this.showSettlementDetails = true;
+
       this.monthlyStatus = customerCurrentMonthDetails.monthlyStatus
 
       console.log(customerCurrentMonthDetails);
@@ -395,6 +396,8 @@ async getCustomerRecord() {
         // monthlyCost: customerCurrentMonthDetails.Transactions.monthlyCost,
       });
     } catch (err) {
+      this.showSettlementDetails = false;
+      this.showAlert('Invalid User. Please try again.', 'error');
       console.log('Error deleting record');
     }
   }
