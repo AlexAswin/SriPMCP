@@ -272,9 +272,9 @@
                       <tfoot *ngIf="row.FullTransactionHistory?.length">
                         <tr>
                           <td>Total</td>
-                          <td>{{ getTotalAmount(row.FullTransactionHistory, 'existingPending') }}</td>
+                          <td>{{ getTotalAmount(row.FullTransactionHistory, 'monthlyCost') }}</td>
                           <td>{{ getTotalAmount(row.FullTransactionHistory, 'transactionAmount') }}</td>
-                          <td>{{ getTotalAmount(row.FullTransactionHistory, 'newPending') }}</td>
+                          <td>{{ (getTotalAmount(row.FullTransactionHistory, 'monthlyCost')) - (getTotalAmount(row.FullTransactionHistory, 'transactionAmount')) }}</td>
                           <td colspan="2"></td>
                         </tr>
                       </tfoot>

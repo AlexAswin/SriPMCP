@@ -47,6 +47,7 @@ interface Transaction {
   transactionType?: string;
   existingPending?: number;
   newPending?: number;
+  monthlyCost?: number;
 }
 
 interface CustomerTransactions {
@@ -307,6 +308,16 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         (showInactive && c.monthlyStatus === 'InActive');
   
       return vehicleMatch && statusMatch;
+    }).map((c) => {
+      if (!vehicleFilter) return c;
+  
+      return {
+        ...c,
+        FullTransactionHistory: (c.FullTransactionHistory ?? []).map((tx) => ({
+          ...tx,
+          monthlyCost: c.amount,
+        })),
+      };
     });
   
     if (fromDate && toDate) {
