@@ -349,17 +349,22 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               const isPastMonth = monthKey < currentMonthStr;
 
               const lastKnownTx = [...history]
-                .filter(
-                  (t) =>
-                    !t.id?.includes('_IDLE') &&
-                    t.transactionDate &&
-                    t.transactionDate.substring(0, 7) < monthKey
+                .filter((t) =>
+                  t.transactionDate != null
+                    ? t.transactionDate.substring(0, 7) < monthKey
+                    : t.id != null && t.id.split('_')[0] < monthKey
                 )
-                .sort((a, b) =>
-                  (b.transactionDate ?? '').localeCompare(
-                    a.transactionDate ?? ''
-                  )
-                )[0];
+                .sort((a, b) => {
+                  const aKey =
+                    a.transactionDate?.substring(0, 7) ??
+                    a.id?.split('_')[0] ??
+                    '';
+                  const bKey =
+                    b.transactionDate?.substring(0, 7) ??
+                    b.id?.split('_')[0] ??
+                    '';
+                  return bKey.localeCompare(aKey); // descending — most recent first
+                })[0];
 
               const previousPending = lastKnownTx?.newPending ?? 0;
               const amountToPay = previousPending + monthlyCost;
