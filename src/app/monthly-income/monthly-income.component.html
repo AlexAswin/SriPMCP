@@ -239,10 +239,9 @@
                    class="example-element-detail-wrapper"
                    [class.example-element-detail-wrapper-expanded]="isExpanded(row)">
           
-                <div>
-                  <div style="padding:16px">
+                   <div class="transaction-history-wrapper">
                     <h4>Transaction History</h4>
-
+                  
                     <table class="full-width">
                       <thead>
                         <tr>
@@ -254,26 +253,33 @@
                           <th>Transaction Id</th>
                         </tr>
                       </thead>
-                      <tbody>                
-                          <tr  *ngFor="let t of row.FullTransactionHistory">
-                            <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate  }}</td>
-                            <td>{{ t.existingPending }}</td>
-                            <td>{{ t.transactionAmount }}</td>
-                            <td>{{ t.newPending }}</td>
-                            <td>{{ t.transactionType  }}</td>
-                            <td>{{ t.id  }}</td>
-                          </tr>
-
-                          <tr *ngIf="!row.FullTransactionHistory?.length">
-                            <td colspan="5" style="text-align: center;">
-                              No Transactions
-                            </td>
-                          </tr>
+                  
+                      <tbody>
+                        <tr *ngFor="let t of row.FullTransactionHistory">
+                          <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate }}</td>
+                          <td>{{ t.existingPending }}</td>
+                          <td>{{ t.transactionAmount }}</td>
+                          <td>{{ t.newPending }}</td>
+                          <td>{{ t.transactionType }}</td>
+                          <td>{{ t.id }}</td>
+                        </tr>
+                  
+                        <tr *ngIf="!row.FullTransactionHistory?.length" class="empty-row">
+                          <td colspan="6">No Transactions</td>
+                        </tr>
                       </tbody>
+                  
+                      <tfoot *ngIf="row.FullTransactionHistory?.length">
+                        <tr>
+                          <td>Total</td>
+                          <td>{{ getTotalAmount(row.FullTransactionHistory, 'existingPending') }}</td>
+                          <td>{{ getTotalAmount(row.FullTransactionHistory, 'transactionAmount') }}</td>
+                          <td>{{ getTotalAmount(row.FullTransactionHistory, 'newPending') }}</td>
+                          <td colspan="2"></td>
+                        </tr>
+                      </tfoot>
                     </table>
-          
                   </div>
-                </div>
           
               </div>
           
@@ -297,7 +303,9 @@
             </td>
           </tr>
           <ng-container>
-            <tr mat-footer-row *matFooterRowDef="CustomersAndBalanceColumns; sticky: true" class="footer-row"></tr>
+            <tr mat-footer-row *matFooterRowDef="CustomersAndBalanceColumns; sticky: true" class="footer-row"
+              [hidden]="(vehicleFilter$ | async)">
+            </tr>
           </ng-container>
         </table>
       </div>
