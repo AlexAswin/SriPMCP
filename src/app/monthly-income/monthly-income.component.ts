@@ -631,6 +631,10 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     }
   }
 
+  getTotalAmount(transactions: any[], field: string): number {
+    return transactions?.reduce((sum, t) => sum + (t[field] ?? 0), 0) ?? 0;
+  }
+
   expandRow(row: any) {
     this.expandedElement = this.isExpanded(row) ? null : row;
   }
