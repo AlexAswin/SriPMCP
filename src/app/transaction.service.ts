@@ -244,7 +244,6 @@ if (targetMonthId !== currentMonthId) {
 
   getAllCustomersWithTransactions(): Observable<any[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
-
     const q = query(customersRef, where('customerType', '==', 'Monthly'));
     const currentMonth = this.getCurrentMonth();
   
@@ -253,7 +252,7 @@ if (targetMonthId !== currentMonthId) {
         if (!customers.length) return of([]);
   
         const customerStreams = customers.map((customer) => {
-
+  
           if (customer.monthlyStatus !== 'InActive') {
             const transactionDocRef = doc(
               this.firestore,
@@ -261,18 +260,38 @@ if (targetMonthId !== currentMonthId) {
             );
   
             return docData(transactionDocRef).pipe(
-              map((ledger: any) => {
-                if (!ledger) {
-                  // this.createNewMonthLedgerForActiveCustomers(currentMonth);
+              switchMap((ledger: any) => {
+                if (ledger) {
+                  // Current month data exists, return it directly
+                  return of({
+                    ...customer,
+                    Transactions: ledger
+                  });
+                } else {
+                  // Current month missing — fetch all transactions and return the last one
+                  const txRef = collection(
+                    this.firestore,
+                    `CustomerEntry/${customer.id}/Transactions`
+                  );
+  
+                  return collectionData(txRef, { idField: 'monthId' }).pipe(
+                    map((txns: any[]) => {
+                      let lastTxn = {};
+                      if (txns && txns.length > 0) {
+                        txns.sort((a, b) => a.monthId.localeCompare(b.monthId));
+                        lastTxn = txns[txns.length - 1];
+                      }
+                      return {
+                        ...customer,
+                        Transactions: lastTxn
+                      };
+                    })
+                  );
                 }
-                return {
-                  ...customer,
-                  Transactions: ledger || {}
-                };
               })
             );
-          } 
-          
+          }
+  
           else {
             const txRef = collection(
               this.firestore,
