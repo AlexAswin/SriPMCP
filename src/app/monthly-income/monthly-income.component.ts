@@ -60,6 +60,7 @@ interface CustomerTransactions {
   paymentMethod?: string;
   currentMonthTotal?: number;
   isTransactionMade?: boolean;
+  isCostAdjustmentMade?: boolean;
   transactionHistory?: Transaction[];
 }
 
@@ -242,34 +243,65 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     monthKey: string,
     txs: Transaction[]
   ): Customer {
-    const monthlyCost = customer.amount;
-
+    const trans = customer.Transactions ?? {};
+  
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  
     const sorted = [...txs].sort((a, b) =>
       (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '')
     );
-
+  
     const firstTx = sorted[0];
-    const lastTx = sorted[sorted.length - 1];
-    const amountToPay = firstTx.existingPending ?? monthlyCost;
-    const rawPrevious = amountToPay - monthlyCost;
-
+    const lastTx  = sorted[sorted.length - 1];
+  
     const isIdle = sorted.every(
       (t) => t.transactionType === 'No Transactions' || t.id?.includes('_IDLE')
     );
-
+  
+    const totalPaid = sorted.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
+  
+    // ── cost adjustment: current month only ─────────────────────────
+    if (trans.isCostAdjustmentMade && monthKey === currentMonthStr) {
+      const previousPending = firstTx.existingPending ?? 0;
+      const monthlyCost     = 0;
+      const amountToPay     = previousPending + monthlyCost;
+  
+      return {
+        ...customer,
+        displayMonth: monthKey,
+        Transactions: {
+          ...trans,
+          monthlyCost,
+          previousPending,
+          amountToPay,
+          transactionAmount:   totalPaid,
+          currentPending:      lastTx.newPending ?? amountToPay,
+          lastTransactionDate: isIdle ? null : lastTx.transactionDate ?? null,
+          paymentMethod: isIdle
+            ? 'Not Done'
+            : sorted.length > 1
+            ? 'Multiple'
+            : lastTx.transactionType ?? 'Not Done',
+        },
+      };
+    }
+  
+    // ── normal row (all past months + non-adjusted current month) ───
+    const monthlyCost = customer.amount;
+    const amountToPay = firstTx.existingPending ?? monthlyCost;
+    const rawPrevious = amountToPay - monthlyCost;
+  
     return {
       ...customer,
       displayMonth: monthKey,
       Transactions: {
-        ...customer.Transactions,
+        ...trans,
         monthlyCost,
         previousPending: rawPrevious > 0 ? rawPrevious : 0,
         amountToPay,
-        transactionAmount: sorted.reduce(
-          (sum, t) => sum + (t.transactionAmount ?? 0),
-          0
-        ),
-        currentPending: lastTx.newPending ?? amountToPay,
+        transactionAmount:   totalPaid,
+        currentPending:      lastTx.newPending ?? amountToPay,
         lastTransactionDate: isIdle ? null : lastTx.transactionDate ?? null,
         paymentMethod: isIdle
           ? 'Not Done'
@@ -322,45 +354,40 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
     if (fromDate && toDate) {
       this.filteredByDate = true;
-  
+    
       const rangeStart = fromDate.substring(0, 10);
       const rangeEnd   = toDate.substring(0, 10);
-  
+    
       const parsedFrom   = new Date(rangeStart + 'T00:00:00');
       const parsedTo     = new Date(rangeEnd   + 'T00:00:00');
       const targetMonths = this.getMonthsInRange(parsedFrom, parsedTo);
-  
+    
       const now = new Date();
       const currentMonthStr = `${now.getFullYear()}-${String(
         now.getMonth() + 1
       ).padStart(2, '0')}`;
-  
+    
       return baseList
         .flatMap((customer) => {
           const history: Transaction[] = customer.FullTransactionHistory ?? [];
-  
-          // Only generate rows for months on or after the customer's start month.
+    
           const customerStartMonth = customer.fromDateMonthly
             ? customer.fromDateMonthly.substring(0, 7)
             : targetMonths[0];
-  
+    
           const customerMonths = targetMonths.filter(
             (m) => m >= customerStartMonth
           );
-  
-          // Customer didn't exist yet during this entire range — skip.
+    
           if (customerMonths.length === 0) return [];
-  
-          // Only keep transactions strictly within the selected date range.
-          // _IDLE markers are excluded — idle rows are regenerated below.
+    
           const inRangeHistory = history.filter((tx) => {
             if (tx.id?.includes('_IDLE')) return false;
             const txDate = tx.transactionDate;
             if (!txDate) return false;
             return txDate >= rangeStart && txDate <= rangeEnd;
           });
-  
-          // Group range-filtered transactions by month.
+    
           const monthsGroup = new Map<string, Transaction[]>();
           for (const tx of inRangeHistory) {
             const monthKey = tx.transactionDate!.substring(0, 7);
@@ -370,17 +397,16 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               monthsGroup.set(monthKey, group);
             }
           }
-  
+    
           return customerMonths.map((monthKey) => {
             const txs = monthsGroup.get(monthKey);
-  
-            // ── idle row ────────────────────────────────────────────────────
+    
+            // ── idle row ──────────────────────────────────────────────────
             if (!txs || txs.length === 0) {
               const monthlyCost = customer.amount;
               const isPastMonth = monthKey < currentMonthStr;
-  
-              // Look back through full history including _IDLE records
-              // to carry forward the last known pending balance.
+              const trans       = customer.Transactions ?? {};
+            
               const lastKnownTx = [...history]
                 .filter((t) =>
                   t.transactionDate != null
@@ -388,20 +414,33 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                     : t.id != null && t.id.split('_')[0] < monthKey
                 )
                 .sort((a, b) => {
-                  const aKey =
-                    a.transactionDate?.substring(0, 7) ??
-                    a.id?.split('_')[0] ??
-                    '';
-                  const bKey =
-                    b.transactionDate?.substring(0, 7) ??
-                    b.id?.split('_')[0] ??
-                    '';
+                  const aKey = a.transactionDate?.substring(0, 7) ?? a.id?.split('_')[0] ?? '';
+                  const bKey = b.transactionDate?.substring(0, 7) ?? b.id?.split('_')[0] ?? '';
                   return bKey.localeCompare(aKey);
                 })[0];
-  
+            
               const previousPending = lastKnownTx?.newPending ?? 0;
               const amountToPay     = previousPending + monthlyCost;
-  
+            
+              // Current month + cost adjustment made
+              if (trans.isCostAdjustmentMade && monthKey === currentMonthStr) {
+                return {
+                  ...customer,
+                  displayMonth: monthKey,
+                  Transactions: {
+                    ...trans,
+                    monthlyCost:         trans.monthlyCost ?? 0,
+                    previousPending:     trans.previousPending ?? previousPending,
+                    amountToPay:         trans.currentMonthTotal ?? amountToPay,
+                    transactionAmount:   trans.transactionAmount ?? 0,
+                    currentPending:      trans.currentPending ?? 0,
+                    lastTransactionDate: null,
+                    paymentMethod:       'Not Done',
+                  },
+                } as Customer;
+              }
+            
+              // Normal idle row (past months or no adjustment)
               return {
                 ...customer,
                 displayMonth: monthKey,
@@ -419,8 +458,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                 },
               } as Customer;
             }
-  
-            // ── active row ──────────────────────────────────────────────────
+    
+            // ── active row ────────────────────────────────────────────────
             return this.buildTransactionMonthRow(customer, monthKey, txs);
           });
         })
@@ -436,8 +475,22 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     return baseList
       .map((c) => {
         const trans       = c.Transactions ?? {};
-        const monthlyCost = c.amount;
+        const monthlyCost = c.Transactions?.monthlyCost?? 0;
         const amountToPay = trans.currentMonthTotal ?? monthlyCost;
+
+        if(trans.isCostAdjustmentMade) {
+          return {
+            ...c,
+            Transactions: {
+              ...trans,
+              monthlyCost,
+              previousPending:  (trans.currentMonthTotal),
+              amountToPay,
+              transactionAmount: trans.transactionAmount ?? 0,
+              currentPending:    trans.currentPending ?? 0,
+            },
+          };
+        }
   
         return {
           ...c,

@@ -13,6 +13,7 @@ $text-muted: #6b7280;
   .admin-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
     margin-bottom: 32px;
 
@@ -47,6 +48,12 @@ $text-muted: #6b7280;
       mat-icon {
         color: #555;
       }
+    }
+
+    img {
+      width: 60px;
+      height: 60px;
+      margin-right: 40px;
     }
   }
 }

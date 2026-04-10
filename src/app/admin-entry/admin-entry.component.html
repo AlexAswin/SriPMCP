@@ -4,6 +4,11 @@
       <mat-icon>arrow_back</mat-icon>
     </button>
     <h1>Management Console</h1>
+
+    <span class="spacer"></span>
+
+    <img src="assets/murugar_.jpg" alt="" [routerLink]="['/dashBoard']">
+
   </header>
 
   <mat-tab-group dynamicHeight animationDuration="200ms">
@@ -156,7 +161,7 @@
                 <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber"
                        (keydown)="restrictVehicleInput($event)" 
                        (input)="onVehicleNumberInput($event)"
-                       class="uppercase-bold">
+                       class="uppercase-bold" maxlength="13">
                 <mat-icon matSuffix>directions_car</mat-icon>
               </mat-form-field>
     
