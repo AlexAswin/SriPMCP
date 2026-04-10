@@ -339,7 +339,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           ...c,
           FullTransactionHistory: (c.FullTransactionHistory ?? []).map((tx) => ({
             ...tx,
-            monthlyCost: c.amount,
+            // monthlyCost: c.amount,
+            monthlyCost: tx.id?.includes('MadeCostAdjustment')? 0 : c.amount,
+
           })),
         };
       });
