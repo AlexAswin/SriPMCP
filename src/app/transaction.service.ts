@@ -96,7 +96,7 @@ export class TransactionService {
           await updateDoc(currentMonthRef, {
             currentMonthTotal: newOpeningBalance,
             currentPending: newClosingBalance,
-            transactionHistory: history 
+            // transactionHistory: history 
           });
         }
       }
@@ -519,26 +519,111 @@ if (targetMonthId !== currentMonthId) {
     }
   }
 
-  async updateVehicleCurrentMonthPending(vehicleNumber: string, settlementAmount: number) {
-    const currentMonth = this.getCurrentMonth();
-
-  try {
-
-    const transactionRef = doc(
-      this.firestore, 
-      `CustomerEntry/${vehicleNumber}/Transactions/${currentMonth}`
-    );
-
-    await updateDoc(transactionRef, {
-      currentPending: settlementAmount,
-      currentMonthTotal: settlementAmount,
-    });
-    return true;
-  } catch (error) {
-    console.error("Firebase Update Error:", error);
-    throw error;
-  }
-  }
+  updateVehicleCurrentMonthPending = async (
+    vehicleNumber: string,
+    settlementAmount: number
+  ): Promise<boolean> => {
+    if (!vehicleNumber) return false;
+  
+    try {
+      // 1. SETUP: Identify Customer Document
+      const customerQuery = query(
+        collection(this.firestore, 'CustomerEntry'),
+        where('vehicleNumber', '==', vehicleNumber)
+      );
+      const snapshot = await getDocs(customerQuery);
+      if (snapshot.empty) return false;
+  
+      const customerDoc = snapshot.docs[0];
+      const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
+  
+      const now = new Date();
+      const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  
+      // 2. CURRENT MONTH: Read existing data
+      const currentMonthRef = doc(customerRef, 'Transactions', currentMonthId);
+      const currentMonthSnap = await getDoc(currentMonthRef);
+  
+      if (!currentMonthSnap.exists()) {
+        console.error(`Ledger for ${currentMonthId} missing.`);
+        return false;
+      }
+  
+      const currentData = currentMonthSnap.data();
+      const history: any[] = currentData['transactionHistory'] || [];
+      const oldPending  = Number(currentData['currentPending'] ?? 0);
+      const shiftAmount = oldPending - settlementAmount;
+      const isCostAdjustmentMade = true;
+  
+      // 3. NO TRANSACTION HISTORY: Simple balance update only
+      if (history.length === 0) {
+        await updateDoc(currentMonthRef, {
+          isCostAdjustmentMade,
+          currentPending:    settlementAmount,
+          currentMonthTotal: settlementAmount,
+          monthlyCost:       0,
+        });
+  
+        const rawFullHistory: any[] = customerDoc.data()['FullTransactionHistory'] || [];
+        const updatedFullHistory = rawFullHistory.map((tx: any) => {
+          if (tx.id?.includes(currentMonthId)) {
+            return {
+              ...tx,
+              existingPending: (tx.existingPending || 0) - shiftAmount,
+              newPending:      (tx.newPending      || 0) - shiftAmount,
+            };
+          }
+          return tx;
+        });
+  
+        await updateDoc(customerRef, {
+          FullTransactionHistory: updatedFullHistory,
+        });
+  
+        console.log(`Simple adjustment for ${vehicleNumber}. No transaction history found.`);
+        return true;
+      }
+  
+      // 4. HAS TRANSACTION HISTORY: Shift all existing entries by the delta
+      const updatedHistory = history.map((tx: any) => ({
+        ...tx,
+        existingPending: (tx.existingPending || 0) - shiftAmount,
+        newPending:      (tx.newPending      || 0) - shiftAmount,
+      }));
+  
+      await updateDoc(currentMonthRef, {
+        isCostAdjustmentMade,
+        currentPending:     settlementAmount,
+        currentMonthTotal:  settlementAmount,
+        monthlyCost:        0,
+        transactionHistory: updatedHistory,
+      });
+  
+      // 5. MASTER LOG: Shift current month entries in FullTransactionHistory
+      const rawFullHistory: any[] = customerDoc.data()['FullTransactionHistory'] || [];
+      const updatedFullHistory = rawFullHistory.map((tx: any) => {
+        if (tx.id?.includes(currentMonthId)) {
+          return {
+            ...tx,
+            existingPending: (tx.existingPending || 0) - shiftAmount,
+            newPending:      (tx.newPending      || 0) - shiftAmount,
+          };
+        }
+        return tx;
+      });
+  
+      await updateDoc(customerRef, {
+        FullTransactionHistory: updatedFullHistory,
+      });
+  
+      console.log(`Adjustment complete for ${vehicleNumber}. Shift applied: ${shiftAmount}`);
+      return true;
+  
+    } catch (error) {
+      console.error('Adjustment Error:', error);
+      throw error;
+    }
+  };
 
   addDailyTransactionsToNewCustomer = async (customerDetails: any) => {
     try {

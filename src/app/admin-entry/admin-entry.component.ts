@@ -94,7 +94,7 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     });
   
     this.deleteCustomerForm = this.fb.group({
-      vehicleNumber: ['', [Validators.required]],
+      vehicleNumber: ['', [Validators.required, Validators.pattern(/^[A-Z]{2}\s[0-9]{2}\s[A-Z]{1,2}\s[0-9]{4}$/)]],
       currentPending: [0],
       settlementAmount: [0]
     });
