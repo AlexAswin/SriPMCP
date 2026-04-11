@@ -248,7 +248,8 @@
                       <thead>
                         <tr>
                           <th>Transaction Date</th>
-                          <th>Amount</th>
+                          <th>Previous Pending</th>
+                          <th>Total Amount</th>
                           <th>Paid</th>
                           <th>Balance</th>
                           <th>Payment Type</th>
@@ -259,6 +260,7 @@
                       <tbody>
                         <tr *ngFor="let t of row.FullTransactionHistory">
                           <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate }}</td>
+                          <td>{{ t.previousPending }}</td>
                           <td>{{ t.existingPending }}</td>
                           <td>{{ t.transactionAmount }}</td>
                           <td>{{ t.newPending }}</td>
@@ -274,6 +276,7 @@
                       <tfoot *ngIf="row.FullTransactionHistory?.length">
                         <tr>
                           <td>Total</td>
+                          <td></td>
                           <td>{{ getTotalAmount(row.FullTransactionHistory, 'monthlyCost') }}</td>
                           <td>{{ getTotalAmount(row.FullTransactionHistory, 'transactionAmount') }}</td>
                           <td>{{ (getTotalAmount(row.FullTransactionHistory, 'monthlyCost')) - (getTotalAmount(row.FullTransactionHistory, 'transactionAmount')) }}</td>

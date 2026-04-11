@@ -48,16 +48,15 @@ export class TransactionService {
   
       // Create unique ID for the new entry
       const newTxId = `${customer}-${targetMonthId}-${(targetData['transactionHistory']?.length + 1 || 1)}`;
-      const newTxIdAfterCostAdjustment = `${customer}-${targetMonthId}-${(targetData['transactionHistory']?.length + 1 || 1)}-MadeCostAdjustment`;
-
   
       const newEntry = {
-        id: targetData['isCostAdjustmentMade'] === true ? newTxIdAfterCostAdjustment : newTxId,
+        id: newTxId,
         transactionAmount: newPayment,
         transactionDate: transactionData.transactionDate,
         transactionType: transactionData.paymentMethod || 'Payment',
         existingPending: oldPending,
         newPending: updatedPending,
+        ...(targetData['isCostAdjustmentMade'] === true && { isCostAdjustmentMade: true })
       };
   
       // Update the Target Month Document
