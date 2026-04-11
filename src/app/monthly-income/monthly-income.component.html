@@ -277,9 +277,9 @@
                         <tr>
                           <td>Total</td>
                           <td></td>
-                          <td>{{ getTotalAmount(row.FullTransactionHistory, 'monthlyCost') }}</td>
+                          <td>{{ getUniqueMonthlyCostTotal(row.FullTransactionHistory) }}</td>
                           <td>{{ getTotalAmount(row.FullTransactionHistory, 'transactionAmount') }}</td>
-                          <td>{{ (getTotalAmount(row.FullTransactionHistory, 'monthlyCost')) - (getTotalAmount(row.FullTransactionHistory, 'transactionAmount')) }}</td>
+                          <td>{{ getUniqueMonthlyCostTotal(row.FullTransactionHistory) - getTotalAmount(row.FullTransactionHistory, 'transactionAmount') }}</td>
                           <td colspan="2"></td>
                         </tr>
                       </tfoot>
