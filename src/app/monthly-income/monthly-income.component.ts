@@ -732,6 +732,18 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     return transactions?.reduce((sum, t) => sum + (t[field] ?? 0), 0) ?? 0;
   }
 
+  getUniqueMonthlyCostTotal(transactions: any[]): number {
+    if (!transactions?.length) return 0;
+  
+    const seen = new Set<string>();
+    return transactions.reduce((sum, t) => {
+      const month = (t.transactionDate ?? '').substring(0, 7);
+      if (seen.has(month)) return sum;
+      seen.add(month);
+      return sum + (t.monthlyCost ?? 0);
+    }, 0);
+  }
+
   expandRow(row: any) {
     this.expandedElement = this.isExpanded(row) ? null : row;
   }
