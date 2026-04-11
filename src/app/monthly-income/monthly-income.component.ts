@@ -48,6 +48,7 @@ interface Transaction {
   existingPending?: number;
   newPending?: number;
   monthlyCost?: number;
+  isCostAdjustmentMade?: boolean;
 }
 
 interface CustomerTransactions {
@@ -326,23 +327,37 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         const vehicleMatch =
           !vehicleFilter ||
           c.vehicleNumber?.toUpperCase().includes(vehicleFilter.toUpperCase());
-  
+
         const statusMatch =
-          (showActive   && c.monthlyStatus === 'Active') ||
+          (showActive && c.monthlyStatus === 'Active') ||
           (showInactive && c.monthlyStatus === 'InActive');
-  
+
         return vehicleMatch && statusMatch;
       })
       .map((c) => {
         if (!vehicleFilter) return c;
+        const sortedHistory = [...(c.FullTransactionHistory ?? [])].sort(
+          (a, b) =>
+            (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '')
+        );
+
         return {
           ...c,
-          FullTransactionHistory: (c.FullTransactionHistory ?? []).map((tx) => ({
-            ...tx,
-            // monthlyCost: c.amount,
-            monthlyCost: tx.id?.includes('MadeCostAdjustment')? 0 : c.amount,
+          FullTransactionHistory: sortedHistory.map((tx) => {
+            const monthKey = (tx.transactionDate ?? '').substring(0, 7);
+            const previousPending =
+              sortedHistory
+                .filter(
+                  (t) => (t.transactionDate ?? '').substring(0, 7) < monthKey
+                )
+                .at(-1)?.newPending ?? 0;
 
-          })),
+            return {
+              ...tx,
+              monthlyCost: tx.isCostAdjustmentMade === true ? 0 : c.amount,
+              previousPending,
+            };
+          }),
         };
       });
   
