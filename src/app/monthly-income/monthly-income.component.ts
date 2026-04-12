@@ -369,85 +369,60 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     // ── date-range view ───────────────────────────────────────────────────────
     if (fromDate && toDate) {
       this.filteredByDate = true;
-  
+    
       const rangeStart   = fromDate.substring(0, 10);
       const rangeEnd     = toDate.substring(0, 10);
       const parsedFrom   = new Date(rangeStart + 'T00:00:00');
       const parsedTo     = new Date(rangeEnd   + 'T00:00:00');
       const targetMonths = this.getMonthsInRange(parsedFrom, parsedTo);
-  
+    
       return baseList
         .flatMap((customer) => {
           const history: Transaction[] = customer.FullTransactionHistory ?? [];
-  
+    
           const customerStartMonth = customer.fromDateMonthly
             ? customer.fromDateMonthly.substring(0, 7)
             : targetMonths[0];
-  
+    
           const customerMonths = targetMonths.filter((m) => m >= customerStartMonth);
           if (customerMonths.length === 0) return [];
-  
+    
           // Pre-group in-range transactions by month
           const monthsGroup = new Map<string, Transaction[]>();
           for (const tx of history) {
             if (tx.id?.includes('_IDLE'))   continue;
             if (!tx.transactionDate)        continue;
             if (tx.transactionDate < rangeStart || tx.transactionDate > rangeEnd) continue;
-  
+    
             const mk = tx.transactionDate.substring(0, 7);
             if (!customerMonths.includes(mk)) continue;
-  
+    
             const group = monthsGroup.get(mk) ?? [];
             group.push(tx);
             monthsGroup.set(mk, group);
           }
-  
-          // ── inactive: find the single last relevant month to show ─────────
-          let inactiveAnchorMonth: string | null = null;
-          if (customer.monthlyStatus === 'InActive') {
-            inactiveAnchorMonth =
-              [...customerMonths].reverse().find((m) => {
-                // Month has real transactions
-                if (monthsGroup.has(m)) return true;
-  
-                // Month has a carried-forward pending balance
-                const lastKnown = [...history]
-                  .filter((t) => {
-                    const tMonth = t.transactionDate?.substring(0, 7) ?? t.id?.split('_')[0];
-                    return tMonth != null && tMonth <= m;
-                  })
-                  .sort((a, b) => {
-                    const aKey = a.transactionDate?.substring(0, 7) ?? a.id?.split('_')[0] ?? '';
-                    const bKey = b.transactionDate?.substring(0, 7) ?? b.id?.split('_')[0] ?? '';
-                    return bKey.localeCompare(aKey);
-                  })[0];
-  
-                return (lastKnown?.newPending ?? 0) > 0;
-              }) ?? null;
-          }
-  
+    
           return customerMonths
             .map((monthKey): Customer | null => {
               const txs   = monthsGroup.get(monthKey);
               const trans = customer.Transactions ?? {};
-  
+    
               // ── active row ──────────────────────────────────────────────
               if (txs?.length) {
-                // Inactive customers: only render if this is the anchor month
-                if (customer.monthlyStatus === 'InActive' && monthKey !== inactiveAnchorMonth) {
-                  return null;
-                }
                 return this.buildTransactionMonthRow(customer, monthKey, txs);
               }
-  
+    
               // ── idle row ────────────────────────────────────────────────
               const monthlyCost = customer.amount;
-  
-              if (customer.monthlyStatus === 'InActive') {
-                // Only show the single anchor month (last month with a balance)
-                if (monthKey !== inactiveAnchorMonth) return null;
+    
+              // Skip idle rows for inactive customers with no current-month data
+              if (customer.monthlyStatus === 'InActive' && monthKey !== currentMonthStr) {
+                const hasAnyTxInOrBeforeMonth = history.some(
+                  (t) => (t.transactionDate ?? '').substring(0, 7) <= monthKey
+                );
+                if (!hasAnyTxInOrBeforeMonth) return null;
               }
-  
+    
               const lastKnownTx = [...history]
                 .filter((t) => {
                   const tMonth = t.transactionDate?.substring(0, 7) ?? t.id?.split('_')[0];
@@ -458,11 +433,11 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                   const bKey = b.transactionDate?.substring(0, 7) ?? b.id?.split('_')[0] ?? '';
                   return bKey.localeCompare(aKey);
                 })[0];
-  
+    
               const previousPending = lastKnownTx?.newPending ?? 0;
               const amountToPay     = previousPending + monthlyCost;
               const isPastMonth     = monthKey < currentMonthStr;
-  
+    
               // Cost-adjusted idle: current month only
               if (trans.isCostAdjustmentMade && monthKey === currentMonthStr) {
                 return {
@@ -480,7 +455,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                   },
                 };
               }
-  
+    
               // Normal idle row
               return {
                 ...customer,
