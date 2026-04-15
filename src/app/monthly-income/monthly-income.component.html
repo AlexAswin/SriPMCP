@@ -247,25 +247,27 @@
                     <table class="full-width">
                       <thead>
                         <tr>
-                          <th>Transaction Date</th>
+                          <th>Transaction Id</th>
                           <th>Previous Pending</th>
-                          <th>Total Amount</th>
+                          <th>Amount</th>
+                          <th>Amount to Pay</th>
                           <th>Paid</th>
                           <th>Balance</th>
+                          <th>Transaction Date</th>
                           <th>Payment Type</th>
-                          <th>Transaction Id</th>
                         </tr>
                       </thead>
                   
                       <tbody>
                         <tr *ngFor="let t of row.FullTransactionHistory">
-                          <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate }}</td>
+                          <td>{{ t.id }}</td>
                           <td>{{ t.previousPending }}</td>
-                          <td>{{ t.existingPending }}</td>
+                          <td>{{ row.Transactions.monthlyCost }}</td>
+                          <td>{{ (t.existingPending) }}</td>
                           <td>{{ t.transactionAmount }}</td>
                           <td>{{ t.newPending }}</td>
+                          <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate }}</td>
                           <td>{{ t.transactionType }}</td>
-                          <td>{{ t.id }}</td>
                         </tr>
                   
                         <tr *ngIf="!row.FullTransactionHistory?.length" class="empty-row">
@@ -276,6 +278,7 @@
                       <tfoot *ngIf="row.FullTransactionHistory?.length">
                         <tr>
                           <td>Total</td>
+                          <td></td>
                           <td></td>
                           <td>{{ getUniqueMonthlyCostTotal(row.FullTransactionHistory) }}</td>
                           <td>{{ getTotalAmount(row.FullTransactionHistory, 'transactionAmount') }}</td>
