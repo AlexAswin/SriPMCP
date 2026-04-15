@@ -369,12 +369,20 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     // ── date-range view ───────────────────────────────────────────────────────
     if (fromDate && toDate) {
       this.filteredByDate = true;
+      
     
       const rangeStart   = fromDate.substring(0, 10);
       const rangeEnd     = toDate.substring(0, 10);
       const parsedFrom   = new Date(rangeStart + 'T00:00:00');
       const parsedTo     = new Date(rangeEnd   + 'T00:00:00');
       const targetMonths = this.getMonthsInRange(parsedFrom, parsedTo);
+
+      const isSingleMonth = targetMonths.length === 1;
+      const isMultiMonth  = targetMonths.length > 1;
+
+      if (isSingleMonth) {
+        this.filteredByDate = false;
+      }
     
       return baseList
         .flatMap((customer) => {
@@ -540,11 +548,10 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           (acc, i) => {
             const trans = i.Transactions;
             return {
-              monthlyCost: acc.monthlyCost + Number(trans?.monthlyCost || 0),
-              prevPending:
-                acc.prevPending + Number(trans?.previousPending || 0),
-              paid: acc.paid + Number(trans?.transactionAmount || 0),
-              balance: acc.balance + Number(trans?.currentPending || 0),
+              monthlyCost: acc.monthlyCost + Number(trans?.monthlyCost    || 0),
+              prevPending: acc.prevPending + Number(trans?.previousPending || 0),
+              paid:        acc.paid        + Number(trans?.transactionAmount || 0),
+              balance:     acc.balance     + Number(trans?.currentPending  || 0),
             };
           },
           { monthlyCost: 0, prevPending: 0, paid: 0, balance: 0 }
@@ -552,21 +559,57 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       ),
       shareReplay(1)
     );
-
-    this.totalMonthlyCost$ = totals$.pipe(map((t) => t.monthlyCost));
-    this.totalPreviousPending$ = totals$.pipe(map((t) => t.prevPending));
-    this.totalPaid$ = totals$.pipe(map((t) => t.paid));
-    this.totalBalance$ = combineLatest([
-      this.totalMonthlyCost$,
-      this.totalPaid$,
-    ]).pipe(map(([cost, totalPaid]) => cost - totalPaid));
-
+  
+    this.totalMonthlyCost$            = totals$.pipe(map((t) => t.monthlyCost));
+    this.totalPreviousPending$        = totals$.pipe(map((t) => t.prevPending));
+    this.totalPaid$                   = totals$.pipe(map((t) => t.paid));
     this.totalBalanceActiveCustomers$ = totals$.pipe(map((t) => t.balance));
-
-    this.totalAmountToPay$ = combineLatest([
-      this.totalMonthlyCost$,
-      this.totalPreviousPending$,
-    ]).pipe(map(([cost, prev]) => cost + prev));
+  
+    this.totalAmountToPay$ = this.filteredCustomers$.pipe(
+      map((items) =>
+        items.reduce((sum, i) => {
+          if (this.filteredByDate) {
+            return sum + Number(i.Transactions?.amountToPay ?? 0);
+          }
+          return sum
+            + Number(i.Transactions?.monthlyCost    ?? 0)
+            + Number(i.Transactions?.previousPending ?? 0);
+        }, 0)
+      )
+    );
+  
+    this.totalBalance$ = this.filteredCustomers$.pipe(
+      map((items) => {
+        if (this.filteredByDate) {
+          // Per customer, keep only the last month's currentPending
+          const customerMap = new Map<string, number>();
+          for (const i of items) {
+            const key     = i.id ?? i.vehicleNumber;
+            const month   = i.displayMonth ?? '';
+            const pending = Number(i.Transactions?.currentPending ?? 0);
+  
+            const trackedMonth = customerMap.get(key + '_month') as unknown as string;
+            if (!trackedMonth || month > trackedMonth) {
+              customerMap.set(key, pending);
+              customerMap.set(key + '_month', month as any);
+            }
+          }
+  
+          return [...customerMap.entries()]
+            .filter(([key]) => !key.endsWith('_month'))
+            .reduce((sum, [, val]) => sum + val, 0);
+        }
+  
+        // Default: last transaction's newPending per customer
+        return items.reduce((sum, i) => {
+          const history = i.FullTransactionHistory ?? [];
+          const lastTx  = [...history]
+            .sort((a, b) => (a.transactionDate ?? '').localeCompare(b.transactionDate ?? ''))
+            .at(-1);
+          return sum + Number(lastTx?.newPending ?? 0);
+        }, 0);
+      })
+    );
   }
 
   toggleAll(value: boolean) {
