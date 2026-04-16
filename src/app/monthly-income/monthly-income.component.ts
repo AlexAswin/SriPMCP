@@ -225,6 +225,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     );
 
     this.setupTotals();
+
+    this.currentMonth = new Date().toLocaleString('default', { month: 'long' });
+
   }
 
   private getMonthsInRange(d1: Date, d2: Date): string[] {
@@ -262,7 +265,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
     const totalPaid = sorted.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
   
-    // ── cost adjustment: current month only ─────────────────────────
     if (trans.isCostAdjustmentMade && monthKey === currentMonthStr) {
       const previousPending = firstTx.existingPending ?? 0;
       const monthlyCost     = 0;
@@ -288,7 +290,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       };
     }
   
-    // ── normal row (all past months + non-adjusted current month) ───
     const monthlyCost = customer.amount;
     const amountToPay = firstTx.existingPending ?? monthlyCost;
     const rawPrevious = amountToPay - monthlyCost;
@@ -366,7 +367,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       return bal >= minVal && bal <= maxVal;
     };
   
-    // ── date-range view ───────────────────────────────────────────────────────
     if (fromDate && toDate) {
       this.filteredByDate = true;
       
@@ -395,7 +395,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           const customerMonths = targetMonths.filter((m) => m >= customerStartMonth);
           if (customerMonths.length === 0) return [];
     
-          // Pre-group in-range transactions by month
           const monthsGroup = new Map<string, Transaction[]>();
           for (const tx of history) {
             if (tx.id?.includes('_IDLE'))   continue;
@@ -415,15 +414,12 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               const txs   = monthsGroup.get(monthKey);
               const trans = customer.Transactions ?? {};
     
-              // ── active row ──────────────────────────────────────────────
               if (txs?.length) {
                 return this.buildTransactionMonthRow(customer, monthKey, txs);
               }
     
-              // ── idle row ────────────────────────────────────────────────
               const monthlyCost = customer.amount;
     
-              // Skip idle rows for inactive customers with no current-month data
               if (customer.monthlyStatus === 'InActive' && monthKey !== currentMonthStr) {
                 const hasAnyTxInOrBeforeMonth = history.some(
                   (t) => (t.transactionDate ?? '').substring(0, 7) <= monthKey
@@ -446,7 +442,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               const amountToPay     = previousPending + monthlyCost;
               const isPastMonth     = monthKey < currentMonthStr;
     
-              // Cost-adjusted idle: current month only
               if (trans.isCostAdjustmentMade && monthKey === currentMonthStr) {
                 return {
                   ...customer,
@@ -464,7 +459,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                 };
               }
     
-              // Normal idle row
               return {
                 ...customer,
                 displayMonth: monthKey,
@@ -488,7 +482,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         .sort((a, b) => this.applySorting(a, b, sort));
     }
   
-    // ── default (no date range) ───────────────────────────────────────────────
     this.filteredByDate = false;
   
     return baseList
@@ -581,7 +574,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.totalBalance$ = this.filteredCustomers$.pipe(
       map((items) => {
         if (this.filteredByDate) {
-          // Per customer, keep only the last month's currentPending
           const customerMap = new Map<string, number>();
           for (const i of items) {
             const key     = i.id ?? i.vehicleNumber;
@@ -786,158 +778,180 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.showInactive$.next(false);
   }
 
-  createNewLedger = () => {
-    this.transactionService.createNewMonthLedger();
-  };
-
   async downloadActiveCustomerPDF() {
-    const doc = new jsPDF('l', 'mm', 'a4');
+  const doc = new jsPDF('l', 'mm', 'a4');
 
-    doc.setFontSize(14);
-    doc.text(`Monthly Balance Details - ${this.currentMonth}`, 14, 15);
+  const pageWidth  = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-    if (this.filteredCustomers$) {
-      this.CustomersWithLedgerData = await firstValueFrom(
-        this.filteredCustomers$
-      );
-    }
+  // ── navbar ───────────────────────────────────────────────────────
+  doc.setFillColor(63, 81, 181);
+  doc.rect(0, 0, pageWidth, 18, 'F');
 
-    const tableBody = this.CustomersWithLedgerData?.map((c: any) => [
-      c.vehicleNumber,
-      c.customerName,
-      `${c.Transactions?.monthlyCost ?? 0}`,
-      '',
-      '',
-      '',
-      '',
-      '',
-    ]);
+  // Logo text (replace with actual image if you have one)
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PMCP', 14, 12);
 
-    const totalColumns = 8;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const columnWidth = pageWidth / totalColumns - 4;
+  // Title centered in navbar
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Active Customer Sheet - ${this.currentMonth}`, pageWidth / 2, 12, { align: 'center' });
 
-    autoTable(doc, {
-      head: [
-        [
-          'Vehicle',
-          'Name',
-          'Total Amount',
-          'Paid',
-          'Balance',
-          'Transaction Date',
-          'Payment Type',
-          'Note',
-        ],
-      ],
-      body: tableBody,
-      startY: 20,
-      styles: {
-        lineWidth: 0.3,
-        lineColor: [0, 0, 0],
-        fontSize: 9,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: [63, 81, 181],
-        textColor: 255,
-      },
-      bodyStyles: {
-        lineWidth: 0.3,
-      },
-      columnStyles: {
-        0: { cellWidth: columnWidth },
-        1: { cellWidth: columnWidth },
-        2: { cellWidth: columnWidth },
-        3: { cellWidth: columnWidth },
-        4: { cellWidth: columnWidth },
-        5: { cellWidth: columnWidth },
-        6: { cellWidth: columnWidth },
-        7: { cellWidth: columnWidth },
-      },
-      theme: 'grid',
-    });
+  // Date right-aligned in navbar
+  const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  doc.text(today, pageWidth - 14, 12, { align: 'right' });
 
-    doc.save(`Monthly-Balance-Sheet ${this.currentMonth}.pdf`);
+  // Reset text color for body
+  doc.setTextColor(0, 0, 0);
+  // ─────────────────────────────────────────────────────────────────
+
+  if (this.filteredCustomers$) {
+    this.CustomersWithLedgerData = await firstValueFrom(this.filteredCustomers$);
   }
 
-  downloadFile = async () => {
-    const doc = new jsPDF('l', 'mm', 'a4');
+  const tableBody = this.CustomersWithLedgerData?.map((c: any) => [
+    c.vehicleNumber,
+    c.customerName,
+    `${c.Transactions?.currentPending ?? 0}`,
+    '',
+    '',
+    '',
+    '',
+    '',
+  ]);
 
-    doc.setFontSize(14);
+  const totalColumns  = 8;
+  const columnWidth   = pageWidth / totalColumns - 4;
 
-    let title = '';
+  autoTable(doc, {
+    head: [['Vehicle', 'Name', 'Amount To Pay', 'Paid', 'Balance', 'Transaction Date', 'Payment Type', 'Note']],
+    body: tableBody,
+    startY: 22,  // push table below navbar
+    styles: {
+      lineWidth:   0.3,
+      lineColor:   [0, 0, 0],
+      fontSize:    9,
+      cellPadding: 3,
+    },
+    headStyles: {
+      fillColor: [63, 81, 181],
+      textColor: 255,
+    },
+    bodyStyles: {
+      lineWidth: 0.3,
+    },
+    columnStyles: {
+      0: { cellWidth: columnWidth },
+      1: { cellWidth: columnWidth },
+      2: { cellWidth: columnWidth },
+      3: { cellWidth: columnWidth },
+      4: { cellWidth: columnWidth },
+      5: { cellWidth: columnWidth },
+      6: { cellWidth: columnWidth },
+      7: { cellWidth: columnWidth },
+    },
+    theme: 'grid',
+  });
 
-    if (this.filterByPending) {
-      title = `Customer Pending Details from ₹${this.minPending} to ₹${this.maxPending}`;
-    } else if (this.filteredByDate && this.fromDate && this.toDate) {
-      title = `Transactions from ${this.fromDate} to ${this.toDate}`;
-    } else if (this.customerType === 'Active') {
-      title = 'Active Customer Details';
-    } else {
-      title = 'InActive Customer Details';
-    }
+  doc.save(`Monthly-Balance-Sheet ${this.currentMonth}.pdf`);
+}
 
-    doc.text(title, 14, 15);
+downloadFile = async () => {
+  const doc = new jsPDF('l', 'mm', 'a4');
 
-    if (this.filteredCustomers$) {
-      this.CustomersWithLedgerData = await firstValueFrom(
-        this.filteredCustomers$.pipe(take(1))
-      );
-    }
+  const pageWidth = doc.internal.pageSize.getWidth();
 
-    const tableBody = this.CustomersWithLedgerData?.map((c: any) => [
-      c.vehicleNumber,
-      c.customerName,
-      `${c.Transactions?.monthlyCost ?? 0}`,
-      `${c.Transactions?.transactionAmount ?? 0}`,
-      `${c.Transactions?.currentPending ?? 0}`,
-      `${c.Transactions?.lastTransactionDate ?? 'No Transactions'}`,
-      `${c.Transactions?.paymentMethod ?? 'Not Done'}`,
-    ]);
+  doc.setFillColor(217, 217 ,217);
+  doc.rect(0, 0, pageWidth, 18, 'F');
 
-    autoTable(doc, {
-      head: [
-        [
-          'Vehicle',
-          'Name',
-          'Total Amount',
-          'Paid',
-          'Balance',
-          'Transaction Date',
-          'Payment Type',
-        ],
-      ],
-      body: tableBody,
-      startY: 20,
-      styles: {
-        lineWidth: 0.3,
-        lineColor: [0, 0, 0],
-        fontSize: 9,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: [63, 81, 181],
-        textColor: 255,
-      },
-      theme: 'grid',
-    });
+  doc.setTextColor(0);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PMCP', 14, 12);
 
-    doc.setFontSize(11);
-    let fileName = '';
+  let title = '';
+  if (this.filterByPending) {
+    title = `Customer Pending Details from ₹${this.minPending} to ₹${this.maxPending}`;
+  } else if (this.filteredByDate && this.fromDate && this.toDate) {
+    title = `Transactions from ${this.fromDate} to ${this.toDate}`;
+  } else if (this.showActive$.value && this.showInactive$.value) {
+    title = `Customer Details - ${this.currentMonth}`;
+  } else if (this.showInactive$.value && !this.showActive$.value) {
+    title = `Inactive-Monthly-Customers - ${this.currentMonth}`;
+  } else {
+    title = `Active-Monthly-Customers - ${this.currentMonth}`;
+  }
 
-    if (this.filterByPending) {
-      fileName = `PendingCustomersFrom${this.minPending}-to-${this.maxPending} - ${this.currentMonth}.pdf`;
-    } else if (this.filteredByDate && this.fromDate && this.toDate) {
-      fileName = `TransactionsFrom-${this.fromDate}-to-${this.toDate} - ${this.currentMonth}.pdf`;
-    } else if (this.customerType === 'Active') {
-      fileName = `Active-Monthly-Customers - ${this.currentMonth}.pdf`;
-    } else {
-      fileName = `Inactive-Monthly-Customers - ${this.currentMonth}.pdf`;
-    }
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.text(title, pageWidth / 2, 12, { align: 'center' });
 
-    doc.save(fileName);
-  };
+  const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  doc.text(today, pageWidth - 14, 12, { align: 'right' });
+
+  doc.setTextColor(0, 0, 0);
+
+  if (this.filteredCustomers$) {
+    this.CustomersWithLedgerData = await firstValueFrom(
+      this.filteredCustomers$.pipe(take(1))
+    );
+  }
+
+  const tableBody = this.CustomersWithLedgerData?.map((c: any) => [
+    c.vehicleNumber,
+    c.customerName,
+    `${c.Transactions?.monthlyCost        ?? 0}`,
+    `${c.Transactions?.transactionAmount  ?? 0}`,
+    `${c.Transactions?.currentPending     ?? 0}`,
+    `${c.Transactions?.lastTransactionDate ?? 'No Transactions'}`,
+    `${c.Transactions?.paymentMethod      ?? 'Not Done'}`,
+  ]);
+
+  const totalAmount  = this.CustomersWithLedgerData?.reduce((sum: number, c: any) => sum + Number(c.Transactions?.monthlyCost      ?? 0), 0) ?? 0;
+  const totalPaid    = this.CustomersWithLedgerData?.reduce((sum: number, c: any) => sum + Number(c.Transactions?.transactionAmount ?? 0), 0) ?? 0;
+  const totalBalance = this.CustomersWithLedgerData?.reduce((sum: number, c: any) => sum + Number(c.Transactions?.currentPending    ?? 0), 0) ?? 0;
+
+  autoTable(doc, {
+    head: [['Vehicle', 'Name', 'Total Amount', 'Paid', 'Balance', 'Transaction Date', 'Payment Type']],
+    body: tableBody,
+    foot: [['Total', '', `${totalAmount}`, `${totalPaid}`, `${totalBalance}`, '', '']],
+    startY: 22,
+    styles: {
+      lineWidth:   0.5,
+      lineColor:   [0, 0, 0],
+      fontSize:    10,
+      cellPadding: 4,
+    },
+    headStyles: {
+      fillColor: [217, 217, 217],
+      textColor: 0,
+    },
+    footStyles: {
+      fillColor: [217, 217, 217],
+      textColor: 0,
+      fontStyle: 'bold',
+    },
+    showFoot: 'lastPage',
+    theme:    'grid',
+  });
+
+  let fileName = '';
+  if (this.filterByPending) {
+    fileName = `PendingCustomersFrom${this.minPending}-to-${this.maxPending} - ${this.currentMonth}.pdf`;
+  } else if (this.filteredByDate && this.fromDate && this.toDate) {
+    fileName = `TransactionsFrom-${this.fromDate}-to-${this.toDate} - ${this.currentMonth}.pdf`;
+  } else if (this.showActive$.value && this.showInactive$.value) {
+    fileName = `Customer Details - ${this.currentMonth}.pdf`;
+  } else if (this.showInactive$.value && !this.showActive$.value) {
+    fileName = `Inactive-Monthly-Customers - ${this.currentMonth}.pdf`;
+  } else {
+    fileName = `Active-Monthly-Customers - ${this.currentMonth}.pdf`;
+  }
+
+  doc.save(fileName);
+};
 
   ngOnDestroy() {
     this.destroy$.next();
