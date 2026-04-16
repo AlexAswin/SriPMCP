@@ -184,16 +184,16 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     const year = now.getFullYear();
     const month = now.getMonth();
 
-    this.minDate = this.formatToISO(new Date(year, month, 1));
+    // this.minDate = this.formatToISO(new Date(year, month, 1));
     this.maxDate = this.formatToISO(new Date(year, month + 1, 0));
 
-    this.fromDateMonthly.valueChanges.subscribe(value => {
-      if (value && this.isNewMonthlyCustomer) {
-        if (value < this.minDate || value > this.maxDate) {
-          this.fromDateMonthly.setValue('');
-        }
-      }
-    });
+    // this.fromDateMonthly.valueChanges.subscribe(value => {
+    //   if (value && this.isNewMonthlyCustomer) {
+    //     if (value < this.minDate || value > this.maxDate) {
+    //       this.fromDateMonthly.setValue('');
+    //     }
+    //   }
+    // });
   }
 
   formatToISO(date: Date): string {
