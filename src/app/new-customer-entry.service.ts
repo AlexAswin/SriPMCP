@@ -71,6 +71,26 @@ export class NewCustomerEntryService {
     }
   }
 
+  async initializeMonthlyLedger(vehicleNumber: string, monthId: string, cost: number) {
+    try {
+      const ledgerRef = doc(
+        this.firestore, 
+        `CustomerEntry/${vehicleNumber}/Transactions/${monthId}`
+      );
+  
+      await setDoc(ledgerRef, {
+        monthlyCost: Number(cost) ,
+        currentMonthTotal: Number(cost) ,
+        currentPending: Number(cost) || 0,
+        isTransactionMade: false,
+      }, { merge: true });
+  
+    } catch (error) {
+      console.error("Error creating reactivation ledger:", error);
+      throw error;
+    }
+  }  
+
   async getVehicleByNumber(vehicleNumber: string, identifier: string) {
     if (!vehicleNumber) return null;
 
