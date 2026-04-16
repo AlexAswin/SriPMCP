@@ -155,17 +155,17 @@
                             <input 
                                 type="date" 
                                 [formControl]="fromDateMonthly" 
-                                [min]="minDate" 
+                            
                                 [max]="maxDate"/>
                             
-                            <div *ngIf="fromDateMonthly.value && (fromDateMonthly.value < minDate || fromDateMonthly.value > maxDate) && isNewMonthlyCustomer" 
+                            <!-- <div *ngIf="fromDateMonthly.value && (fromDateMonthly.value < minDate || fromDateMonthly.value > maxDate) && isNewMonthlyCustomer" 
                                  style="color: red; font-size: 12px;">
                                 Only current month allowed
-                            </div>
+                            </div> -->
                         </div>
-                            <div class="error-container" *ngIf="fromDateMonthly.invalid && (fromDateMonthly.dirty || fromDateMonthly.touched)">
+                            <!-- <div class="error-container" *ngIf="fromDateMonthly.invalid && (fromDateMonthly.dirty || fromDateMonthly.touched)">
                                 <small>Start date is required</small>
-                            </div>
+                            </div> -->
                         </div>
             
                         <div class="form-group" *ngIf="isStatusInActive">
