@@ -126,6 +126,10 @@ cancelEdit() {
   this.vehicleUpdateForm.reset({ duration: 'Monthly' });
 }
 
+createNewLedger = () => {
+  this.transactionService.createNewMonthLedger();
+};
+
 async saveVehicle(formDirective: FormGroupDirective) {
   if (this.vehicleForm.invalid) return;
   
