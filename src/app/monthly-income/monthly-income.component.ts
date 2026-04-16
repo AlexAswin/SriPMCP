@@ -799,28 +799,22 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   const pageWidth  = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // ── navbar ───────────────────────────────────────────────────────
   doc.setFillColor(63, 81, 181);
   doc.rect(0, 0, pageWidth, 18, 'F');
 
-  // Logo text (replace with actual image if you have one)
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.text('PMCP', 14, 12);
 
-  // Title centered in navbar
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.text(`Active Customer Sheet - ${this.currentMonth}`, pageWidth / 2, 12, { align: 'center' });
 
-  // Date right-aligned in navbar
   const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   doc.text(today, pageWidth - 14, 12, { align: 'right' });
 
-  // Reset text color for body
   doc.setTextColor(0, 0, 0);
-  // ─────────────────────────────────────────────────────────────────
 
   if (this.filteredCustomers$) {
     this.CustomersWithLedgerData = await firstValueFrom(this.filteredCustomers$);
@@ -843,7 +837,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   autoTable(doc, {
     head: [['Vehicle', 'Name', 'Amount To Pay', 'Paid', 'Balance', 'Transaction Date', 'Payment Type', 'Note']],
     body: tableBody,
-    startY: 22,  // push table below navbar
+    startY: 22, 
     styles: {
       lineWidth:   0.3,
       lineColor:   [0, 0, 0],
@@ -875,15 +869,14 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
 
 downloadFile = async () => {
   const doc = new jsPDF('l', 'mm', 'a4');
-
   const pageWidth = doc.internal.pageSize.getWidth();
-  const now       = new Date();
-const datePart  = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-const timePart  = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-const timestamp = `${datePart}${timePart}`;
+  
+  const now = new Date();
+  const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+  const timestamp = `${datePart}${timePart}`;
 
-
-  doc.setFillColor(217, 217 ,217);
+  doc.setFillColor(217, 217, 217);
   doc.rect(0, 0, pageWidth, 18, 'F');
 
   doc.setTextColor(0);
@@ -891,27 +884,39 @@ const timestamp = `${datePart}${timePart}`;
   doc.setFont('helvetica', 'bold');
   doc.text('PMCP', 14, 12);
 
-  let title = '';
+  let mainTitle = '';
   if (this.filterByPending) {
-    title = `Customer Pending Details from ₹${this.minPending} to ₹${this.maxPending}`;
-  } else if (this.filteredByDate && this.fromDate && this.toDate) {
-    title = `Transactions from ${this.fromDate} to ${this.toDate}`;
-  } else if (this.showActive$.value && this.showInactive$.value) {
-    title = `Transaction Details`;
+    mainTitle = 'Customer Pending Details';
   } else if (this.showInactive$.value && !this.showActive$.value) {
-    title = `Inactive Customers Transaction Details`;
+    mainTitle = 'Inactive Customers Transaction Details';
+  } else if (this.showActive$.value && this.showInactive$.value) {
+    mainTitle = 'Customers Transaction Details';
   } else {
-    title = `Active Customers Transaction Details`;
+    mainTitle = 'Active Customers Transaction Details';
   }
+  doc.text(mainTitle, pageWidth / 2, 12, { align: 'center' });
 
-  doc.setFontSize(11);
+  const today = new Date().toLocaleDateString('en-IN', { 
+    day: '2-digit', month: 'short', year: 'numeric' 
+  });
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(title, pageWidth / 2, 12, { align: 'center' });
+  doc.text(`${today}`, pageWidth - 14, 12, { align: 'right' });
 
-  const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  doc.text(today, pageWidth - 14, 12, { align: 'right' });
+  let subTitle = '';
 
-  doc.setTextColor(0, 0, 0);
+if (this.fromDate$.value && this.toDate$.value) {
+  subTitle = `Transaction Period: ${this.fromDate$.value} to ${this.toDate$.value}`;
+} else if (this.filterByPending) {
+  subTitle = `Pending Amount Range: ₹${this.minPending} - ₹${this.maxPending}`;
+}
+
+if (subTitle) {
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(60, 60, 60); 
+  doc.text(subTitle, pageWidth / 2, 25, { align: 'center' });
+}
 
   if (this.filteredCustomers$) {
     this.CustomersWithLedgerData = await firstValueFrom(
@@ -937,7 +942,6 @@ const timestamp = `${datePart}${timePart}`;
     head: [['Vehicle', 'Name', 'Total Amount', 'Paid', 'Balance', 'Transaction Date', 'Payment Type']],
     body: tableBody,
     foot: [['Total', '', `${totalAmount}`, `${totalPaid}`, `${totalBalance}`, '', '']],
-    startY: 22,
     styles: {
       lineWidth:   0.5,
       lineColor:   [0, 0, 0],
@@ -957,19 +961,7 @@ const timestamp = `${datePart}${timePart}`;
     theme:    'grid',
   });
 
-  let fileName = '';
-  if (this.filterByPending) {
-    fileName = `PendingCustomersFrom${this.minPending}-to-${this.maxPending} - ${this.currentMonth}.pdf`;
-  } else if (this.filteredByDate && this.fromDate && this.toDate) {
-    fileName = `TransactionsFrom-${this.fromDate}-to-${this.toDate} - ${this.currentMonth}.pdf`;
-  } else if (this.showActive$.value && this.showInactive$.value) {
-    fileName = `Transaction Details - ${timestamp}.pdf`;
-  } else if (this.showInactive$.value && !this.showActive$.value) {
-    fileName = `Inactive Customers Transaction Details - ${timestamp}.pdf`;
-  } else {
-    fileName = `Active Customers Transaction Details - ${timestamp}.pdf`;
-  }
-
+  let fileName = `${mainTitle.replace(/\s+/g, '_')}_${timestamp}.pdf`;
   doc.save(fileName);
 };
 

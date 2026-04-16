@@ -55,7 +55,6 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   isStatusInActive: boolean = false;
   searchWithVehicleNbr = new FormControl<string | null>('');
 
-
   isNewMonthlyCustomer: boolean = true;
   isMonthlyActiveCustomer: boolean = false;
   isMonthlyInActiveCustomer: boolean = false;
@@ -115,7 +114,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
     const vehicleNbr = this.route.snapshot.queryParamMap.get('vehicleNbr');
     if (vehicleNbr) {
-      const formattedVehicleNbr = this.reformatVehicleNumber(vehicleNbr)
+     const formattedVehicleNbr = this.reformatVehicleNumber(vehicleNbr);
       this.getCustomerDetails(formattedVehicleNbr);
     }
 
@@ -138,9 +137,15 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   vehicleDetails = () => {
     this.vehicleDetailsForm = this.fb.group({
-      vehicleNumber: [{ value: '', disabled: false }, [Validators.required, Validators.pattern(/^[A-Z]{2}\s[0-9]{2}\s[A-Z]{1,2}\s[0-9]{4}$/)]],
+      vehicleNumber: [
+        { value: '', disabled: false },
+        [
+          Validators.required,
+          Validators.pattern(/^[A-Z]{2}\s[0-9]{2}\s[A-Z]{1,2}\s[0-9]{4}$/),
+        ],
+      ],
       vehicleType: [{ value: '', disabled: false }, [Validators.required]],
-      vehicleName: [{value: '', disabled: false}, [Validators.required]],
+      vehicleName: [{ value: '', disabled: false }, [Validators.required]],
       customerName: [
         { value: '', disabled: false },
         [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)],
@@ -169,14 +174,14 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   }
 
   private normalizeVehicleNumber(value: string): string {
-    return (
-      this.reformatVehicleNumber(value).toUpperCase().trim()
-    );
+    return this.reformatVehicleNumber(value).toUpperCase().trim();
   }
 
   reformatVehicleNumber(value: any): string {
     if (typeof value !== 'string') return '';
-    return value.toUpperCase().replace(/^([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})$/, '$1 $2 $3 $4');
+    return value
+      .toUpperCase()
+      .replace(/^([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})$/, '$1 $2 $3 $4');
   }
 
   getMinDate = () => {
@@ -194,7 +199,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     //     }
     //   }
     // });
-  }
+  };
 
   formatToISO(date: Date): string {
     const y = date.getFullYear();
@@ -206,45 +211,57 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   restrictVehicleInput(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
     const key = event.key;
-    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) return;
-  
+    if (
+      [
+        'Backspace',
+        'Delete',
+        'Tab',
+        'ArrowLeft',
+        'ArrowRight',
+        'Enter',
+      ].includes(key)
+    )
+      return;
+
     const control = this.vehicleDetailsForm.get('vehicleNumber');
 
     const currentErrors = control?.errors;
     if (currentErrors) {
       delete currentErrors['letterExpected'];
       delete currentErrors['digitExpected'];
-      control?.setErrors(Object.keys(currentErrors).length ? currentErrors : null);
+      control?.setErrors(
+        Object.keys(currentErrors).length ? currentErrors : null
+      );
     }
-  
+
     const cursor = input.selectionStart ?? 0;
     const isDigit = /^[0-9]$/.test(key);
     const isLetter = /^[a-zA-Z]$/.test(key);
-    
+
     const rawTotal = input.value.replace(/\s/g, '');
     const rawBefore = input.value.substring(0, cursor).replace(/\s/g, '');
     const rawIndex = rawBefore.length;
-  
+
     if (!isDigit && !isLetter) return event.preventDefault();
 
     if (rawIndex >= 9 && isLetter) {
       return event.preventDefault();
     }
-  
+
     if (rawIndex < 2 && !isLetter) {
       control?.setErrors({ ...control.errors, letterExpected: true });
       return event.preventDefault();
-    } 
-    
+    }
+
     if (rawIndex >= 2 && rawIndex < 4 && !isDigit) {
       control?.setErrors({ ...control.errors, digitExpected: true });
       return event.preventDefault();
     }
-  
+
     if (rawIndex >= 4 && rawIndex < 6) {
       const remainder = rawTotal.substring(4);
       const digitCount = (remainder.match(/\d/g) || []).length;
-  
+
       if (isDigit && digitCount >= 4) {
         control?.setErrors({ ...control.errors, letterExpected: true });
         return event.preventDefault();
@@ -255,24 +272,20 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
         return event.preventDefault();
       }
     }
-  
 
-    if (rawIndex >= 6  && isLetter) {
+    if (rawIndex >= 6 && isLetter) {
       control?.setErrors({ ...control.errors, digitExpected: true });
       return event.preventDefault();
     }
-
-    
   }
 
   onVehicleNumberInput(event: Event) {
     const input = event.target as HTMLInputElement;
     const oldCursor = input.selectionStart || 0;
     const oldVal = input.value;
-  
 
     let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  
+
     let state = raw.substring(0, 2);
     let dist = raw.substring(2, 4);
     let rest = raw.substring(4);
@@ -282,14 +295,16 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
     const digitsMatch = rest.match(/\d+$/);
     const digits = digitsMatch ? digitsMatch[0].substring(0, 4) : '';
-  
+
     let formatted = state;
     if (dist) formatted += ' ' + dist;
     if (series) formatted += ' ' + series;
     if (digits) formatted += ' ' + digits;
-  
+
     input.value = formatted.trim();
-    this.vehicleDetailsForm.get('vehicleNumber')?.setValue(input.value, { emitEvent: false });
+    this.vehicleDetailsForm
+      .get('vehicleNumber')
+      ?.setValue(input.value, { emitEvent: false });
 
     const diff = input.value.length - oldVal.length;
     input.setSelectionRange(oldCursor + diff, oldCursor + diff);
@@ -322,49 +337,45 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   }
 
   getCustomerDetails = async (vehicleNbr?: string) => {
-    if (!vehicleNbr){
+    if (!vehicleNbr) {
       this.cancelEntry();
       return;
     }
-  
+
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNbr);
     const res = await this.newCustomerEntryService.getVehicleByNumber(
       formatedVehicleNbr,
       'vehicleNbr'
     );
-  
-    this.currentCustomer = res?.vehicleNumber;  
+
+    this.currentCustomer = res?.vehicleNumber;
 
     if (res && res.monthlyStatus) {
       this.cancelEntry();
 
       this.handleMonthlyCustomer(res);
-    } 
-    
-    else if (res && res.dailyStatus) {
+    } else if (res && res.dailyStatus) {
       this.handleDailyCustomer(res);
-    } 
-    
-    else {
+    } else {
       this.handleNewCustomer();
     }
-  
+
     this.finalizeFormState();
   };
-  
+
   private handleMonthlyCustomer(res: any) {
     const isActive = res.monthlyStatus === 'Active';
     this.isNewMonthlyCustomer = false;
     this.isMonthlyActiveCustomer = isActive;
     this.isMonthlyInActiveCustomer = !isActive;
     this.isStatusInActive = !isActive;
-  
+
     if (isActive) {
       this.endDateMonthly.reset();
     } else {
       this.endDateMonthly.setValue(res.endDateMonthly);
     }
-  
+
     this.vehicleDetailsForm.patchValue({
       vehicleNumber: res.vehicleNumber,
       vehicleType: res.vehicleType,
@@ -375,19 +386,19 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       address: res.address,
       amount: res.amount,
     });
-  
+
     this.advance.setValue(res.advance);
     this.monthlyStatus.setValue(res.monthlyStatus);
     this.fromDateMonthly.setValue(res.fromDateMonthly);
     this.note.setValue(res.note);
   }
-  
+
   private handleDailyCustomer(res: any) {
     this.isNewMonthlyCustomer = false;
     this.isMonthlyActiveCustomer = false;
     this.isMonthlyInActiveCustomer = false;
     this.showAlert = true;
-  
+
     if (res.dailyStatus === 'paid') {
       this.dailyToMonthlyCustomer = true;
       this.type = 'warning';
@@ -406,31 +417,34 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.message = 'Sorry... This customer is an Unpaid Daily Customer...';
     }
   }
-  
+
   private handleNewCustomer() {
     this.isNewMonthlyCustomer = true;
     this.isMonthlyActiveCustomer = false;
     this.isMonthlyInActiveCustomer = false;
 
-  
-    const isUserTyping = this.vehicleDetailsForm.get('customerName')?.dirty || 
-                         this.vehicleDetailsForm.get('customerPhoneNbr')?.dirty||
-                         this.vehicleDetailsForm.get('vehicleType')?.dirty;
-  
+    const isUserTyping =
+      this.vehicleDetailsForm.get('customerName')?.dirty ||
+      this.vehicleDetailsForm.get('customerPhoneNbr')?.dirty ||
+      this.vehicleDetailsForm.get('vehicleType')?.dirty;
+
     if (!isUserTyping) {
       this.resetStandaloneControls();
       this.monthlyStatus.setValue('Active');
-      this.vehicleDetailsForm.patchValue({
-        vehicleType: '',
-        vehicleName: '',
-        customerName: '',
-        customerPhoneNbr: '',
-        address: '',
-        amount: '',
-      }, { emitEvent: false }); 
+      this.vehicleDetailsForm.patchValue(
+        {
+          vehicleType: '',
+          vehicleName: '',
+          customerName: '',
+          customerPhoneNbr: '',
+          address: '',
+          amount: '',
+        },
+        { emitEvent: false }
+      );
     }
   }
-  
+
   private finalizeFormState() {
     this.vehicleDetailsForm.markAsUntouched();
     this.markStandalonesAsUntouched();
@@ -461,7 +475,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   private buildHistory(fromDate: string, endDate: string): any {
     if (!fromDate || !endDate) return null;
-  
+
     return {
       vehicleNumber: this.currentCustomer,
       startDate: fromDate,
@@ -469,7 +483,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       amountPaid: this.vehicleDetailsForm.get('amount')?.value,
       advancePaid: this.advance.value,
       note: this.note.value,
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
     };
   }
 
@@ -483,7 +497,6 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   }
 
   isFormValid(): boolean {
-
     const isMainValid = this.vehicleDetailsForm.valid;
 
     const isEndDateRequired = this.monthlyStatus.value === 'InActive';
@@ -495,12 +508,14 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.note.valid &&
       (isEndDateRequired ? this.endDateMonthly.valid : true);
 
-      if(this.advance.value && (this.advance.value! > (this.vehicleDetailsForm?.get('amount')?.value))) {
-        return false
-      }
+    if (
+      this.advance.value &&
+      this.advance.value! > this.vehicleDetailsForm?.get('amount')?.value
+    ) {
+      return false;
+    }
 
     if (!isMainValid || !areStandalonesValid) {
-
       this.vehicleDetailsForm.markAllAsTouched();
       this.advance.markAsTouched();
       this.monthlyStatus.markAsTouched();
@@ -530,33 +545,40 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.message = 'Please fill all required fields correctly.';
       return;
     }
-  
+
     try {
       const formValue = this.vehicleDetailsForm.getRawValue();
       const normalizedData = this.normalizePayload({ ...formValue });
-  
+
       const fullPayload = {
         ...normalizedData,
         advance: this.advance.value,
         monthlyStatus: this.monthlyStatus.value,
         fromDateMonthly: this.fromDateMonthly.value,
         note: this.note.value,
-        endDateMonthly: this.monthlyStatus.value === 'Active' ? null : this.endDateMonthly.value,
+        endDateMonthly:
+          this.monthlyStatus.value === 'Active'
+            ? null
+            : this.endDateMonthly.value,
       };
-  
+
       if (this.isNewMonthlyCustomer) {
         await this.newCustomerEntryService.addNewCustomerEntry(fullPayload);
         this.message = 'New Customer Added Successfully!';
-      } 
-      else if (this.dailyToMonthlyCustomer) {
-        await this.newCustomerEntryService.updateCustomerByVehicleNumber(this.currentCustomer, fullPayload);
+      } else if (this.dailyToMonthlyCustomer) {
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+          this.currentCustomer,
+          fullPayload
+        );
         this.message = 'Daily Customer converted to Monthly!';
-      } 
-      else {
+      } else {
         let updatePayload: any;
         let historyPayload: any = null;
-  
-        if (this.isMonthlyInActiveCustomer && this.monthlyStatus.value === 'Active') {
+
+        if (
+          this.isMonthlyInActiveCustomer &&
+          this.monthlyStatus.value === 'Active'
+        ) {
           updatePayload = {
             ...normalizedData,
             monthlyStatus: 'Active',
@@ -565,9 +587,33 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
             advance: this.advance.value,
             note: this.note.value,
           };
+
+          const reactivateDate = this.fromDateMonthly.value
+            ? new Date(this.fromDateMonthly.value)
+            : new Date();
+
+          const formatter = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+          });
+
+          const parts = formatter.formatToParts(reactivateDate);
+          const year = parts.find((p) => p.type === 'year')?.value;
+          const month = parts.find((p) => p.type === 'month')?.value;
+
+          const monthId = `${year}-${month}`;
+
+          await this.newCustomerEntryService.initializeMonthlyLedger(
+            normalizedData.vehicleNumber,
+            monthId,
+            normalizedData.amount
+          );
           this.message = 'Customer Reactivated Successfully!';
-        }
-        else if (this.isMonthlyActiveCustomer && this.monthlyStatus.value === 'InActive') {
+        } else if (
+          this.isMonthlyActiveCustomer &&
+          this.monthlyStatus.value === 'InActive'
+        ) {
           updatePayload = {
             ...normalizedData,
             monthlyStatus: 'InActive',
@@ -580,9 +626,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
             this.endDateMonthly.value ?? ''
           );
           this.message = 'Customer session saved to history and deactivated.';
-        } 
-
-        else {
+        } else {
           updatePayload = {
             ...normalizedData,
             advance: this.advance.value,
@@ -592,18 +636,17 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
           };
           this.message = 'Customer Details Updated Successfully!';
         }
-  
+
         await this.newCustomerEntryService.updateCustomerByVehicleNumber(
           this.currentCustomer,
           updatePayload,
           historyPayload
         );
       }
-  
+
       this.type = 'success';
       this.showAlert = true;
       this.onSuccessCleanup();
-  
     } catch (error) {
       this.type = 'error';
       this.showAlert = true;
