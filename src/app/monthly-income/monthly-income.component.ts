@@ -161,7 +161,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     'payMethod',
   ];
 
-  customerType = 'Active';
+  customerType: string = 'Active';
   customerTypes: string[] = ['Active', 'InActive'];
 
   fromDate: Date | null = null;
@@ -227,6 +227,21 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     this.setupTotals();
 
     this.currentMonth = new Date().toLocaleString('default', { month: 'long' });
+
+    combineLatest({
+      showActive:   this.showActive$,
+      showInactive: this.showInactive$,
+    }).subscribe(({ showActive, showInactive }) => {
+      if (showActive && showInactive) {
+        this.customerType = '';
+      } else if (showActive) {
+        this.customerType = 'Active';
+      } else if (showInactive) {
+        this.customerType = 'InActive';
+      } else {
+        this.customerType = '';
+      }
+    });
 
   }
 
@@ -862,6 +877,11 @@ downloadFile = async () => {
   const doc = new jsPDF('l', 'mm', 'a4');
 
   const pageWidth = doc.internal.pageSize.getWidth();
+  const now       = new Date();
+const datePart  = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+const timePart  = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+const timestamp = `${datePart}${timePart}`;
+
 
   doc.setFillColor(217, 217 ,217);
   doc.rect(0, 0, pageWidth, 18, 'F');
@@ -877,11 +897,11 @@ downloadFile = async () => {
   } else if (this.filteredByDate && this.fromDate && this.toDate) {
     title = `Transactions from ${this.fromDate} to ${this.toDate}`;
   } else if (this.showActive$.value && this.showInactive$.value) {
-    title = `Customer Details - ${this.currentMonth}`;
+    title = `Transaction Details`;
   } else if (this.showInactive$.value && !this.showActive$.value) {
-    title = `Inactive-Monthly-Customers - ${this.currentMonth}`;
+    title = `Inactive Customers Transaction Details`;
   } else {
-    title = `Active-Monthly-Customers - ${this.currentMonth}`;
+    title = `Active Customers Transaction Details`;
   }
 
   doc.setFontSize(11);
@@ -943,11 +963,11 @@ downloadFile = async () => {
   } else if (this.filteredByDate && this.fromDate && this.toDate) {
     fileName = `TransactionsFrom-${this.fromDate}-to-${this.toDate} - ${this.currentMonth}.pdf`;
   } else if (this.showActive$.value && this.showInactive$.value) {
-    fileName = `Customer Details - ${this.currentMonth}.pdf`;
+    fileName = `Transaction Details - ${timestamp}.pdf`;
   } else if (this.showInactive$.value && !this.showActive$.value) {
-    fileName = `Inactive-Monthly-Customers - ${this.currentMonth}.pdf`;
+    fileName = `Inactive Customers Transaction Details - ${timestamp}.pdf`;
   } else {
-    fileName = `Active-Monthly-Customers - ${this.currentMonth}.pdf`;
+    fileName = `Active Customers Transaction Details - ${timestamp}.pdf`;
   }
 
   doc.save(fileName);
