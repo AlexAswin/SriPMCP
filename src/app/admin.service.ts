@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { addDoc, collectionData, deleteDoc, doc, setDoc, updateDoc } from '@angular/fire/firestore';
+import { addDoc, collectionData, deleteDoc, doc, getDoc, setDoc, updateDoc } from '@angular/fire/firestore';
 import { Firestore, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
@@ -114,15 +114,32 @@ async adjustVehicleCostForCurrentMonth(vehicleType: string, monthlyCost: number,
       console.warn(`No customers found with vehicle type: ${vehicleType}`);
       return;
     }
-    const updatePromises = querySnapshot.docs.map(customerDoc => {
+    const updatePromises = querySnapshot.docs.map(async customerDoc => {
+
+      const customerDocRef = doc(this.firestore, `CustomerEntry/${customerDoc.id}`);
+
+      updateDoc(customerDocRef, {
+        amount: monthlyCost
+      });
       const transactionDocRef = doc(
         this.firestore, 
         `CustomerEntry/${customerDoc.id}/Transactions/${monthId}`
       );
+      const transactionSnap = await getDoc(transactionDocRef);
+      if (transactionSnap.exists()) {
+        const existingData = transactionSnap.data();
+        
+        const monthlyCostDifference = monthlyCost - (existingData['monthlyCost']);
+        const currentMonthTotal = (existingData['currentMonthTotal'] + monthlyCostDifference );
+        const currentPending = (existingData['currentPending'] + monthlyCostDifference );
 
-      return setDoc(transactionDocRef, { 
-        monthlyCost: monthlyCost 
-      }, { merge: true });
+        return setDoc(transactionDocRef, { 
+          monthlyCost: monthlyCost,
+          currentMonthTotal: currentMonthTotal,
+          currentPending: currentPending
+  
+        }, { merge: true });
+        }
     });
 
     await Promise.all(updatePromises);

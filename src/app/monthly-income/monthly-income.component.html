@@ -258,11 +258,11 @@
                         <tr *ngFor="let t of row.FullTransactionHistory">
                           <td>{{ t.id }}</td>
                           <td>{{ t.previousPending }}</td>
-                          <td>{{ row.Transactions.monthlyCost }}</td>
-                          <td>{{ (t.existingPending) }}</td>
+                          <td>{{ t.monthlyCost }}</td>          <!-- per-transaction cost, not row.Transactions.monthlyCost -->
+                          <td>{{ t.existingPending }}</td>
                           <td>{{ t.transactionAmount }}</td>
                           <td>{{ t.newPending }}</td>
-                          <td>{{ t.transactionDate === null ? 'NO Transactions' : t.transactionDate }}</td>
+                          <td>{{ t.transactionDate === null ? 'No Transactions' : t.transactionDate }}</td>
                           <td>{{ t.transactionType }}</td>
                         </tr>
                   
