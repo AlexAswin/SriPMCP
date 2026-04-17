@@ -387,18 +387,18 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         return {
           ...c,
           FullTransactionHistory: sortedHistory.map((tx, index) => {
-            const monthKey = (tx.transactionDate ?? '').substring(0, 7);
+            const monthKey = (tx.transactionDate ?? tx.id?? '').substring(0, 7);
   
             // previousPending = newPending of immediately preceding transaction
-            const previousPending = index === 0
-              ? 0
-              : (sortedHistory[index - 1]?.newPending ?? 0);
-  
+            const previousPending =
+              index === 0 ? 0 : sortedHistory[index - 1]?.newPending ?? 0;
+
             // Per-month cost from monthlyTransactions
-            const monthlyCost = tx.isCostAdjustmentMade === true
-              ? 0
-              : (c.monthlyTransactions?.[monthKey]?.monthlyCost ?? tx.monthlyCost ?? c.amount);
-  
+            const monthlyCost =
+              tx.isCostAdjustmentMade === true
+                ? 0
+                : c.monthlyTransactions?.[monthKey]?.monthlyCost ?? c.amount;
+
             return {
               ...tx,
               monthlyCost,
