@@ -257,17 +257,25 @@ if (targetMonthId !== currentMonthId) {
         if (!customers.length) return of([]);
   
         const streams = customers.map((customer) => {
-          const txDoc = doc(
+          const txRef = collection(
             this.firestore,
-            `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
+            `CustomerEntry/${customer.id}/Transactions`
           );
   
-          return docData(txDoc).pipe(
-            map((txn: any) => ({
-              ...customer,
-              Transactions: txn ?? {},
-              monthlyTransactions: { [currentMonth]: txn ?? {} },
-            }))
+          // Fetch ALL month docs so history amount column works correctly
+          return collectionData(txRef, { idField: 'monthId' }).pipe(
+            map((txns: any[]) => {
+              const monthlyTransactions: Record<string, any> = {};
+              txns.forEach((t) => (monthlyTransactions[t.monthId] = t));
+  
+              const currentTxn = monthlyTransactions[currentMonth] ?? txns.at(-1) ?? {};
+  
+              return {
+                ...customer,
+                Transactions: currentTxn,
+                monthlyTransactions,
+              };
+            })
           );
         });
   
