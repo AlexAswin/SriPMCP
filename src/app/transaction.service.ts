@@ -243,79 +243,78 @@ if (targetMonthId !== currentMonthId) {
   //   );
   // }
 
-  getAllCustomersWithTransactions(): Observable<any[]> {
+  private buildCustomerQuery() {
     const customersRef = collection(this.firestore, 'CustomerEntry');
-    const q = query(customersRef, where('customerType', '==', 'Monthly'));
+    return query(customersRef, where('customerType', '==', 'Monthly'));
+  }
+  
+  getCustomersCurrentMonth(): Observable<any[]> {
     const currentMonth = this.getCurrentMonth();
+    const q = this.buildCustomerQuery();
   
     return collectionData(q, { idField: 'id' }).pipe(
       switchMap((customers: any[]) => {
         if (!customers.length) return of([]);
   
-        const customerStreams = customers.map((customer) => {
+        const streams = customers.map((customer) => {
+          const txDoc = doc(
+            this.firestore,
+            `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
+          );
   
-          if (customer.monthlyStatus !== 'InActive') {
-            const transactionDocRef = doc(
-              this.firestore,
-              `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
-            );
-  
-            return docData(transactionDocRef).pipe(
-              switchMap((ledger: any) => {
-                if (ledger) {
-                  // Current month data exists, return it directly
-                  return of({
-                    ...customer,
-                    Transactions: ledger
-                  });
-                } else {
-                  // Current month missing — fetch all transactions and return the last one
-                  const txRef = collection(
-                    this.firestore,
-                    `CustomerEntry/${customer.id}/Transactions`
-                  );
-  
-                  return collectionData(txRef, { idField: 'monthId' }).pipe(
-                    map((txns: any[]) => {
-                      let lastTxn = {};
-                      if (txns && txns.length > 0) {
-                        txns.sort((a, b) => a.monthId.localeCompare(b.monthId));
-                        lastTxn = txns[txns.length - 1];
-                      }
-                      return {
-                        ...customer,
-                        Transactions: lastTxn
-                      };
-                    })
-                  );
-                }
-              })
-            );
-          }
-  
-          else {
-            const txRef = collection(
-              this.firestore,
-              `CustomerEntry/${customer.id}/Transactions`
-            );
-  
-            return collectionData(txRef, { idField: 'monthId' }).pipe(
-              map((txns: any[]) => {
-                let lastTxn = {};
-                if (txns && txns.length > 0) {
-                  txns.sort((a, b) => a.monthId.localeCompare(b.monthId));
-                  lastTxn = txns[txns.length - 1];
-                }
-                return {
-                  ...customer,
-                  Transactions: lastTxn
-                };
-              })
-            );
-          }
+          return docData(txDoc).pipe(
+            map((txn: any) => ({
+              ...customer,
+              Transactions: txn ?? {},
+              monthlyTransactions: { [currentMonth]: txn ?? {} },
+            }))
+          );
         });
   
-        return combineLatest(customerStreams);
+        return combineLatest(streams);
+      })
+    );
+  }
+  
+  getCustomersForRange(fromMonth: string, toMonth: string): Observable<any[]> {
+    const currentMonth = this.getCurrentMonth();
+    const q = this.buildCustomerQuery();
+  
+    return collectionData(q, { idField: 'id' }).pipe(
+      switchMap((customers: any[]) => {
+        if (!customers.length) return of([]);
+  
+        const streams = customers.map((customer) => {
+          const txRef = collection(
+            this.firestore,
+            `CustomerEntry/${customer.id}/Transactions`
+          );
+  
+          const txQuery = query(
+            txRef,
+            where('__name__', '>=', fromMonth),
+            where('__name__', '<=', toMonth)
+          );
+  
+          return collectionData(txQuery, { idField: 'monthId' }).pipe(
+            map((txns: any[]) => {
+              const monthlyTransactions: Record<string, any> = {};
+              txns.forEach((t) => (monthlyTransactions[t.monthId] = t));
+  
+              const currentTxn = monthlyTransactions[currentMonth]
+                ?? txns.at(-1)
+                ?? {};
+  
+              return {
+                ...customer,
+                Transactions: currentTxn,
+                monthlyTransactions,
+              };
+            })
+          );
+        });
+  
+        return combineLatest(streams);
       })
     );
   }
