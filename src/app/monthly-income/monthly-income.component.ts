@@ -388,26 +388,39 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         return {
           ...c,
           FullTransactionHistory: sortedHistory.map((tx) => {
-            const monthKey    = (tx.transactionDate ?? '').substring(0, 7);
+            const isIdle = tx.id?.includes('_IDLE') || tx.transactionType === 'No Transactions';
+          
+            // For IDLE records, transactionDate is null — extract month from the id instead
+            // id format: "2026-03_IDLE"
+            const monthKey = isIdle
+              ? (tx.id?.substring(0, 7) ?? '')
+              : (tx.transactionDate ?? '').substring(0, 7);
+          
             const monthlyCost = tx.isCostAdjustmentMade === true
               ? 0
               : (c.monthlyTransactions?.[monthKey]?.monthlyCost ?? c.amount);
-  
-            // Find first transaction of this month to get carry-forward
+          
             const firstTxOfMonth = sortedHistory.find(
-              (t) => t.transactionDate?.substring(0, 7) === monthKey
+              (t) => {
+                const tMonth = t.id?.includes('_IDLE')
+                  ? t.id.substring(0, 7)
+                  : (t.transactionDate ?? '').substring(0, 7);
+                return tMonth === monthKey;
+              }
             );
-  
-            // previousPending = carry-forward from previous month only
-            // = firstTx.existingPending - monthlyCost (strips out the monthly charge)
+          
             const previousPending = Math.max(
               (firstTxOfMonth?.existingPending ?? 0) - monthlyCost, 0
             );
-  
+          
             return {
               ...tx,
               monthlyCost,
               previousPending,
+              // For IDLE, show month start date since transactionDate is null
+              transactionDate: isIdle
+                ? (tx.transactionDate ?? `No Transaction`)
+                : tx.transactionDate,
             };
           }),
         };
