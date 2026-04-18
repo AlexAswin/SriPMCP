@@ -457,15 +457,10 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         const validMonths        = targetMonths.filter((m) => m >= customerStartMonth);
   
         if (validMonths.length === 0) return [];
-  
-        // Only look for initial balance from transactions BEFORE the range
-        // AND only if the customer existed before the range starts
         const rangeFirstMonth = targetMonths[0];
   
         const initialRunningBalance = customerStartMonth >= rangeFirstMonth
-          // Customer started at or after range start — no prior balance possible
           ? 0
-          // Customer existed before range — find last known balance before range
           : (() => {
               const lastTxBeforeRange = fullHistory
                 .filter(t => (t.transactionDate ?? '').substring(0, 7) < rangeFirstMonth)
@@ -475,7 +470,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                 return lastTxBeforeRange.newPending ?? 0;
               }
   
-              // No transactions before range — check monthlyTxMap for last month before range
               const lastMonthBeforeRange = Object.keys(monthlyTxMap)
                 .filter(m => m < rangeFirstMonth)
                 .sort((a, b) => b.localeCompare(a))[0];
@@ -500,10 +494,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           const totalPaidInMonth   = txsInMonth.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
           const closingBalance     = amountToPay - totalPaidInMonth;
   
-          // Carry forward to next month
           runningBalance = closingBalance;
   
-          // Inactive filtering
           if (customer.monthlyStatus === 'InActive' && monthKey !== currentMonthStr) {
             const hasHistory =
               fullHistory.some(t => (t.transactionDate ?? '').substring(0, 7) <= monthKey) ||
@@ -541,8 +533,12 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       .sort((a, b) => {
         const primary = this.applySorting(a, b, sort);
         if (primary !== 0) return primary;
+      
+        const vehicleComp = (a.vehicleNumber ?? '').localeCompare(b.vehicleNumber ?? '');
+        if (vehicleComp !== 0) return vehicleComp;
+      
         return (a.displayMonth ?? '').localeCompare(b.displayMonth ?? '');
-      });
+      })
     }
   
     this.filteredByDate = false;
