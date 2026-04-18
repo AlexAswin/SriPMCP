@@ -228,11 +228,10 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       switchMap((filters) => {
         const { fromDate, toDate } = filters;
   
-        // Pick the right service method based on whether date range is set
         const customers$ = (fromDate && toDate)
           ? this.transactionService.getCustomersForRange(
-              fromDate.substring(0, 7),  // '2026-03'
-              toDate.substring(0, 7)     // '2026-04'
+              fromDate.substring(0, 7),  
+              toDate.substring(0, 7)    
             )
           : this.transactionService.getCustomersCurrentMonth();
   
@@ -305,7 +304,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
     const totalPaid = sorted.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
   
-    // Use per-month cost from monthlyTransactions
     const monthlyCost = this.getMonthlyCostForMonth(customer, monthKey);
   
     if (trans.isCostAdjustmentMade && monthKey === currentMonthStr) {
@@ -379,26 +377,30 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       })
       .map((c) => {
         if (!vehicleFilter) return c;
-  
+      
         const sortedHistory = [...(c.FullTransactionHistory ?? [])].sort(
-          (a, b) => (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '')
+          (a, b) => {
+            const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
+            return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
+          }
         );
-  
+      
         return {
           ...c,
           FullTransactionHistory: sortedHistory.map((tx, index) => {
-            const monthKey = (tx.transactionDate ?? tx.id?? '').substring(0, 7);
-  
-            // previousPending = newPending of immediately preceding transaction
-            const previousPending =
-              index === 0 ? 0 : sortedHistory[index - 1]?.newPending ?? 0;
-
-            // Per-month cost from monthlyTransactions
-            const monthlyCost =
-              tx.isCostAdjustmentMade === true
-                ? 0
-                : c.monthlyTransactions?.[monthKey]?.monthlyCost ?? c.amount;
-
+            const monthKey    = (tx.transactionDate ?? '').substring(0, 7);
+            const monthlyCost = tx.isCostAdjustmentMade === true
+              ? 0
+              : (c.monthlyTransactions?.[monthKey]?.monthlyCost ?? c.amount);
+          
+            const firstTxOfMonth = sortedHistory.find(
+              (t) => t.transactionDate?.substring(0, 7) === monthKey
+            );
+          
+            const previousPending = Math.max(
+              (firstTxOfMonth?.existingPending ?? 0) - monthlyCost, 0
+            );
+          
             return {
               ...tx,
               monthlyCost,
@@ -415,123 +417,86 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
     if (fromDate && toDate) {
       this.filteredByDate = true;
-  
-      const rangeStart   = fromDate.substring(0, 10);
-      const rangeEnd     = toDate.substring(0, 10);
-      const parsedFrom   = new Date(rangeStart + 'T00:00:00');
-      const parsedTo     = new Date(rangeEnd   + 'T00:00:00');
+    
+      const rangeStart = fromDate.substring(0, 10);
+      const rangeEnd = toDate.substring(0, 10);
+      const parsedFrom = new Date(rangeStart + 'T00:00:00');
+      const parsedTo = new Date(rangeEnd + 'T00:00:00');
+      
       const targetMonths = this.getMonthsInRange(parsedFrom, parsedTo);
-  
       if (targetMonths.length === 1) {
         this.filteredByDate = false;
       }
-  
-      const firstMonth = targetMonths[0];
-      const lastMonth  = targetMonths[targetMonths.length - 1];
-  
-      return baseList
-        .flatMap((customer) => {
-          const history: Transaction[]            = customer.FullTransactionHistory ?? [];
-          const monthlyTxMap: Record<string, any> = customer.monthlyTransactions ?? {};
-  
-          const customerStartMonth = customer.fromDateMonthly
-            ? customer.fromDateMonthly.substring(0, 7)
-            : firstMonth;
-  
-          const customerMonths = targetMonths.filter((m) => m >= customerStartMonth);
-          if (customerMonths.length === 0) return [];
-  
-          const monthsGroup = new Map<string, Transaction[]>();
-          for (const tx of history) {
-            if (tx.id?.includes('_IDLE')) continue;
-            if (!tx.transactionDate)      continue;
-  
-            const txMonth = tx.transactionDate.substring(0, 7);
-            if (txMonth < firstMonth || txMonth > lastMonth) continue;
-            if (!customerMonths.includes(txMonth))           continue;
-  
-            const group = monthsGroup.get(txMonth) ?? [];
-            group.push(tx);
-            monthsGroup.set(txMonth, group);
+    
+      return baseList.flatMap((customer) => {
+        const fullHistory: Transaction[] = [...(customer.FullTransactionHistory ?? [])]
+          .sort((a, b) => {
+            const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
+            return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
+          });
+    
+        const monthlyTxMap: Record<string, any> = customer.monthlyTransactions ?? {};
+        
+        const initialTx = fullHistory
+          .filter(t => (t.transactionDate ?? '').substring(0, 7) < targetMonths[0])
+          .at(-1);
+    
+        let runningBalance = initialTx?.newPending ?? 0;
+    
+        const customerStartMonth = customer.fromDateMonthly?.substring(0, 7) ?? targetMonths[0];
+        const validMonths = targetMonths.filter((m) => m >= customerStartMonth);
+    
+        if (validMonths.length === 0) return [];
+    
+        return validMonths.map((monthKey): Customer | null => {
+          const monthTrans = monthlyTxMap[monthKey] ?? customer.Transactions ?? {};
+          const monthlyCost = monthTrans.monthlyCost ?? customer.amount ?? 0;
+          
+          const txsInMonth = fullHistory.filter(t => (t.transactionDate ?? '').substring(0, 7) === monthKey);
+    
+          const previousPending = runningBalance;
+          const amountToPay = previousPending + monthlyCost;
+          
+          const totalPaidInMonth = txsInMonth.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
+          
+          const closingBalance = amountToPay - totalPaidInMonth;
+    
+          runningBalance = closingBalance;
+    
+          if (customer.monthlyStatus === 'InActive' && monthKey !== currentMonthStr) {
+            const hasHistory = fullHistory.some(t => (t.transactionDate ?? '').substring(0, 7) <= monthKey);
+            if (!hasHistory && !monthlyTxMap[monthKey]) return null;
           }
-  
-          return customerMonths
-            .map((monthKey): Customer | null => {
-              const txs        = monthsGroup.get(monthKey);
-              const monthTrans = monthlyTxMap[monthKey] ?? customer.Transactions ?? {};
-  
-              if (txs?.length) {
-                return this.buildTransactionMonthRow(customer, monthKey, txs);
-              }
-  
-              const monthlyCost = this.getMonthlyCostForMonth(customer, monthKey);
-  
-              if (customer.monthlyStatus === 'InActive' && monthKey !== currentMonthStr) {
-                const hasAnyTxInOrBeforeMonth =
-                  history.some((t) => (t.transactionDate ?? '').substring(0, 7) <= monthKey) ||
-                  Object.keys(monthlyTxMap).some((m) => m <= monthKey);
-  
-                if (!hasAnyTxInOrBeforeMonth) return null;
-              }
-  
-              const previousMonthKey = Object.keys(monthlyTxMap)
-                .filter((m) => m < monthKey)
-                .sort((a, b) => b.localeCompare(a))[0];
-  
-              const previousPending = previousMonthKey
-                ? (monthlyTxMap[previousMonthKey]?.currentPending ?? 0)
-                : ([...history]
-                    .filter((t) => {
-                      const tMonth = t.transactionDate?.substring(0, 7) ?? t.id?.split('_')[0];
-                      return tMonth != null && tMonth < monthKey;
-                    })
-                    .sort((a, b) => {
-                      const aKey = a.transactionDate?.substring(0, 7) ?? a.id?.split('_')[0] ?? '';
-                      const bKey = b.transactionDate?.substring(0, 7) ?? b.id?.split('_')[0] ?? '';
-                      return bKey.localeCompare(aKey);
-                    })[0]?.newPending ?? 0);
-  
-              const amountToPay = previousPending + monthlyCost;
-              const isPastMonth = monthKey < currentMonthStr;
-  
-              if (monthTrans.isCostAdjustmentMade && monthKey === currentMonthStr) {
-                return {
-                  ...customer,
-                  displayMonth: monthKey,
-                  Transactions: {
-                    ...monthTrans,
-                    monthlyCost:         monthTrans.monthlyCost      ?? 0,
-                    previousPending:     monthTrans.previousPending   ?? previousPending,
-                    amountToPay:         monthTrans.currentMonthTotal ?? amountToPay,
-                    transactionAmount:   monthTrans.transactionAmount ?? 0,
-                    currentPending:      monthTrans.currentPending    ?? 0,
-                    lastTransactionDate: null,
-                    paymentMethod:       'Not Done',
-                  },
-                };
-              }
-  
-              return {
-                ...customer,
-                displayMonth: monthKey,
-                Transactions: {
-                  ...monthTrans,
-                  monthlyCost,
-                  previousPending,
-                  amountToPay,
-                  transactionAmount:   0,
-                  currentPending: isPastMonth
-                    ? amountToPay
-                    : (monthTrans.currentPending ?? amountToPay),
-                  lastTransactionDate: null,
-                  paymentMethod:       'Not Done',
-                },
-              };
-            })
-            .filter((row): row is Customer => row !== null);
-        })
-        .filter(withinPendingRange)
-        .sort((a, b) => this.applySorting(a, b, sort));
+    
+          const displayTxData = {
+            ...monthTrans,
+            monthlyCost,
+            previousPending,
+            amountToPay,
+            transactionAmount: totalPaidInMonth,
+            currentPending: closingBalance, 
+            lastTransactionDate: txsInMonth.at(-1)?.transactionDate ?? null,
+            paymentMethod: txsInMonth.length > 1 ? 'Multiple' : (txsInMonth[0]?.transactionType ?? 'Not Done')
+          };
+    
+          if (txsInMonth.length > 0) {
+            const row = this.buildTransactionMonthRow(customer, monthKey, txsInMonth);
+            return { ...row, Transactions: displayTxData };
+          }
+    
+          return {
+            ...customer,
+            displayMonth: monthKey,
+            Transactions: displayTxData
+          };
+        }).filter((row): row is Customer => row !== null);
+      })
+      .filter(withinPendingRange)
+      .sort((a, b) => {
+        const primary = this.applySorting(a, b, sort);
+        if (primary !== 0) return primary;
+        return (a.displayMonth ?? '').localeCompare(b.displayMonth ?? '');
+      });
     }
   
     this.filteredByDate = false;
