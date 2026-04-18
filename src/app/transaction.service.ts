@@ -15,7 +15,6 @@ export class TransactionService {
     if (!customer) return;
   
     try {
-      // 1. SETUP: Identify Customer and Month IDs
       const customerQuery = query(
         collection(this.firestore, 'CustomerEntry'),
         where('vehicleNumber', '==', customer)
@@ -24,134 +23,146 @@ export class TransactionService {
       if (snapshot.empty) return;
   
       const customerDoc = snapshot.docs[0];
-      const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
+      const customerRef = customerDoc.ref;
   
-      const dateParts = transactionData.transactionDate.split('-');
-      const targetMonthId = `${dateParts[0]}-${dateParts[1]}`; 
-      const now = new Date();
-      const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const dateParts     = transactionData.transactionDate.split('-');
+      const targetMonthId = `${dateParts[0]}-${dateParts[1]}`;
   
-      // 2. TARGET MONTH: Update the specific month being paid (e.g., March)
-      const targetMonthRef = doc(customerRef, 'Transactions', targetMonthId);
+      const targetMonthRef  = doc(customerRef, 'Transactions', targetMonthId);
       const targetMonthSnap = await getDoc(targetMonthRef);
-  
-      if (!targetMonthSnap.exists()) {
-        console.error(`Ledger for ${targetMonthId} missing.`);
-        return; 
-      }
+      if (!targetMonthSnap.exists()) return;
   
       const targetData = targetMonthSnap.data();
       const newPayment = Number(transactionData.transactionAmount) || 0;
-      const oldPending = Number(targetData['currentPending'] ?? 0);
-      const updatedPending = Math.max(oldPending - newPayment, 0);
-      const updatedTotalPaid = (targetData['transactionAmount'] || 0) + newPayment;
   
-      // Create unique ID for the new entry
-      const newTxId = `${customer}-${targetMonthId}-${(targetData['transactionHistory']?.length + 1 || 1)}`;
+      const history: any[] = targetData['transactionHistory'] || [];
   
-      const newEntry = {
-        id: newTxId,
+      const existingIndexes = history.map((t: any) => {
+        const parts    = t.id.split('-');
+        const lastPart = parts[parts.length - 1];
+        return parseInt(lastPart) || 0;
+      });
+      const nextIndex = (existingIndexes.length > 0 ? Math.max(...existingIndexes) : 0) + 1;
+      const newTxId   = `${customer}-${targetMonthId}-${nextIndex}`;
+  
+      const monthOpeningBalance = targetData['currentMonthTotal'] ?? targetData['monthlyCost'] ?? 0;
+  
+      const newEntryRaw = {
+        id:                newTxId,
         transactionAmount: newPayment,
-        transactionDate: transactionData.transactionDate,
-        transactionType: transactionData.paymentMethod || 'Payment',
-        existingPending: oldPending,
-        newPending: updatedPending,
-        ...(targetData['isCostAdjustmentMade'] === true && { isCostAdjustmentMade: true })
+        transactionDate:   transactionData.transactionDate,
+        transactionType:   transactionData.paymentMethod || 'Payment',
+        existingPending:   0, 
+        newPending:        0,
       };
   
-      // Update the Target Month Document
-      await updateDoc(targetMonthRef, {
-        transactionHistory: arrayUnion(newEntry),
-        transactionAmount: updatedTotalPaid,
-        currentPending: updatedPending,
-        isTransactionMade: true,
-        lastTransactionDate: transactionData.transactionDate,
-        paymentMethod: transactionData.paymentMethod
+      const mergedHistory = [...history, newEntryRaw].sort((a, b) => {
+        const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
+        if (dateComp !== 0) return dateComp;
+        const aIdx = parseInt(a.id?.split('-').at(-1) ?? '0') || 0;
+        const bIdx = parseInt(b.id?.split('-').at(-1) ?? '0') || 0;
+        return aIdx - bIdx;
       });
   
-      // 3. DOWNSTREAM SYNC: Update the Current Month if this was a backdated payment
-      if (targetMonthId !== currentMonthId) {
-        const currentMonthRef = doc(customerRef, 'Transactions', currentMonthId);
-        const currentSnap = await getDoc(currentMonthRef);
-  
-        if (currentSnap.exists()) {
-          const currentData = currentSnap.data();
-          const history = [...(currentData['transactionHistory'] || [])];
-          
-          const monthlyCost = Number(currentData['monthlyCost'] || 0);
-          const paymentsInCurrentMonth = Number(currentData['transactionAmount'] || 0);
-  
-          // Recalculate Opening Balance for the current month
-          const newOpeningBalance = updatedPending + monthlyCost;
-          const newClosingBalance = Math.max(newOpeningBalance - paymentsInCurrentMonth, 0);
-  
-          // Update the FIRST transaction of the current month to match the new opening balance
-          if (history.length > 0) {
-            history[0] = {
-              ...history[0],
-              existingPending: newOpeningBalance,
-              newPending: newOpeningBalance - (history[0].transactionAmount || 0)
-            };
-          }
-  
-          await updateDoc(currentMonthRef, {
-            currentMonthTotal: newOpeningBalance,
-            currentPending: newClosingBalance,
-            // transactionHistory: history 
-          });
-        }
-      }
-  
-      // 4. MASTER LOG: Update FullTransactionHistory on the Customer Document
-// 1. Get the current master list
-const rawFullHistory = customerDoc.data()['FullTransactionHistory'] || [];
-const shiftAmount = oldPending - updatedPending;
-
-if (targetMonthId !== currentMonthId) {
-  // --- BACKDATED FLOW: Modify existing entries to fix the "Ghost Balance" ---
-  const updatedFullHistory = rawFullHistory
-    .filter((t: any) => t.id !== `${targetMonthId}_IDLE`) // Remove placeholder if it exists
-    .map((tx: any) => {
-      // If a transaction belongs to the 'Current Month', we MUST shift its 
-      // existingPending and newPending by the shiftAmount so the math stays correct.
-      if (tx.id.includes(currentMonthId)) {
+      let runningPending = monthOpeningBalance;
+      const recalculatedHistory = mergedHistory.map((tx) => {
+        const existing   = runningPending;
+        const newPending = Math.max(existing - (tx.transactionAmount ?? 0), 0);
+        runningPending   = newPending;
         return {
           ...tx,
-          existingPending: (tx.existingPending || 0) - shiftAmount,
-          newPending: (tx.newPending || 0) - shiftAmount
+          existingPending: existing,
+          newPending,
         };
-      }
-      return tx;
-    });
-
-  // Add the new backdated entry to the corrected list
-  updatedFullHistory.push(newEntry);
-
-  await updateDoc(customerRef, {
-    FullTransactionHistory: updatedFullHistory
-  });
-
-} else {
-  // --- REGULAR FLOW: Just append the new transaction ---
-  await updateDoc(customerRef, {
-    FullTransactionHistory: arrayUnion(newEntry)
-  });
-
-  // Handle IDLE cleanup separately for regular flow if needed
-  if (!targetData['isTransactionMade']) {
-    const toRemove = rawFullHistory.find((t: any) => t.id === `${targetMonthId}_IDLE`);
-    if (toRemove) {
-      await updateDoc(customerRef, {
-        FullTransactionHistory: arrayRemove(toRemove),
       });
-    }
-  }
-}
   
-      console.log(`Sync complete for ${customer}. Shift applied: ${shiftAmount}`);
+      const newEntry = recalculatedHistory.find((t) => t.id === newTxId)!;
+  
+      const updatedPending = recalculatedHistory.at(-1)?.newPending ?? 0;
+  
+      const oldPending  = Number(targetData['currentPending'] ?? 0);
+      const shiftAmount = oldPending - updatedPending; 
+  
+      const allTxDates    = recalculatedHistory.map((t) => t.transactionDate);
+      const lastTxDate    = [...allTxDates].sort().at(-1);
+      const paymentMethod = recalculatedHistory.length > 1
+        ? 'Multiple'
+        : transactionData.paymentMethod;
+  
+      const batch = writeBatch(this.firestore);
+  
+      batch.update(targetMonthRef, {
+        transactionHistory:  recalculatedHistory,
+        transactionAmount:   (targetData['transactionAmount'] || 0) + newPayment,
+        currentPending:      updatedPending,
+        isTransactionMade:   true,
+        lastTransactionDate: lastTxDate,
+        paymentMethod,
+      });
+  
+      const allMonthsSnap = await getDocs(
+        collection(this.firestore, `${customerRef.path}/Transactions`)
+      );
+  
+      allMonthsSnap.docs.forEach((docSnap) => {
+        if (docSnap.id > targetMonthId) {
+          const mData           = docSnap.data();
+          const mHistory: any[] = mData['transactionHistory'] || [];
+  
+          const updateObj: any = {
+            currentPending:    increment(-shiftAmount),
+            currentMonthTotal: increment(-shiftAmount),
+          };
+  
+          if (mHistory.length > 0) {
+            updateObj.transactionHistory = mHistory.map((t) => ({
+              ...t,
+              existingPending: (t.existingPending ?? 0) - shiftAmount,
+              newPending:      (t.newPending      ?? 0) - shiftAmount,
+            }));
+          }
+  
+          batch.update(docSnap.ref, updateObj);
+        }
+      });
+  
+      const rawFullHistory: any[] = customerDoc.data()['FullTransactionHistory'] || [];
+  
+      const otherMonthHistory = rawFullHistory.filter(
+        (tx: any) => (tx.transactionDate ?? '').substring(0, 7) !== targetMonthId
+      );
+  
+      const shiftedOtherHistory = otherMonthHistory.map((tx: any) => {
+        const txMonth = (tx.transactionDate ?? '').substring(0, 7);
+        if (txMonth > targetMonthId) {
+          return {
+            ...tx,
+            existingPending: (tx.existingPending ?? 0) - shiftAmount,
+            newPending:      (tx.newPending      ?? 0) - shiftAmount,
+          };
+        }
+        return tx;
+      });
+  
+      const finalHistory = [
+        ...shiftedOtherHistory.filter(
+          (tx: any) => (tx.transactionDate ?? '').substring(0, 7) < targetMonthId
+        ),
+        ...recalculatedHistory,
+        ...shiftedOtherHistory.filter(
+          (tx: any) => (tx.transactionDate ?? '').substring(0, 7) > targetMonthId
+        ),
+      ].filter((t: any) => t.id !== `${targetMonthId}_IDLE`);
+  
+      batch.update(customerRef, {
+        FullTransactionHistory: finalHistory,
+      });
+  
+      await batch.commit();
   
     } catch (error) {
-      console.error('Transaction Error:', error);
+      console.error('Backdated Transaction Sync Failed:', error);
+      throw error;
     }
   };
 
@@ -463,12 +474,13 @@ if (targetMonthId !== currentMonthId) {
   
       const customerDoc = snapshot.docs[0];
       const customerRef = customerDoc.ref;
-      
-      const parts = transactionId.split('-');
-      const monthId = parts.slice(parts.length - 3, parts.length - 1).join('-'); 
+      const customerData = customerDoc.data();
+  
+      const parts   = transactionId.split('-');
+      const monthId = parts.slice(parts.length - 3, parts.length - 1).join('-');
   
       const monthDocRef = doc(this.firestore, `${customerRef.path}/Transactions/${monthId}`);
-      const monthSnap = await getDoc(monthDocRef);
+      const monthSnap   = await getDoc(monthDocRef);
       if (!monthSnap.exists()) return;
   
       const monthData = monthSnap.data();
@@ -476,53 +488,113 @@ if (targetMonthId !== currentMonthId) {
       const toRemove = history.find((t: any) => t.id === transactionId);
       if (!toRemove) return;
   
-      const amount = toRemove.transactionAmount;
-
+      const amount = toRemove.transactionAmount ?? 0;
+      const batch  = writeBatch(this.firestore);
+  
       if (history.length === 1) {
-        await updateDoc(monthDocRef, {
+        batch.update(monthDocRef, {
           lastTransactionDate: deleteField(),
-          paymentMethod: deleteField(),
-          transactionHistory: deleteField(),
-          transactionAmount: deleteField(),
-          isTransactionMade: false,
-          currentPending: increment(amount),
+          paymentMethod:       deleteField(),
+          transactionHistory:  deleteField(),
+          transactionAmount:   deleteField(),
+          isTransactionMade:   false,
+          currentPending:      increment(amount),
         });
       } else {
-        await updateDoc(monthDocRef, {
-          transactionAmount: increment(-amount),
-          currentPending: increment(amount),
-          transactionHistory: arrayRemove(toRemove),
+        const updatedMonthHistory = history
+          .filter((t) => t.id !== transactionId)
+          .map((t) => {
+            const isAfter =
+              t.transactionDate > toRemove.transactionDate ||
+              (t.transactionDate === toRemove.transactionDate && t.id > transactionId);
+  
+            if (isAfter) {
+              return {
+                ...t,
+                existingPending: (t.existingPending ?? 0) + amount,
+                newPending:      (t.newPending      ?? 0) + amount,
+              };
+            }
+            return t;
+          });
+  
+        const sortedRemaining = [...updatedMonthHistory].sort((a, b) =>
+          (b.transactionDate ?? '').localeCompare(a.transactionDate ?? '')
+        );
+        const lastTx        = sortedRemaining[0];
+        const paymentMethod = updatedMonthHistory.length > 1
+          ? 'Multiple'
+          : lastTx?.transactionType ?? 'Not Done';
+  
+        batch.update(monthDocRef, {
+          transactionAmount:   increment(-amount),
+          currentPending:      increment(amount),
+          transactionHistory:  updatedMonthHistory,
+          lastTransactionDate: lastTx?.transactionDate ?? deleteField(),
+          paymentMethod,
         });
       }
   
-      const allMonthsQuery = query(collection(this.firestore, `${customerRef.path}/Transactions`));
-      const allMonthsSnap = await getDocs(allMonthsQuery);
+      const allMonthsSnap = await getDocs(
+        collection(this.firestore, `${customerRef.path}/Transactions`)
+      );
   
-      const batch = writeBatch(this.firestore);
-  
-      allMonthsSnap.docs.forEach(docSnap => {
+      allMonthsSnap.docs.forEach((docSnap) => {
         if (docSnap.id > monthId) {
-          batch.update(docSnap.ref, {
-            // existingPending: increment(amount),
-            currentPending: increment(amount),
-            currentMonthTotal: increment(amount)
-          });
+          const mData    = docSnap.data();
+          const mHistory: any[] = mData['transactionHistory'] || [];
+  
+          const updateObj: any = {
+            currentPending:      increment(amount),
+            currentMonthTotal:   increment(amount),
+          };
+  
+          if (mHistory.length > 0) {
+            updateObj.transactionHistory = mHistory.map((t) => ({
+              ...t,
+              existingPending: (t.existingPending ?? 0) + amount,
+              newPending:      (t.newPending      ?? 0) + amount,
+            }));
+          }
+  
+          batch.update(docSnap.ref, updateObj);
         }
       });
   
-      const fullHistory = customerDoc.data()['FullTransactionHistory'] || [];
-      const toRemoveFull = fullHistory.find((t: any) => t.id === transactionId);
-      
-      if (fullHistory.length === 1) {
-        batch.update(customerRef, { FullTransactionHistory: deleteField() });
+      const fullHistory: any[] = customerData['FullTransactionHistory'] || [];
+  
+      const updatedFullHistory = fullHistory
+        .filter((t) => t.id !== transactionId)
+        .map((t) => {
+          const tMonth  = (t.transactionDate ?? '').substring(0, 7);
+          const isAfter =
+            tMonth > monthId ||
+            (tMonth === monthId && t.transactionDate > toRemove.transactionDate) ||
+            (tMonth === monthId && t.transactionDate === toRemove.transactionDate && t.id > transactionId);
+  
+          if (isAfter) {
+            return {
+              ...t,
+              existingPending: (t.existingPending ?? 0) + amount,
+              newPending:      (t.newPending      ?? 0) + amount,
+            };
+          }
+          return t;
+        });
+  
+      const customerUpdate: any = {};
+  
+      if (updatedFullHistory.length === 0) {
+        customerUpdate.FullTransactionHistory = deleteField();
       } else {
-        batch.update(customerRef, { FullTransactionHistory: arrayRemove(toRemoveFull) });
+        customerUpdate.FullTransactionHistory = updatedFullHistory;
       }
   
+      batch.update(customerRef, customerUpdate); 
       await batch.commit();
   
     } catch (error) {
-      console.error("Error during cascading deletion:", error);
+      console.error('Deletion failed:', error);
       throw error;
     }
   }
@@ -534,7 +606,6 @@ if (targetMonthId !== currentMonthId) {
     if (!vehicleNumber) return false;
   
     try {
-      // 1. SETUP: Identify Customer Document
       const customerQuery = query(
         collection(this.firestore, 'CustomerEntry'),
         where('vehicleNumber', '==', vehicleNumber)
@@ -548,7 +619,6 @@ if (targetMonthId !== currentMonthId) {
       const now = new Date();
       const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   
-      // 2. CURRENT MONTH: Read existing data
       const currentMonthRef = doc(customerRef, 'Transactions', currentMonthId);
       const currentMonthSnap = await getDoc(currentMonthRef);
   
@@ -563,7 +633,6 @@ if (targetMonthId !== currentMonthId) {
       const shiftAmount = oldPending - settlementAmount;
       const isCostAdjustmentMade = true;
   
-      // 3. NO TRANSACTION HISTORY: Simple balance update only
       if (history.length === 0) {
         await updateDoc(currentMonthRef, {
           isCostAdjustmentMade,
@@ -592,7 +661,6 @@ if (targetMonthId !== currentMonthId) {
         return true;
       }
   
-      // 4. HAS TRANSACTION HISTORY: Shift all existing entries by the delta
       const updatedHistory = history.map((tx: any) => ({
         ...tx,
         existingPending: (tx.existingPending || 0) - shiftAmount,
@@ -607,7 +675,6 @@ if (targetMonthId !== currentMonthId) {
         transactionHistory: updatedHistory,
       });
   
-      // 5. MASTER LOG: Shift current month entries in FullTransactionHistory
       const rawFullHistory: any[] = customerDoc.data()['FullTransactionHistory'] || [];
       const updatedFullHistory = rawFullHistory.map((tx: any) => {
         if (tx.id?.includes(currentMonthId)) {
