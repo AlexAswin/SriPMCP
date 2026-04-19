@@ -390,8 +390,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           FullTransactionHistory: sortedHistory.map((tx) => {
             const isIdle = tx.id?.includes('_IDLE') || tx.transactionType === 'No Transactions';
           
-            // For IDLE records, transactionDate is null — extract month from the id instead
-            // id format: "2026-03_IDLE"
             const monthKey = isIdle
               ? (tx.id?.substring(0, 7) ?? '')
               : (tx.transactionDate ?? '').substring(0, 7);
@@ -417,7 +415,6 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               ...tx,
               monthlyCost,
               previousPending,
-              // For IDLE, show month start date since transactionDate is null
               transactionDate: isIdle
                 ? (tx.transactionDate ?? `No Transaction`)
                 : tx.transactionDate,

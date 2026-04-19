@@ -616,10 +616,10 @@ export class TransactionService {
       const customerDoc = snapshot.docs[0];
       const customerRef = doc(this.firestore, 'CustomerEntry', customerDoc.id);
   
-      const now = new Date();
+      const now            = new Date();
       const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   
-      const currentMonthRef = doc(customerRef, 'Transactions', currentMonthId);
+      const currentMonthRef  = doc(customerRef, 'Transactions', currentMonthId);
       const currentMonthSnap = await getDoc(currentMonthRef);
   
       if (!currentMonthSnap.exists()) {
@@ -627,71 +627,145 @@ export class TransactionService {
         return false;
       }
   
-      const currentData = currentMonthSnap.data();
-      const history: any[] = currentData['transactionHistory'] || [];
-      const oldPending  = Number(currentData['currentPending'] ?? 0);
+      const currentData      = currentMonthSnap.data();
+      const history: any[]   = currentData['transactionHistory'] || [];
+      const oldPending       = Number(currentData['currentPending'] ?? 0);
+      const oldMonthlyTotal  = Number(currentData['currentMonthTotal'] ?? 0);
+      const oldMonthlyCost   = Number(currentData['monthlyCost'] ?? 0);
+  
+      // shiftAmount = how much the total debt changes
+      // positive = debt reduced, negative = debt increased
       const shiftAmount = oldPending - settlementAmount;
-      const isCostAdjustmentMade = true;
   
+      // The new opening balance for this month = previousPending (carry-forward only)
+      // = oldMonthlyTotal - oldMonthlyCost (strips out the monthly charge)
+      const previousMonthCarryForward = Math.max(oldMonthlyTotal - oldMonthlyCost, 0);
+  
+      const batch = writeBatch(this.firestore);
+  
+      // --- 1. Update Current Month Doc ---
       if (history.length === 0) {
-        await updateDoc(currentMonthRef, {
-          isCostAdjustmentMade,
-          currentPending:    settlementAmount,
-          currentMonthTotal: settlementAmount,
-          monthlyCost:       0,
+        // No transactions yet — simple update
+        batch.update(currentMonthRef, {
+          isCostAdjustmentMade: true,
+          currentPending:       settlementAmount,
+          currentMonthTotal:    settlementAmount,
+          monthlyCost:          0,
         });
+      } else {
+        // Recalculate entire transaction chain with new opening balance
+        // New opening = previousMonthCarryForward + 0 (monthlyCost now 0)
+        const newOpeningBalance = previousMonthCarryForward;
   
-        const rawFullHistory: any[] = customerDoc.data()['FullTransactionHistory'] || [];
-        const updatedFullHistory = rawFullHistory.map((tx: any) => {
-          if (tx.id?.includes(currentMonthId)) {
+        let runningPending = newOpeningBalance;
+        const recalculatedHistory = history
+          .sort((a: any, b: any) => {
+            const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
+            return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
+          })
+          .map((tx: any) => {
+            const existing   = runningPending;
+            const newPending = Math.max(existing - (tx.transactionAmount ?? 0), 0);
+            runningPending   = newPending;
             return {
               ...tx,
-              existingPending: (tx.existingPending || 0) - shiftAmount,
-              newPending:      (tx.newPending      || 0) - shiftAmount,
+              existingPending: existing,
+              newPending,
             };
-          }
-          return tx;
-        });
+          });
   
-        await updateDoc(customerRef, {
-          FullTransactionHistory: updatedFullHistory,
-        });
+        const newCurrentPending = recalculatedHistory.at(-1)?.newPending ?? settlementAmount;
   
-        console.log(`Simple adjustment for ${vehicleNumber}. No transaction history found.`);
-        return true;
+        batch.update(currentMonthRef, {
+          isCostAdjustmentMade: true,
+          currentPending:       newCurrentPending,
+          currentMonthTotal:    settlementAmount,
+          monthlyCost:          0,
+          transactionHistory:   recalculatedHistory,
+        });
       }
   
-      const updatedHistory = history.map((tx: any) => ({
-        ...tx,
-        existingPending: (tx.existingPending || 0) - shiftAmount,
-        newPending:      (tx.newPending      || 0) - shiftAmount,
-      }));
+      // --- 2. Cascade to Future Months ---
+      const allMonthsSnap = await getDocs(
+        collection(this.firestore, `${customerRef.path}/Transactions`)
+      );
   
-      await updateDoc(currentMonthRef, {
-        isCostAdjustmentMade,
-        currentPending:     settlementAmount,
-        currentMonthTotal:  settlementAmount,
-        monthlyCost:        0,
-        transactionHistory: updatedHistory,
+      allMonthsSnap.docs.forEach((docSnap) => {
+        if (docSnap.id > currentMonthId) {
+          const mData           = docSnap.data();
+          const mHistory: any[] = mData['transactionHistory'] || [];
+  
+          const updateObj: any = {
+            currentPending:    increment(-shiftAmount),
+            currentMonthTotal: increment(-shiftAmount),
+          };
+  
+          if (mHistory.length > 0) {
+            updateObj.transactionHistory = mHistory.map((t: any) => ({
+              ...t,
+              existingPending: (t.existingPending ?? 0) - shiftAmount,
+              newPending:      (t.newPending      ?? 0) - shiftAmount,
+            }));
+          }
+  
+          batch.update(docSnap.ref, updateObj);
+        }
       });
   
       const rawFullHistory: any[] = customerDoc.data()['FullTransactionHistory'] || [];
-      const updatedFullHistory = rawFullHistory.map((tx: any) => {
-        if (tx.id?.includes(currentMonthId)) {
+  
+      const otherMonthHistory = rawFullHistory.filter(
+        (tx: any) => (tx.transactionDate ?? tx.id ?? '').substring(0, 7) !== currentMonthId
+      );
+  
+      const currentMonthFullHistory = rawFullHistory
+        .filter((tx: any) => (tx.transactionDate ?? tx.id ?? '').substring(0, 7) === currentMonthId)
+        .sort((a: any, b: any) => {
+          const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
+          return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
+        });
+  
+      let runningPending = previousMonthCarryForward; 
+      const recalculatedFullCurrentMonth = currentMonthFullHistory.map((tx: any) => {
+        const existing   = runningPending;
+        const newPending = Math.max(existing - (tx.transactionAmount ?? 0), 0);
+        runningPending   = newPending;
+        return {
+          ...tx,
+          existingPending: existing,
+          newPending,
+        };
+      });
+  
+      const shiftedFutureHistory = otherMonthHistory.map((tx: any) => {
+        const txMonth = (tx.transactionDate ?? tx.id ?? '').substring(0, 7);
+        if (txMonth > currentMonthId) {
           return {
             ...tx,
-            existingPending: (tx.existingPending || 0) - shiftAmount,
-            newPending:      (tx.newPending      || 0) - shiftAmount,
+            existingPending: (tx.existingPending ?? 0) - shiftAmount,
+            newPending:      (tx.newPending      ?? 0) - shiftAmount,
           };
         }
         return tx;
       });
   
-      await updateDoc(customerRef, {
-        FullTransactionHistory: updatedFullHistory,
+      const finalHistory = [
+        ...shiftedFutureHistory.filter(
+          (tx: any) => (tx.transactionDate ?? tx.id ?? '').substring(0, 7) < currentMonthId
+        ),
+        ...recalculatedFullCurrentMonth,
+        ...shiftedFutureHistory.filter(
+          (tx: any) => (tx.transactionDate ?? tx.id ?? '').substring(0, 7) > currentMonthId
+        ),
+      ];
+  
+      batch.update(customerRef, {
+        FullTransactionHistory: finalHistory,
       });
   
-      console.log(`Adjustment complete for ${vehicleNumber}. Shift applied: ${shiftAmount}`);
+      await batch.commit();
+  
+      console.log(`Adjustment complete for ${vehicleNumber}. ShiftAmount: ${shiftAmount}`);
       return true;
   
     } catch (error) {
