@@ -93,11 +93,10 @@ export class NewCustomerEntryService {
 
   async getVehicleByNumber(vehicleNumber: string, identifier: string) {
     if (!vehicleNumber) return null;
-
-    const vehiclesRef = collection(this.firestore, 'CustomerEntry');
+  
+    const vehiclesRef  = collection(this.firestore, 'CustomerEntry');
     const currentMonth = this.getCurrentMonth();
-    // const currentMonth = '2026-04';
-
+  
     const q = query(
       vehiclesRef,
       where(
@@ -106,37 +105,55 @@ export class NewCustomerEntryService {
         vehicleNumber
       )
     );
-
+  
     const snapshot = await getDocs(q);
-
+  
     if (snapshot.empty) {
       this.setVehicle(null);
       return null;
     }
-
-    const docSnap = snapshot.docs[0];
-    const customerId = docSnap.id;
+  
+    const docSnap      = snapshot.docs[0];
+    const customerId   = docSnap.id;
     const customerData = docSnap.data();
-
-    const transactionDocRef = doc(
-      this.firestore,
-      `CustomerEntry/${customerId}/Transactions/${currentMonth}`
-    );
-
-    const transactionSnap = await getDoc(transactionDocRef);
-    const transactionData = transactionSnap.exists()
-      ? transactionSnap.data()
-      : {};
-
+  
+    // Try current month first
+    const currentMonthRef  = doc(this.firestore, `CustomerEntry/${customerId}/Transactions/${currentMonth}`);
+    const currentMonthSnap = await getDoc(currentMonthRef);
+  
+    let transactionData: any = {};
+  
+    if (currentMonthSnap.exists()) {
+      // Current month doc exists — use it
+      transactionData = currentMonthSnap.data();
+    } else {
+      // Current month missing — fetch all and use the latest
+      const allMonthsSnap = await getDocs(
+        collection(this.firestore, `CustomerEntry/${customerId}/Transactions`)
+      );
+  
+      if (!allMonthsSnap.empty) {
+        const sorted = allMonthsSnap.docs
+          .sort((a, b) => b.id.localeCompare(a.id)); // latest month first
+  
+        transactionData = {
+          ...sorted[0].data(),
+          monthId: sorted[0].id, // so you know which month this came from
+        };
+      }
+    }
+  
     const finalData = {
       id: customerId,
       ...customerData,
       Transactions: transactionData,
     } as any;
-
+  
     this.setVehicle(finalData);
     return finalData;
   }
+
+
   setVehicle(data: any) {
     this.vehicleSource.next(data);
   }
