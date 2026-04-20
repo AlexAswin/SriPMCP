@@ -147,99 +147,181 @@
     </mat-tab>
     <mat-tab label="Maintenance">
       <div class="tab-content maintenance-container">
+    
+        <!-- Search -->
         <mat-card appearance="outlined" class="search-card">
           <mat-card-header>
-            <!-- <mat-icon mat-card-avatar color="primary">search</mat-icon> -->
-            <mat-card-title>Manage Customer Details</mat-card-title>
-            <mat-card-subtitle>Search by vehicle Number</mat-card-subtitle>
+            <mat-icon mat-card-avatar color="primary">manage_search</mat-icon>
+            <mat-card-title>Search Customer</mat-card-title>
+            <mat-card-subtitle>Enter vehicle number to manage transactions or adjust current balance.</mat-card-subtitle>
           </mat-card-header>
-    
           <mat-card-content>
-            <form [formGroup]="deleteCustomerForm" (ngSubmit)="getCustomerRecord()" class="search-form">
+            <form [formGroup]="deleteCustomerForm" class="search-form">
               <mat-form-field appearance="outline" class="vehicle-input">
                 <mat-label>Vehicle Number</mat-label>
-                <input matInput placeholder="TN 01 AB 1234" formControlName="vehicleNumber"
-                       (keydown)="restrictVehicleInput($event)" 
+                <input matInput
+                       placeholder="TN 01 AB 1234"
+                       formControlName="vehicleNumber"
+                       (keydown)="restrictVehicleInput($event)"
                        (input)="onVehicleNumberInput($event)"
-                       class="uppercase-bold" maxlength="13">
+                       (keydown.enter)="getCustomerRecord()"
+                       class="uppercase-bold"
+                       maxlength="13">
                 <mat-icon matSuffix>directions_car</mat-icon>
               </mat-form-field>
-    
-              <app-button label="Get Details" variant="primary" type="submit"></app-button>
+              <app-button 
+                label="Search" 
+                variant="primary" 
+                type="button"
+                (click)="getCustomerRecord()">
+              </app-button>
             </form>
           </mat-card-content>
         </mat-card>
     
-        <div *ngIf="showSettlementDetails" class="action-grid">
-          
-          <mat-card appearance="outlined" class="danger-zone-card">
-            <mat-card-header>
-              <mat-card-title class="warn-text">Danger Zone</mat-card-title>
-            </mat-card-header>
-          
-            <mat-card-content>
-              <div class="delete-section">
-                <p class="warning-text">
-                  <strong>Option A:</strong> Remove the <strong>most recent</strong> transaction from this month.
-                </p>
-                <app-button 
-                  label="Delete Last Transaction" 
-                  variant="secondary" 
-                  (click)="deleteLastTransaction()" 
-                  class="warn-btn">
-                </app-button>
+        <!-- Mini Dashboard -->
+        <div *ngIf="showSettlementDetails" class="maintenance-dashboard">
+    
+          <!-- Scenario Selector -->
+          <div class="scenario-grid">
+    
+            <div class="scenario-card"
+                 [class.active]="activeScenario === 'adjust'"
+                 (click)="activeScenario = 'adjust'">
+              <div class="scenario-icon accent">
+                <mat-icon>account_balance_wallet</mat-icon>
               </div>
-          
-              <hr class="section-divider">
-          
-              <div class="delete-section">
-                <p><strong>Option B:</strong> Remove a specific record by its Unique ID.</p>
+              <div class="scenario-info">
+                <span class="scenario-title">Adjust Balance</span>
+                <span class="scenario-desc">Override current month's pending amount</span>
+              </div>
+            </div>
+    
+            <div class="scenario-card"
+                 [class.active]="activeScenario === 'deleteLast'"
+                 (click)="activeScenario = 'deleteLast'">
+              <div class="scenario-icon warn">
+                <mat-icon>undo</mat-icon>
+              </div>
+              <div class="scenario-info">
+                <span class="scenario-title">Delete Last Ledger</span>
+                <span class="scenario-desc">Delete the whole ledger</span>
+              </div>
+            </div>
+    
+            <div class="scenario-card"
+                 [class.active]="activeScenario === 'deleteById'"
+                 (click)="activeScenario = 'deleteById'">
+              <div class="scenario-icon danger">
+                <mat-icon>find_in_page</mat-icon>
+              </div>
+              <div class="scenario-info">
+                <span class="scenario-title">Delete by ID</span>
+                <span class="scenario-desc">Delete a transaction by transaction ID</span>
+              </div>
+            </div>
+    
+          </div>
+    
+          <!-- Action Panel -->
+          <mat-card appearance="outlined" class="action-panel">
+    
+            <!-- Adjust Balance -->
+            <ng-container *ngIf="activeScenario === 'adjust'">
+              <mat-card-header>
+                <span class="panel-badge accent">Adjust Balance</span>
+              </mat-card-header>
+              <mat-card-content [formGroup]="deleteCustomerForm">
+                <p class="panel-hint">
+                  Sets a new pending amount for this month.
+                </p>
+                <div class="balance-display">
+                  <span class="balance-label">Current Balance</span>
+                  <span class="balance-value">
+                    ₹
+                    <input class="balance-amount"
+                           matInput
+                           type="number"
+                           formControlName="currentPending"
+                           placeholder="0"
+                           readonly>
+                  </span>
+                </div>
+                <mat-divider class="section-divider"></mat-divider>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>New Settlement Amount</mat-label>
+                  <span matTextPrefix>₹&nbsp;</span>
+                  <input matInput
+                         type="number"
+                         formControlName="settlementAmount"
+                         placeholder="Enter the corrected balance">
+                  <!-- <mat-hint>Enter the amount the customer actually owes this month</mat-hint> -->
+                </mat-form-field>
+              </mat-card-content>
+              <mat-card-actions align="end">
+                <app-button
+                  label="Apply Adjustment"
+                  variant="primary"
+                  (click)="adjustPending()">
+                </app-button>
+              </mat-card-actions>
+            </ng-container>
+    
+            <!-- Delete Last Transaction -->
+            <ng-container *ngIf="activeScenario === 'deleteLast'">
+              <mat-card-header>
+                <span class="panel-badge warn">Delete Last Transaction</span>
+              </mat-card-header>
+              <mat-card-content>
+                <p class="panel-hint">
+                  Permanently remove the last ledger.
+                </p>
+                <div class="preview-box warn">
+                  <mat-icon>warning_amber</mat-icon>
+                  <span>The most recent transaction for this vehicle will be deleted.</span>
+                </div>
+              </mat-card-content>
+              <mat-card-actions align="end">
+                <app-button
+                  label="Delete Last Transaction"
+                  variant="secondary"
+                  (click)="deleteLastTransaction()">
+                </app-button>
+              </mat-card-actions>
+            </ng-container>
+    
+            <!-- Delete by ID -->
+            <ng-container *ngIf="activeScenario === 'deleteById'">
+              <mat-card-header>
+                <span class="panel-badge danger">Delete by Transaction ID</span>
+              </mat-card-header>
+              <mat-card-content>
+                <p class="panel-hint">
+                  Enter the exact transaction ID to permanently remove it.
+                </p>
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Transaction ID</mat-label>
-                  <input matInput #idInput placeholder="Ex: AA 11 AA 1111-2026-03-1" class="uppercase-bold">
+                  <input matInput
+                         #idInput
+                         placeholder="e.g. AA 11 AA 1111-2026-03-1"
+                         class="uppercase-bold">
+                  <mat-icon matSuffix>tag</mat-icon>
+                  <!-- <mat-hint>Find the ID in the transaction history table</mat-hint> -->
                 </mat-form-field>
-                
-                <div class="action-right">
-                  <app-button 
-                    [label]="isDeleting ? 'Processing...' : 'Delete by ID'" 
-                    [disabled]="isDeleting"
-                    variant="primary" 
-                    (click)="deleteTransactionById(idInput.value)" 
-                    class="warn-btn">
-                  </app-button>
-                </div>
-              </div>
-            </mat-card-content>
+              </mat-card-content>
+              <mat-card-actions align="end">
+                <app-button
+                  [label]="isDeleting ? 'Deleting...' : 'Delete Transaction'"
+                  [disabled]="isDeleting || !idInput.value"
+                  variant="primary"
+                  (click)="deleteTransactionById(idInput.value)">
+                </app-button>
+              </mat-card-actions>
+            </ng-container>
+    
           </mat-card>
-    
-          <mat-card appearance="outlined" class="adjustment-card">
-            <mat-card-header>
-              <!-- <mat-icon mat-card-avatar color="accent">account_balance_wallet</mat-icon> -->
-              <mat-card-title> Adjust Pending </mat-card-title>
-            </mat-card-header>
-            <mat-card-content [formGroup]="deleteCustomerForm">
-              <div class="stats-row">
-                <div class="stat-item">
-                  <label>Current Balance</label>
-                  <div>
-                    <input class="balance-amount" matInput type="number" formControlName="currentPending" placeholder="0.00" readonly>
-                  </div>
-
-                </div>
-              </div>
-    
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>New Settlement Amount</mat-label>
-                <input matInput type="number" formControlName="settlementAmount" placeholder="Enter amount">
-                <span matTextPrefix>₹&nbsp;</span>
-              </mat-form-field>
-            </mat-card-content>
-            <mat-card-actions align="end">
-              <app-button label="Apply Adjustment" variant="primary" (click)="adjustPending()"></app-button>
-            </mat-card-actions>
-          </mat-card>
-    
         </div>
+    
       </div>
     </mat-tab>
 

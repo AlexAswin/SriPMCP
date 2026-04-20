@@ -48,6 +48,7 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
 
   alertMessage: string = '';
   alertType: 'success' | 'error' = 'success';
+  activeScenario: 'adjust' | 'deleteLast' | 'deleteById' = 'adjust';
 
   monthlyStatus: string = ''
 
@@ -383,28 +384,41 @@ reformatVehicleNumber(value: any): string {
 
 async getCustomerRecord() {
   if (this.deleteCustomerForm.invalid) return;
-  
+
   const vNbr = this.deleteCustomerForm.value.vehicleNumber;
+  const formattedVehicleNbr = this.normalizeVehicleNumber(vNbr);
 
-  const formatedVehicleNbr = this.normalizeVehicleNumber(vNbr);
+  try {
+    const customerDetails = await this.newCustomerEntryService
+      .getVehicleByNumber(formattedVehicleNbr, 'vehicleNbr');
 
-    try {
-      const customerCurrentMonthDetails = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
-      this.showSettlementDetails = true;
-
-      this.monthlyStatus = customerCurrentMonthDetails.monthlyStatus
-
-      console.log(customerCurrentMonthDetails);
-      this.deleteCustomerForm.patchValue({
-        currentPending: customerCurrentMonthDetails.Transactions.currentPending,
-        // monthlyCost: customerCurrentMonthDetails.Transactions.monthlyCost,
-      });
-    } catch (err) {
+    if (!customerDetails) {
       this.showSettlementDetails = false;
-      this.showAlert('Invalid User. Please try again.', 'error');
-      console.log('Error deleting record');
+      this.showAlert('Vehicle not found. Please try again.', 'error');
+      return;
     }
+
+    // Fetch current month's Transaction subdoc directly
+    const now            = new Date();
+    const currentMonthId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const currentMonthPending = customerDetails.monthlyTransactions?.[currentMonthId]?.currentPending
+      ?? customerDetails.Transactions?.currentPending  // fallback if still on main doc
+      ?? 0;
+
+    this.showSettlementDetails = true;
+    this.monthlyStatus         = customerDetails.monthlyStatus;
+
+    this.deleteCustomerForm.patchValue({
+      currentPending: currentMonthPending,
+    });
+
+  } catch (err) {
+    this.showSettlementDetails = false;
+    this.showAlert('Invalid vehicle. Please try again.', 'error');
+    console.error('Error fetching customer record:', err);
   }
+}
 
   async deleteLastTransaction() {
     const vNbr = this.deleteCustomerForm.value.vehicleNumber;
