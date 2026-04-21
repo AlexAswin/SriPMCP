@@ -56,7 +56,7 @@
                         </div>
                     </div>
 
-                    <div class="rightContainer">
+                    <div class="leftContainer">
                         <div class="form-group">
                             <div class="input-row">
                                 <label>Vehicle Name</label>
@@ -64,6 +64,19 @@
                             </div>
                             <div class="error-container" *ngIf="vehicleDetailsForm.get('vehicleName')?.invalid && (vehicleDetailsForm.get('vehicleName')?.dirty || vehicleDetailsForm.get('vehicleName')?.touched)">
                                 <small>Vehicle Name is required</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rightContainer">
+                        <div class="form-group">
+                            <div class="input-row">
+                                <label>LoT Number</label>
+                                <input type="text" placeholder="Lot number" formControlName="lotNumber" />
+                            </div>
+                            
+                            <div class="error-container" *ngIf="vehicleDetailsForm.get('lotNumber')?.invalid && (vehicleDetailsForm.get('lotNumber')?.dirty || vehicleDetailsForm.get('lotNumber')?.touched)">
+                                <small>Lot Number is required</small>
                             </div>
                         </div>
                     </div>

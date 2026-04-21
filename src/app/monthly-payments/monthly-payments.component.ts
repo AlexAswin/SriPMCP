@@ -285,16 +285,25 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
         transactionDate: rawForm.transactionDate 
       };
   
-      await this.transactionService.customerMonthlyTransactionDetails(customer, transactionData);
-  
+      const proceedTransaction = await this.transactionService.customerMonthlyTransactionDetails(customer, transactionData);
+
+      if( proceedTransaction ) {
+        this.snackBar.open('Transaction successful!', 'Close', {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['snackbar-success'],
+        });
       this.resetAllFormStates();
+      } else {
+        this.snackBar.open('Transaction Failed! Please try again...', 'Close', {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['snackbar-success'],
+        });
+      }
   
-      this.snackBar.open('Transaction successful!', 'Close', {
-        duration: 4000,
-        horizontalPosition: 'center',
-        verticalPosition: 'bottom',
-        panelClass: ['snackbar-success'],
-      });
   
     } catch (error) {
       console.error('Transaction Error:', error);

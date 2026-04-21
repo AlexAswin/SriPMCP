@@ -146,6 +146,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       ],
       vehicleType: [{ value: '', disabled: false }, [Validators.required]],
       vehicleName: [{ value: '', disabled: false }, [Validators.required]],
+      lotNumber: [{ value: '', disabled: false }, [Validators.required]],
       customerName: [
         { value: '', disabled: false },
         [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)],
