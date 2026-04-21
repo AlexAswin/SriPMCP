@@ -71,25 +71,77 @@ export class NewCustomerEntryService {
     }
   }
 
-  async initializeMonthlyLedger(vehicleNumber: string, monthId: string, cost: number) {
+  async initializeMonthlyLedger(
+    vehicleNumber: string,
+    lastLedgerMonthId: string | null,
+    currentMonth: string | null,
+    cost: number
+  ) {
     try {
-      const ledgerRef = doc(
-        this.firestore, 
-        `CustomerEntry/${vehicleNumber}/Transactions/${monthId}`
-      );
+      if (cost == null || isNaN(Number(cost))) {
+        throw new Error(`Invalid cost value: ${cost}`);
+      }
   
-      await setDoc(ledgerRef, {
-        monthlyCost: Number(cost) ,
-        currentMonthTotal: Number(cost) ,
-        currentPending: Number(cost) || 0,
+      if (!currentMonth) {
+        throw new Error(`Invalid current month: ${currentMonth}`);
+      }
+  
+      const normalizeMonthId = (monthId: string): string => {
+        const parts = monthId.split('-');
+        if (parts.length < 2 || !parts[0] || !parts[1]) {
+          throw new Error(`Invalid month format: ${monthId}. Expected YYYY-MM or YYYY-MM-DD`);
+        }
+        return `${parts[0]}-${parts[1].padStart(2, '0')}`;
+      };
+  
+      const normalizedCurrentMonth = normalizeMonthId(currentMonth);
+      const normalizedLastMonthId = lastLedgerMonthId
+        ? normalizeMonthId(lastLedgerMonthId)
+        : null;
+  
+      const monthlyCost = Number(cost);
+      const transactionsRef = collection(this.firestore, `CustomerEntry/${vehicleNumber}/Transactions`);
+  
+      const newLedgerRef = doc(transactionsRef, normalizedCurrentMonth);
+      const existingDoc = await getDoc(newLedgerRef);
+  
+      if (existingDoc.exists()) {
+        console.warn(`Ledger for ${normalizedCurrentMonth} already exists. Skipping initialization.`);
+        return;
+      }
+  
+      let previousPending = 0;
+  
+      if (normalizedLastMonthId) {
+        const lastLedgerRef = doc(transactionsRef, normalizedLastMonthId);
+        const lastLedgerSnap = await getDoc(lastLedgerRef);
+  
+        if (lastLedgerSnap.exists()) {
+          previousPending = lastLedgerSnap.data()['currentPending'] ?? 0;
+          console.log(`Found previous ledger: ${normalizedLastMonthId}. Carrying forward: ${previousPending}`);
+        } else {
+          console.warn(`Previous ledger ${normalizedLastMonthId} not found. Starting from 0.`);
+        }
+      } else {
+        console.log('No previous ledger key provided. Starting from 0.');
+      }
+  
+      const amountToPay = previousPending + monthlyCost;
+  
+      await setDoc(newLedgerRef, {
+        monthlyCost: monthlyCost,
+        currentMonthTotal: amountToPay,
+        currentPending: amountToPay,
         isTransactionMade: false,
-      }, { merge: true });
+      });
+  
+      console.log(`Successfully initialized ledger for ${normalizedCurrentMonth} (vehicle: ${vehicleNumber})`);
   
     } catch (error) {
-      console.error("Error creating reactivation ledger:", error);
+      console.error("Error initializing monthly ledger:", error);
       throw error;
     }
-  }  
+  }
 
   async getVehicleByNumber(vehicleNumber: string, identifier: string) {
     if (!vehicleNumber) return null;

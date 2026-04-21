@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {FormBuilder, FormGroup, FormGroupDirective, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -10,7 +10,7 @@ import { AdminService, VehicleType } from '../admin.service';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { CommonModule } from '@angular/common';
-import { Observable, Subject, take, takeUntil } from 'rxjs';
+import { Observable, Subject, firstValueFrom, take, takeUntil } from 'rxjs';
 import { MatListModule } from '@angular/material/list';
 import { RouterModule } from '@angular/router';
 import { TransactionService } from '../transaction.service';
@@ -18,6 +18,9 @@ import { MatCard, MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
+import { MonthlyIncomeComponent } from '../monthly-income/monthly-income.component';
+import autoTable from 'jspdf-autotable';
+import jsPDF from 'jspdf';
 
 @Component({
   selector: 'app-admin-entry',
@@ -43,6 +46,11 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
 
   expenses$!: Observable<any[]>;
   paymentMethods$!: Observable<any[]>;
+  activeCustomers$: any[] = [];
+
+
+  currentMonth: string = '';
+
 
   private destroy$ = new Subject<void>();
 
@@ -54,6 +62,8 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
 
   isDeleting = false;
   alert: boolean = false
+
+  @ViewChild(MonthlyIncomeComponent) monthlyIncomeComponent!: MonthlyIncomeComponent;
 
   constructor(
     private fb: FormBuilder,
@@ -111,6 +121,8 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
 
     this.expenses$ = this.adminService.getExpenses();
     this.paymentMethods$ = this.adminService.getPaymentMethods();
+
+    this.currentMonth = new Date().toLocaleString('default', { month: 'long' });
   }
 
 openEditMode(vehicle: any) {
@@ -480,6 +492,101 @@ async getCustomerRecord() {
         this.showAlert('Failed to update the pending amount. Please try again.', 'error');
       }
     }
+  }
+
+  async downloadActiveCustomerPDF() {
+
+    const activeCustomers = await firstValueFrom(this.transactionService.getActiveMonthlyCustomers());
+  
+    const doc = new jsPDF('l', 'mm', 'a4');
+  
+    const pageWidth  = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+  
+    doc.setFillColor(217, 217, 217);
+    doc.rect(0, 0, pageWidth, 18, 'F');
+  
+    doc.setTextColor(0);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PMCP', 14, 13);
+  
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+  
+    const monthLabel = new Date(`${this.currentMonth}-01`).toLocaleDateString('en-IN', { month: 'long'});
+    doc.text(`Active Customer Sheet - ${monthLabel}`, pageWidth / 2, 13, { align: 'center' });
+  
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    doc.text(today, pageWidth - 14, 13, { align: 'right' });
+  
+    doc.setTextColor(0, 0, 0);
+  
+    const tableBody = (activeCustomers ?? []).map((c: any) => [
+      c.vehicleNumber   ?? '',
+      c.customerName    ?? '',
+      `${c.Transactions?.currentPending ?? 0}`,
+      '',
+      '',
+      '',
+      '',
+      '',
+    ]);
+  
+    const marginLeft  = 10;
+    const marginRight = 10;
+    const usableWidth = pageWidth - marginLeft - marginRight; 
+  
+    const colWidths = {
+      vehicle:     usableWidth * 0.15,
+      name:        usableWidth * 0.15,
+      amountToPay: usableWidth * 0.10,
+      paid:        usableWidth * 0.10,
+      balance:     usableWidth * 0.10,
+      date:        usableWidth * 0.12,
+      paymentType: usableWidth * 0.10,
+      note:        usableWidth * 0.16,
+    };
+  
+    autoTable(doc, {
+      head: [['Vehicle', 'Name', 'Amount To Pay', 'Paid', 'Balance', 'Transaction Date', 'Payment Type', 'Note']],
+      body: tableBody,
+      startY: 24,
+      margin: { left: marginLeft, right: marginRight },
+      tableWidth: usableWidth, 
+      styles: {
+        lineWidth:   0.5,
+        lineColor:   [0, 0, 0],
+        fontSize:    10,
+        cellPadding: 4,
+      },
+      headStyles: {
+        fillColor: [217, 217, 217],
+        textColor: 0,
+        halign: 'center'
+      },
+      bodyStyles: {
+        fillColor: [245, 245, 245],  
+        textColor: [0, 0, 0],
+        lineWidth:  0.3,
+      },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255],  
+      },
+      columnStyles: {
+        0: { cellWidth: colWidths.vehicle,     halign: 'center' },
+        1: { cellWidth: colWidths.name,        halign: 'center'   },
+        2: { cellWidth: colWidths.amountToPay, halign: 'center'  },
+        3: { cellWidth: colWidths.paid,        halign: 'center'  },
+        4: { cellWidth: colWidths.balance,     halign: 'center'  },
+        5: { cellWidth: colWidths.date,        halign: 'center' },
+        6: { cellWidth: colWidths.paymentType, halign: 'center' },
+        7: { cellWidth: colWidths.note,        halign: 'center'   },
+      },
+      theme: 'grid',
+    });
+  
+    doc.save(`Monthly-Balance-Sheet ${monthLabel}.pdf`);
   }
 
   showAlert(message: string, type: 'success' | 'error' = 'success') {
