@@ -71,6 +71,7 @@ interface Customer {
   monthlyStatus?: 'Active' | 'InActive';
   amount: number;
   fromDateMonthly?: string | null;
+  endDateMonthly?: string | null;
   Transactions?: CustomerTransactions;
   FullTransactionHistory?: Transaction[];
   displayMonth?: string;
@@ -360,64 +361,42 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     const minVal = minPending ?? 0;
     const maxVal = maxPending ?? Number.MAX_SAFE_INTEGER;
   
-    const now             = new Date();
+    const now = new Date();
     const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   
     const baseList = customers
       .filter((c) => {
-        const vehicleMatch =
-          !vehicleFilter ||
-          c.vehicleNumber?.toUpperCase().includes(vehicleFilter.toUpperCase());
-  
-        const statusMatch =
-          (showActive && c.monthlyStatus === 'Active') ||
-          (showInactive && c.monthlyStatus === 'InActive');
-  
+        const vehicleMatch = !vehicleFilter || c.vehicleNumber?.toUpperCase().includes(vehicleFilter.toUpperCase());
+        const statusMatch = (showActive && c.monthlyStatus === 'Active') || (showInactive && c.monthlyStatus === 'InActive');
         return vehicleMatch && statusMatch;
       })
       .map((c) => {
         if (!vehicleFilter) return c;
   
-        const sortedHistory = [...(c.FullTransactionHistory ?? [])].sort(
-          (a, b) => {
-            const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
-            return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
-          }
-        );
+        const sortedHistory = [...(c.FullTransactionHistory ?? [])].sort((a, b) => {
+          const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
+          return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
+        });
   
         return {
           ...c,
           FullTransactionHistory: sortedHistory.map((tx) => {
             const isIdle = tx.id?.includes('_IDLE') || tx.transactionType === 'No Transactions';
-          
-            const monthKey = isIdle
-              ? (tx.id?.substring(0, 7) ?? '')
-              : (tx.transactionDate ?? '').substring(0, 7);
-          
-            const monthlyCost = tx.isCostAdjustmentMade === true
-              ? 0
-              : (c.monthlyTransactions?.[monthKey]?.monthlyCost ?? c.amount);
-          
-            const firstTxOfMonth = sortedHistory.find(
-              (t) => {
-                const tMonth = t.id?.includes('_IDLE')
-                  ? t.id.substring(0, 7)
-                  : (t.transactionDate ?? '').substring(0, 7);
-                return tMonth === monthKey;
-              }
-            );
-          
-            const previousPending = Math.max(
-              (firstTxOfMonth?.existingPending ?? 0) - monthlyCost, 0
-            );
-          
+            const monthKey = isIdle ? (tx.id?.substring(0, 7) ?? '') : (tx.transactionDate ?? '').substring(0, 7);
+            const monthlyCost = tx.isCostAdjustmentMade === true ? 0 : (c.monthlyTransactions?.[monthKey]?.monthlyCost ?? c.amount);
+  
+            const firstTxOfMonth = sortedHistory.find((t) => {
+              const tMonth = t.id?.includes('_IDLE') ? t.id.substring(0, 7) : (t.transactionDate ?? '').substring(0, 7);
+              return tMonth === monthKey;
+            });
+  
+            const previousPending = Math.max((firstTxOfMonth?.existingPending ?? 0) - (monthlyCost ?? 0), 0);
+  
             return {
               ...tx,
               monthlyCost,
               previousPending,
-              transactionDate: isIdle
-                ? (tx.transactionDate ?? `No Transaction`)
-                : tx.transactionDate,
+              transactionDate: isIdle ? (tx.transactionDate ?? `No Transaction`) : tx.transactionDate,
             };
           }),
         };
@@ -432,9 +411,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       this.filteredByDate = true;
   
       const rangeStart = fromDate.substring(0, 10);
-      const rangeEnd   = toDate.substring(0, 10);
+      const rangeEnd = toDate.substring(0, 10);
       const parsedFrom = new Date(rangeStart + 'T00:00:00');
-      const parsedTo   = new Date(rangeEnd   + 'T00:00:00');
+      const parsedTo = new Date(rangeEnd + 'T00:00:00');
   
       const targetMonths = this.getMonthsInRange(parsedFrom, parsedTo);
       if (targetMonths.length === 1) {
@@ -442,62 +421,61 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       }
   
       return baseList.flatMap((customer) => {
-        const fullHistory: Transaction[] = [...(customer.FullTransactionHistory ?? [])]
-          .sort((a, b) => {
-            const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
-            return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
-          });
+        const fullHistory: Transaction[] = [...(customer.FullTransactionHistory ?? [])].sort((a, b) => {
+          const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
+          return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
+        });
   
         const monthlyTxMap: Record<string, any> = customer.monthlyTransactions ?? {};
   
+        // Bounds check
         const customerStartMonth = customer.fromDateMonthly?.substring(0, 7) ?? targetMonths[0];
-        const validMonths        = targetMonths.filter((m) => m >= customerStartMonth);
+        const rangeLastMonth = targetMonths[targetMonths.length - 1];
+        const customerEndMonth = customer.endDateMonthly?.substring(0, 7) ?? rangeLastMonth;
+  
+        // Filter target months to only those where the customer was "Active"
+        const validMonths = targetMonths.filter((m) => m >= customerStartMonth && m <= customerEndMonth);
   
         if (validMonths.length === 0) return [];
+  
         const rangeFirstMonth = targetMonths[0];
   
-        const initialRunningBalance = customerStartMonth >= rangeFirstMonth
-          ? 0
-          : (() => {
-              const lastTxBeforeRange = fullHistory
-                .filter(t => (t.transactionDate ?? '').substring(0, 7) < rangeFirstMonth)
-                .at(-1);
+        // Fixed: Calculating the balance strictly before the start of the selected range
+        let runningBalance = (() => {
+          const lastTxBeforeRange = fullHistory
+            .filter(t => (t.transactionDate ?? '').substring(0, 7) < rangeFirstMonth)
+            .sort((a, b) => (a.transactionDate ?? '').localeCompare(b.transactionDate ?? ''))
+            .at(-1);
   
-              if (lastTxBeforeRange) {
-                return lastTxBeforeRange.newPending ?? 0;
-              }
+          if (lastTxBeforeRange) return lastTxBeforeRange.newPending ?? 0;
   
-              const lastMonthBeforeRange = Object.keys(monthlyTxMap)
-                .filter(m => m < rangeFirstMonth)
-                .sort((a, b) => b.localeCompare(a))[0];
+          const lastMonthBeforeRange = Object.keys(monthlyTxMap)
+            .filter(m => m < rangeFirstMonth)
+            .sort((a, b) => b.localeCompare(a))[0];
   
-              return lastMonthBeforeRange
-                ? (monthlyTxMap[lastMonthBeforeRange]?.currentPending ?? 0)
-                : 0;
-            })();
-  
-        let runningBalance = initialRunningBalance;
+          return lastMonthBeforeRange ? (monthlyTxMap[lastMonthBeforeRange]?.currentPending ?? 0) : 0;
+        })();
   
         return validMonths.map((monthKey): Customer | null => {
-          const monthTrans  = monthlyTxMap[monthKey] ?? customer.Transactions ?? {};
+          const monthTrans = monthlyTxMap[monthKey] ?? {};
           const monthlyCost = monthTrans.monthlyCost ?? customer.amount ?? 0;
   
           const txsInMonth = fullHistory.filter(
             t => (t.transactionDate ?? '').substring(0, 7) === monthKey
           );
   
-          const previousPending    = runningBalance;
-          const amountToPay        = previousPending + monthlyCost;
-          const totalPaidInMonth   = txsInMonth.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
-          const closingBalance     = amountToPay - totalPaidInMonth;
+          const previousPending = runningBalance;
+          const amountToPay = previousPending + monthlyCost;
+          const totalPaidInMonth = txsInMonth.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
+          const closingBalance = amountToPay - totalPaidInMonth;
   
           runningBalance = closingBalance;
   
-          if (customer.monthlyStatus === 'InActive' && monthKey !== currentMonthStr) {
-            const hasHistory =
-              fullHistory.some(t => (t.transactionDate ?? '').substring(0, 7) <= monthKey) ||
-              Object.keys(monthlyTxMap).some(m => m <= monthKey);
-            if (!hasHistory) return null;
+          // If InActive, we only show the row if it actually belongs to their history window
+          if (customer.monthlyStatus === 'InActive') {
+            const hasHistory = txsInMonth.length > 0 || monthlyTxMap[monthKey];
+            // If no payment and no cost record and it's past their end date, hide it
+            if (!hasHistory && monthKey > customerEndMonth) return null;
           }
   
           const displayTxData = {
@@ -505,12 +483,10 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
             monthlyCost,
             previousPending,
             amountToPay,
-            transactionAmount:   totalPaidInMonth,
-            currentPending:      closingBalance,
+            transactionAmount: totalPaidInMonth,
+            currentPending: closingBalance,
             lastTransactionDate: txsInMonth.at(-1)?.transactionDate ?? null,
-            paymentMethod:       txsInMonth.length > 1
-              ? 'Multiple'
-              : (txsInMonth[0]?.transactionType ?? 'Not Done'),
+            paymentMethod: txsInMonth.length > 1 ? 'Multiple' : (txsInMonth[0]?.transactionType ?? 'Not Done'),
           };
   
           if (txsInMonth.length > 0) {
@@ -523,52 +499,34 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
             displayMonth: monthKey,
             Transactions: displayTxData,
           };
-  
         }).filter((row): row is Customer => row !== null);
       })
       .filter(withinPendingRange)
       .sort((a, b) => {
         const primary = this.applySorting(a, b, sort);
         if (primary !== 0) return primary;
-      
         const vehicleComp = (a.vehicleNumber ?? '').localeCompare(b.vehicleNumber ?? '');
-        if (vehicleComp !== 0) return vehicleComp;
-      
-        return (a.displayMonth ?? '').localeCompare(b.displayMonth ?? '');
-      })
+        return vehicleComp !== 0 ? vehicleComp : (a.displayMonth ?? '').localeCompare(b.displayMonth ?? '');
+      });
     }
   
     this.filteredByDate = false;
   
     return baseList
       .map((c) => {
-        const trans       = c.Transactions ?? {};
-        const monthlyCost = trans.monthlyCost       ?? 0;
+        const trans = c.Transactions ?? {};
+        const monthlyCost = trans.monthlyCost ?? 0;
         const amountToPay = trans.currentMonthTotal ?? monthlyCost;
-  
-        if (trans.isCostAdjustmentMade) {
-          return {
-            ...c,
-            Transactions: {
-              ...trans,
-              monthlyCost,
-              previousPending:   trans.currentMonthTotal ?? 0,
-              amountToPay,
-              transactionAmount: trans.transactionAmount ?? 0,
-              currentPending:    trans.currentPending    ?? 0,
-            },
-          };
-        }
   
         return {
           ...c,
           Transactions: {
             ...trans,
             monthlyCost,
-            previousPending:   Math.max(0, amountToPay - monthlyCost),
+            previousPending: trans.isCostAdjustmentMade ? (trans.currentMonthTotal ?? 0) : Math.max(0, amountToPay - monthlyCost),
             amountToPay,
             transactionAmount: trans.transactionAmount ?? 0,
-            currentPending:    trans.currentPending    ?? 0,
+            currentPending: trans.currentPending ?? 0,
           },
         };
       })

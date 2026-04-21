@@ -441,6 +441,57 @@ export class TransactionService {
     }
   }
 
+  async makeIdelTransactionForInactiveCustomer( vehicleNumber: string, endDate: string | null) {
+    if(!endDate) return;
+    const now = new Date(endDate);
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const idleMarkerId = `${monthKey}_IDLE`;
+  
+    try {
+      const customerRef = doc(this.firestore, 'CustomerEntry', vehicleNumber);
+      const customerSnap = await getDoc(customerRef);
+  
+      if (customerSnap.exists()) {
+        const data = customerSnap.data();
+        const history: any[] = data['FullTransactionHistory'] || [];
+  
+        const hasMonthlyActivity = history.some(tx => {
+          const txDate = tx.transactionDate;
+          const txId = tx.id || '';
+          return (txDate && txDate.startsWith(monthKey)) || txId.startsWith(monthKey);
+        });
+  
+        if (!hasMonthlyActivity) {
+          const batch = writeBatch(this.firestore);
+          
+          const prevPending = data['Transactions']?.currentPending ?? data['amount'] ?? 0;
+  
+          const idleTransaction = {
+            id: idleMarkerId,
+            transactionType: 'No Transactions',
+            transactionAmount: 0,
+            existingPending: prevPending,
+            newPending: prevPending,
+            transactionDate: `${monthKey}_IDLE`, 
+            timestamp: new Date()
+          };
+  
+          batch.update(customerRef, {
+            FullTransactionHistory: arrayUnion(idleTransaction),
+            monthlyStatus: 'InActive',
+            endDateMonthly: new Date().toISOString()
+          });
+  
+          await batch.commit();
+          console.log(`Idle transaction created for ${vehicleNumber} for ${monthKey}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating idle transaction:', error);
+      throw error;
+    }
+  }
+
   getMonthIdFromDate(dateStr: string): string {
     const [y, m] = dateStr.split('-').map(Number);
     return `${y}-${String(m).padStart(2, '0')}`;
