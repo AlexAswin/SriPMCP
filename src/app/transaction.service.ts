@@ -11,8 +11,8 @@ export class TransactionService {
   customerMonthlyTransactionDetails = async (
     customer: string | null,
     transactionData: any
-  ) => {
-    if (!customer) return;
+  ) : Promise<boolean> => {
+    if (!customer) return false;
   
     try {
       const customerQuery = query(
@@ -20,7 +20,7 @@ export class TransactionService {
         where('vehicleNumber', '==', customer)
       );
       const snapshot = await getDocs(customerQuery);
-      if (snapshot.empty) return;
+      if (snapshot.empty) return false;
   
       const customerDoc = snapshot.docs[0];
       const customerRef = customerDoc.ref;
@@ -30,7 +30,7 @@ export class TransactionService {
   
       const targetMonthRef  = doc(customerRef, 'Transactions', targetMonthId);
       const targetMonthSnap = await getDoc(targetMonthRef);
-      if (!targetMonthSnap.exists()) return;
+      if (!targetMonthSnap.exists()) return false;
   
       const targetData = targetMonthSnap.data();
       const newPayment = Number(transactionData.transactionAmount) || 0;
@@ -159,6 +159,8 @@ export class TransactionService {
       });
   
       await batch.commit();
+
+      return true;
   
     } catch (error) {
       console.error('Backdated Transaction Sync Failed:', error);
