@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
 import { Observable, Subject, debounceTime, distinctUntilChanged, filter, startWith, take, takeUntil, withLatestFrom } from 'rxjs';
 import { AdminService, VehicleType } from '../admin.service';
+import { TransactionService } from '../transaction.service';
 
 
 @Component({
@@ -123,6 +124,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   constructor(
     private newCustomerEntryService: NewCustomerEntryService,
+    private transactionService: TransactionService,
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
@@ -627,6 +629,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
             this.endDateMonthly.value ?? ''
           );
           this.message = 'Customer session saved to history and deactivated.';
+          this.transactionService.makeIdelTransactionForInactiveCustomer(normalizedData.vehicleNumber, this.endDateMonthly.value);
         } else {
           updatePayload = {
             ...normalizedData,
