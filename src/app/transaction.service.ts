@@ -177,42 +177,42 @@ export class TransactionService {
     return prevMonthId;
   }
 
-  // getActiveMonthlyCustomers(): Observable<any[]> {
-  //   const customersRef = collection(this.firestore, 'CustomerEntry');
-  //   const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
-  //   console.log(q)
+  getActiveMonthlyCustomers(): Observable<any[]> {
+    const customersRef = collection(this.firestore, 'CustomerEntry');
+    const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
+    console.log(q)
 
-  //   return collectionData(q, { idField: 'id' }).pipe(
-  //     switchMap((customers: any[]) => {
+    return collectionData(q, { idField: 'id' }).pipe(
+      switchMap((customers: any[]) => {
 
-  //       const currentMonth = this.getCurrentMonth();
+        const currentMonth = this.getCurrentMonth();
 
-  //       const details = customers.map(customer => {
+        const details = customers.map(customer => {
 
-  //         const ledgerRef = doc(
-  //           this.firestore,
-  //           `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
-  //         );
+          const ledgerRef = doc(
+            this.firestore,
+            `CustomerEntry/${customer.id}/Transactions/${currentMonth}`
+          );
 
-  //         return docData(ledgerRef).pipe(
-  //           map(ledger => {
+          return docData(ledgerRef).pipe(
+            map(ledger => {
 
-  //             if (!ledger) {
-  //               this.createNewMonthLedgerForActiveCustomers(currentMonth);
-  //             }
+              if (!ledger) {
+                this.createNewMonthLedgerForActiveCustomers(currentMonth);
+              }
 
-  //             return {
-  //               ...customer,
-  //               Transactions: ledger
-  //             };
-  //           })
-  //         );
-  //       });
+              return {
+                ...customer,
+                Transactions: ledger
+              };
+            })
+          );
+        });
 
-  //       return combineLatest(details);
-  //     })
-  //   );
-  // }
+        return combineLatest(details);
+      })
+    );
+  }
 
   // getInactiveCustomersWithLastTransaction(): Observable<any[]> {
   //   const customersRef = collection(this.firestore, 'CustomerEntry');

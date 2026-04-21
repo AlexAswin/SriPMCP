@@ -609,7 +609,8 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
 
           await this.newCustomerEntryService.initializeMonthlyLedger(
             normalizedData.vehicleNumber,
-            monthId,
+            this.endDateMonthly.value,
+            this.fromDateMonthly.value,
             normalizedData.amount
           );
           this.message = 'Customer Reactivated Successfully!';
