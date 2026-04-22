@@ -71,14 +71,20 @@
                     <div class="rightContainer">
                         <div class="form-group">
                             <div class="input-row">
-                                <label>LoT Number</label>
-                                <input type="text" placeholder="Lot number" formControlName="lotNumber" />
+                              <label>LoT Number</label>
+                              <input type="text" placeholder="Lot number" formControlName="lotNumber" (keydown)="restrictDigits($event)" />
                             </div>
-                            
-                            <div class="error-container" *ngIf="vehicleDetailsForm.get('lotNumber')?.invalid && (vehicleDetailsForm.get('lotNumber')?.dirty || vehicleDetailsForm.get('lotNumber')?.touched)">
-                                <small>Lot Number is required</small>
+                          
+                            <div class="error-container" *ngIf="vehicleDetailsForm.get('lotNumber')?.invalid && 
+                                 (vehicleDetailsForm.get('lotNumber')?.dirty || vehicleDetailsForm.get('lotNumber')?.touched)">
+                              <small *ngIf="vehicleDetailsForm.get('lotNumber')?.errors?.['required']">Lot Number is required</small>
+                              <small *ngIf="vehicleDetailsForm.get('lotNumber')?.errors?.['lotOccupied']" style="color: red;">
+                                Lot {{ vehicleDetailsForm.get('lotNumber')?.value }} is already occupied
+                              </small>
                             </div>
-                        </div>
+                          
+                            <small *ngIf="vehicleDetailsForm.get('lotNumber')?.pending">Checking lot availability...</small>
+                          </div>
                     </div>
                 </div>
             </div>

@@ -4,13 +4,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { ButtonComponent } from '../Common/button/button.component';
 import { CommonModule } from '@angular/common';
-import { AbstractControl, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, AsyncValidatorFn, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatRadioModule} from '@angular/material/radio';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
-import { Observable, Subject, debounceTime, distinctUntilChanged, filter, startWith, take, takeUntil, withLatestFrom } from 'rxjs';
+import { Observable, Subject, catchError, debounceTime, distinctUntilChanged, filter, first, map, of, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs';
 import { AdminService, VehicleType } from '../admin.service';
 import { TransactionService } from '../transaction.service';
 
@@ -148,7 +148,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       ],
       vehicleType: [{ value: '', disabled: false }, [Validators.required]],
       vehicleName: [{ value: '', disabled: false }, [Validators.required]],
-      lotNumber: [{ value: '', disabled: false }, [Validators.required]],
+      lotNumber: [{ value: '', disabled: false }, [Validators.required, Validators.pattern(/^[0-9]{10}$/)], [this.lotNumberOccupied()]],
       customerName: [
         { value: '', disabled: false },
         [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)],
@@ -313,6 +313,28 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     input.setSelectionRange(oldCursor + diff, oldCursor + diff);
   }
 
+  lotNumberOccupied(): AsyncValidatorFn {
+    return (control: AbstractControl): Observable<ValidationErrors | null> => {
+      if (!control.value) return of(null);
+  
+      return of(control.value).pipe(
+        debounceTime(300),
+        switchMap(lotNumber =>
+          this.newCustomerEntryService.getActiveLotNumbers().pipe(
+            map(activeLots => {
+              const isOccupied = activeLots.some(
+                lot => String(lot.lotNumber) === String(lotNumber)
+              );
+              return isOccupied ? { lotOccupied: true } : null;
+            }),
+            catchError(() => of(null))
+          )
+        ),
+        first()
+      );
+    };
+  }
+
   restrictDigits(event: KeyboardEvent) {
     const key = event.key;
 
@@ -388,6 +410,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       customerType: res.customerType,
       address: res.address,
       amount: res.amount,
+      lotNumber: res.lotNumber
     });
 
     this.advance.setValue(res.advance);
@@ -413,6 +436,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
         customerName: res.customerName,
         customerPhoneNbr: res.customerPhoneNbr,
         address: res.address,
+        lotNumber: res.lotNumber
       });
     } else {
       this.dailyCustomerUnpaid = true;
@@ -442,6 +466,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
           customerPhoneNbr: '',
           address: '',
           amount: '',
+          lotNumber: ''
         },
         { emitEvent: false }
       );

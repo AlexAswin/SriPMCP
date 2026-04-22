@@ -15,7 +15,7 @@ import {
   query,
   where,
 } from '@angular/fire/firestore';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from, map } from 'rxjs';
 import { TransactionService } from './transaction.service';
 
 @Injectable({
@@ -212,6 +212,15 @@ export class NewCustomerEntryService {
 
   getVehicle() {
     return this.vehicleSource.value;
+  }
+
+  getActiveLotNumbers(): Observable<{ lotNumber: string, monthlyStatus: string }[]> {
+    const customersRef = collection(this.firestore, 'CustomerEntry');
+    const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
+    
+    return from(getDocs(q)).pipe(
+      map((snapshot: any) => snapshot.docs.map((doc: any) => doc.data() as { lotNumber: string, monthlyStatus: string }))
+    );
   }
 
   async updateCustomerByVehicleNumber(
