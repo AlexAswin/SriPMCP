@@ -145,6 +145,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   filterByPending: boolean = false;
 
   filteredByDate: boolean = false;
+  showVehicleTransactionHistory: boolean = false;
 
   currentMonth: string = '';
 
@@ -371,7 +372,12 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         return vehicleMatch && statusMatch;
       })
       .map((c) => {
-        if (!vehicleFilter) return c;
+        if (!vehicleFilter) {
+        this.showVehicleTransactionHistory = false;
+          return c;
+        }
+
+        this.showVehicleTransactionHistory = true;
   
         const sortedHistory = [...(c.FullTransactionHistory ?? [])].sort((a, b) => {
           const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
@@ -409,6 +415,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
     if (fromDate && toDate) {
       this.filteredByDate = true;
+      this.showVehicleTransactionHistory = false;
   
       const rangeStart = fromDate.substring(0, 10);
       const rangeEnd = toDate.substring(0, 10);

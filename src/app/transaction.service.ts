@@ -418,8 +418,7 @@ export class TransactionService {
             transactionAmount: 0,
             existingPending: prevPending,
             newPending: prevPending,
-            transactionDate: null,
-            timestamp: new Date() 
+            transactionDate: idleMarkerId,
           }),
         });
         operationCount++;
