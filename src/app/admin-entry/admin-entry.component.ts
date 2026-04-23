@@ -139,6 +139,13 @@ cancelEdit() {
   this.vehicleUpdateForm.reset({ duration: 'Monthly' });
 }
 
+onTabChange(): void {
+  this.vehicleForm.reset();
+  this.vehicleUpdateForm.reset();
+  this.expenseForm.reset();
+  this.paymentForm.reset();
+}
+
 createNewLedger = () => {
   this.transactionService.createNewMonthLedger();
 };
