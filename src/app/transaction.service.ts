@@ -11,7 +11,7 @@ export class TransactionService {
   customerMonthlyTransactionDetails = async (
     customer: string | null,
     transactionData: any
-  ) : Promise<boolean> => {
+  ): Promise<boolean> => {
     if (!customer) return false;
   
     try {
@@ -22,11 +22,23 @@ export class TransactionService {
       const snapshot = await getDocs(customerQuery);
       if (snapshot.empty) return false;
   
-      const customerDoc = snapshot.docs[0];
-      const customerRef = customerDoc.ref;
+      const customerDoc  = snapshot.docs[0];
+      const customerRef  = customerDoc.ref;
+      const customerData = customerDoc.data();
   
-      const dateParts     = transactionData.transactionDate.split('-');
-      const targetMonthId = `${dateParts[0]}-${dateParts[1]}`;
+      // ── Determine target month ─────────────────────────────────────────
+      // If InActive, use the last ledger month (endDateMonthly) instead of transaction date month
+      let targetMonthId: string;
+  
+      if (transactionData.customerStatus === 'InActive') {
+        const endDate = customerData['endDateMonthly'];
+        if (!endDate) return false;
+        targetMonthId = endDate.substring(0, 7);
+      } else {
+        const dateParts = transactionData.transactionDate.split('-');
+        targetMonthId   = `${dateParts[0]}-${dateParts[1]}`;
+      }
+      // ──────────────────────────────────────────────────────────────────
   
       const targetMonthRef  = doc(customerRef, 'Transactions', targetMonthId);
       const targetMonthSnap = await getDoc(targetMonthRef);
@@ -52,7 +64,7 @@ export class TransactionService {
         transactionAmount: newPayment,
         transactionDate:   transactionData.transactionDate,
         transactionType:   transactionData.paymentMethod || 'Payment',
-        existingPending:   0, 
+        existingPending:   0,
         newPending:        0,
       };
   
@@ -69,19 +81,13 @@ export class TransactionService {
         const existing   = runningPending;
         const newPending = Math.max(existing - (tx.transactionAmount ?? 0), 0);
         runningPending   = newPending;
-        return {
-          ...tx,
-          existingPending: existing,
-          newPending,
-        };
+        return { ...tx, existingPending: existing, newPending };
       });
   
-      const newEntry = recalculatedHistory.find((t) => t.id === newTxId)!;
-  
+      const newEntry       = recalculatedHistory.find((t) => t.id === newTxId)!;
       const updatedPending = recalculatedHistory.at(-1)?.newPending ?? 0;
-  
-      const oldPending  = Number(targetData['currentPending'] ?? 0);
-      const shiftAmount = oldPending - updatedPending; 
+      const oldPending     = Number(targetData['currentPending'] ?? 0);
+      const shiftAmount    = oldPending - updatedPending;
   
       const allTxDates    = recalculatedHistory.map((t) => t.transactionDate);
       const lastTxDate    = [...allTxDates].sort().at(-1);
@@ -100,41 +106,45 @@ export class TransactionService {
         paymentMethod,
       });
   
-      const allMonthsSnap = await getDocs(
-        collection(this.firestore, `${customerRef.path}/Transactions`)
-      );
+      // For InActive customers, there are no future months to shift — skip cascade
+      if (transactionData.customerStatus !== 'InActive') {
+        const allMonthsSnap = await getDocs(
+          collection(this.firestore, `${customerRef.path}/Transactions`)
+        );
   
-      allMonthsSnap.docs.forEach((docSnap) => {
-        if (docSnap.id > targetMonthId) {
-          const mData           = docSnap.data();
-          const mHistory: any[] = mData['transactionHistory'] || [];
+        allMonthsSnap.docs.forEach((docSnap) => {
+          if (docSnap.id > targetMonthId) {
+            const mData           = docSnap.data();
+            const mHistory: any[] = mData['transactionHistory'] || [];
   
-          const updateObj: any = {
-            currentPending:    increment(-shiftAmount),
-            currentMonthTotal: increment(-shiftAmount),
-          };
+            const updateObj: any = {
+              currentPending:    increment(-shiftAmount),
+              currentMonthTotal: increment(-shiftAmount),
+            };
   
-          if (mHistory.length > 0) {
-            updateObj.transactionHistory = mHistory.map((t) => ({
-              ...t,
-              existingPending: (t.existingPending ?? 0) - shiftAmount,
-              newPending:      (t.newPending      ?? 0) - shiftAmount,
-            }));
+            if (mHistory.length > 0) {
+              updateObj.transactionHistory = mHistory.map((t) => ({
+                ...t,
+                existingPending: (t.existingPending ?? 0) - shiftAmount,
+                newPending:      (t.newPending      ?? 0) - shiftAmount,
+              }));
+            }
+  
+            batch.update(docSnap.ref, updateObj);
           }
+        });
+      }
   
-          batch.update(docSnap.ref, updateObj);
-        }
-      });
-  
-      const rawFullHistory: any[] = customerDoc.data()['FullTransactionHistory'] || [];
+      const rawFullHistory: any[] = customerData['FullTransactionHistory'] || [];
   
       const otherMonthHistory = rawFullHistory.filter(
         (tx: any) => (tx.transactionDate ?? '').substring(0, 7) !== targetMonthId
       );
   
+      // For InActive, no future months exist so shiftedOtherHistory skips the shift
       const shiftedOtherHistory = otherMonthHistory.map((tx: any) => {
         const txMonth = (tx.transactionDate ?? '').substring(0, 7);
-        if (txMonth > targetMonthId) {
+        if (transactionData.customerStatus !== 'InActive' && txMonth > targetMonthId) {
           return {
             ...tx,
             existingPending: (tx.existingPending ?? 0) - shiftAmount,
@@ -159,7 +169,6 @@ export class TransactionService {
       });
   
       await batch.commit();
-
       return true;
   
     } catch (error) {

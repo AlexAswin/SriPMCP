@@ -33,6 +33,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   transactionDate = new FormControl<string | null>(null);
 
   existingPending: number = (0);
+  customerStatus: string = ''
 
   readonly dialog = inject(MatDialog);
 
@@ -109,6 +110,8 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     }
     this.existingPending = customerDetails.Transactions.currentPending;
     if(customerDetails && customerDetails.customerType === 'Monthly') {
+
+      this.customerStatus = customerDetails.monthlyStatus;
       this.monthlyPaymentForm.patchValue({
         vehicleNumber: customerDetails.vehicleNumber,
         vehicleType: customerDetails.vehicleType,
@@ -282,8 +285,10 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
         advance: rawForm.advance,       
         paymentMethod: rawForm.paymentMethod,
         transactionAmount: rawForm.payingAmount,
-        transactionDate: rawForm.transactionDate 
+        transactionDate: rawForm.transactionDate,
+        customerStatus: this.customerStatus
       };
+
   
       const proceedTransaction = await this.transactionService.customerMonthlyTransactionDetails(customer, transactionData);
 

@@ -148,7 +148,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       ],
       vehicleType: [{ value: '', disabled: false }, [Validators.required]],
       vehicleName: [{ value: '', disabled: false }, [Validators.required]],
-      lotNumber: [{ value: '', disabled: false }, [Validators.required, Validators.pattern(/^[0-9]{10}$/)], [this.lotNumberOccupied()]],
+      lotNumber: [{ value: '', disabled: false }, [Validators.required], [this.lotNumberOccupied()]],
       customerName: [
         { value: '', disabled: false },
         [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)],
@@ -316,6 +316,9 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   lotNumberOccupied(): AsyncValidatorFn {
     return (control: AbstractControl): Observable<ValidationErrors | null> => {
       if (!control.value) return of(null);
+
+      // const status = control.parent?.get('monthlyStatus')?.value;
+      // if (status === 'InActive') return of(null);
   
       return of(control.value).pipe(
         debounceTime(300),
@@ -543,6 +546,10 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       return false;
     }
 
+    if(this.monthlyStatus.value === 'InActive') {
+      return true;
+    }
+
     if (!isMainValid || !areStandalonesValid) {
       this.vehicleDetailsForm.markAllAsTouched();
       this.advance.markAsTouched();
@@ -646,6 +653,7 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
           updatePayload = {
             ...normalizedData,
             monthlyStatus: 'InActive',
+            lotNumber: null,
             endDateMonthly: this.endDateMonthly.value,
             note: this.note.value,
           };
