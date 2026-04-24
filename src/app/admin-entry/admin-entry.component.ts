@@ -145,6 +145,7 @@ onTabChange(): void {
   this.expenseForm.reset();
   this.paymentForm.reset();
   this.deleteCustomerForm.reset();
+  this.showSettlementDetails = false;
 }
 
 createNewLedger = () => {
