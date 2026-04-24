@@ -352,6 +352,34 @@
       <div class="filter-section">
         <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
       </div>
+
+      <div class="container">
+        <h2>Delete Customer by Vehicle Number</h2>
+      
+        <div class="form-group">
+          <input
+            type="text"
+            [(ngModel)]="vehicleNumber"
+            placeholder="Enter Vehicle Number"
+            class="form-control"
+          />
+          <button (click)="deleteCustomer(vehicleNumber)" [disabled]="!vehicleNumber.trim()">
+            Delete Customer
+          </button>
+        </div>
+      
+        <div class="alert success" *ngIf="successMessage">
+          ✅ {{ successMessage }}
+        </div>
+      
+        <div class="alert error" *ngIf="errorMessage">
+          ❌ {{ errorMessage }}
+        </div>
+      
+        <div class="loading" *ngIf="isLoading">
+          Deleting... please wait
+        </div>
+      </div>
     </mat-tab>
 
   </mat-tab-group>

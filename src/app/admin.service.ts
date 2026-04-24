@@ -149,4 +149,30 @@ async adjustVehicleCostForCurrentMonth(vehicleType: string, monthlyCost: number,
     console.error("Error updating subcollection costs:", error);
   }
 }
+
+
+async deleteCustomerByVehicleNumber(vehicleNumber: string): Promise<void> {
+  try {
+    const customerQuery = query(
+      collection(this.firestore, 'CustomerEntry'),
+      where('vehicleNumber', '==', vehicleNumber)
+    );
+
+    const querySnapshot = await getDocs(customerQuery);
+
+    if (querySnapshot.empty) {
+      throw new Error(`No customer found with vehicle number: ${vehicleNumber}`);
+    }
+
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+
+    console.log(`Customer(s) with vehicle number ${vehicleNumber} deleted successfully.`);
+
+  } catch (error) {
+    console.error('Error deleting customer:', error);
+    throw error;
+  }
+}
+
 }

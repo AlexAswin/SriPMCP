@@ -27,13 +27,21 @@ export class TransactionService {
       const customerData = customerDoc.data();
   
       // ── Determine target month ─────────────────────────────────────────
-      // If InActive, use the last ledger month (endDateMonthly) instead of transaction date month
+      // InActive customers always use their endDateMonthly ledger
       let targetMonthId: string;
+      let needsIdleEntry = false; // ← true when payment date is beyond end month
   
       if (transactionData.customerStatus === 'InActive') {
         const endDate = customerData['endDateMonthly'];
         if (!endDate) return false;
-        targetMonthId = endDate.substring(0, 7);
+  
+        targetMonthId = endDate.substring(0, 7); // always use end month doc
+  
+        const dateParts      = transactionData.transactionDate.split('-');
+        const paymentMonthId = `${dateParts[0]}-${dateParts[1]}`;
+  
+        // Payment month is beyond end month → flag for IDLE entry in FullTransactionHistory
+        needsIdleEntry = paymentMonthId > targetMonthId;
       } else {
         const dateParts = transactionData.transactionDate.split('-');
         targetMonthId   = `${dateParts[0]}-${dateParts[1]}`;
@@ -84,7 +92,6 @@ export class TransactionService {
         return { ...tx, existingPending: existing, newPending };
       });
   
-      const newEntry       = recalculatedHistory.find((t) => t.id === newTxId)!;
       const updatedPending = recalculatedHistory.at(-1)?.newPending ?? 0;
       const oldPending     = Number(targetData['currentPending'] ?? 0);
       const shiftAmount    = oldPending - updatedPending;
@@ -106,7 +113,6 @@ export class TransactionService {
         paymentMethod,
       });
   
-      // For InActive customers, there are no future months to shift — skip cascade
       if (transactionData.customerStatus !== 'InActive') {
         const allMonthsSnap = await getDocs(
           collection(this.firestore, `${customerRef.path}/Transactions`)
@@ -141,7 +147,6 @@ export class TransactionService {
         (tx: any) => (tx.transactionDate ?? '').substring(0, 7) !== targetMonthId
       );
   
-      // For InActive, no future months exist so shiftedOtherHistory skips the shift
       const shiftedOtherHistory = otherMonthHistory.map((tx: any) => {
         const txMonth = (tx.transactionDate ?? '').substring(0, 7);
         if (transactionData.customerStatus !== 'InActive' && txMonth > targetMonthId) {
@@ -154,15 +159,29 @@ export class TransactionService {
         return tx;
       });
   
+      const idlePending = targetData['currentPending'] ?? targetData['monthlyCost'] ?? 0;
+      const idleEntry = needsIdleEntry ? {
+        id:                `${targetMonthId}_IDLE`,
+        existingPending:   idlePending,
+        newPending:        idlePending,
+        transactionAmount: 0,
+        transactionDate:   `${targetMonthId}_IDLE`,
+        transactionType:   'No Transactions',
+      } : null;
+  
+      const beforeTarget = shiftedOtherHistory.filter(
+        (tx: any) => (tx.transactionDate ?? '').substring(0, 7) < targetMonthId
+      );
+      const afterTarget = shiftedOtherHistory.filter(
+        (tx: any) => (tx.transactionDate ?? '').substring(0, 7) > targetMonthId
+      );
+  
       const finalHistory = [
-        ...shiftedOtherHistory.filter(
-          (tx: any) => (tx.transactionDate ?? '').substring(0, 7) < targetMonthId
-        ),
-        ...recalculatedHistory,
-        ...shiftedOtherHistory.filter(
-          (tx: any) => (tx.transactionDate ?? '').substring(0, 7) > targetMonthId
-        ),
-      ].filter((t: any) => t.id !== `${targetMonthId}_IDLE`);
+        ...beforeTarget,
+        ...(idleEntry ? [idleEntry] : []),  
+        ...recalculatedHistory,            
+        ...afterTarget,
+      ];
   
       batch.update(customerRef, {
         FullTransactionHistory: finalHistory,

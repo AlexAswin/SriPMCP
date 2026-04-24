@@ -79,6 +79,11 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   tabLabels = ['Vehicles', 'Expenses & Methods', 'Maintenance', 'Ledger'];
   activeTabIndex = 0;
 
+  vehicleNumber = '';
+  successMessage = '';
+  errorMessage = '';
+  isLoading = false;
+
   @ViewChild(MonthlyIncomeComponent)
   monthlyIncomeComponent!: MonthlyIncomeComponent;
 
@@ -581,6 +586,16 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     if (this.activeTabIndex < this.tabLabels.length - 1) {
       this.activeTabIndex++;
     }
+  }
+
+  deleteCustomer(vehicleNumber: string): void {
+    this.adminService.deleteCustomerByVehicleNumber(vehicleNumber)
+      .then(() => {
+        console.log('Deleted successfully');
+      })
+      .catch(err => {
+        console.error('Failed to delete:', err.message);
+      });
   }
 
   async downloadActiveCustomerPDF() {

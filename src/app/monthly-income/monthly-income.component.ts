@@ -450,7 +450,9 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
       return baseList.flatMap((customer) => {
         const fullHistory: Transaction[] = [...(customer.FullTransactionHistory ?? [])].sort((a, b) => {
-          const dateComp = (a.transactionDate ?? '').localeCompare(b.transactionDate ?? '');
+          const aDate = (a.transactionDate ?? '').replace('_IDLE', '').substring(0, 10);
+          const bDate = (b.transactionDate ?? '').replace('_IDLE', '').substring(0, 10);
+          const dateComp = aDate.localeCompare(bDate);
           return dateComp !== 0 ? dateComp : (a.id ?? '').localeCompare(b.id ?? '');
         });
   
@@ -601,18 +603,28 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   }
 
   private applySorting(a: any, b: any, sort: any): number {
-    if (!sort?.key) return 0;
+    const monthA = a.displayMonth ?? a.Transactions?.lastTransactionDate?.substring(0, 7) ?? '';
+    const monthB = b.displayMonth ?? b.Transactions?.lastTransactionDate?.substring(0, 7) ?? '';
+  
+    if (!sort?.key) {
+      return monthA.localeCompare(monthB); 
+    }
+  
     let valA: any, valB: any;
-
+  
     if (sort.key === 'pending') {
       valA = a.Transactions?.currentPending ?? 0;
       valB = b.Transactions?.currentPending ?? 0;
     } else if (sort.key === 'date') {
-      valA = new Date(a.Transactions?.lastTransactionDate || 0).getTime();
-      valB = new Date(b.Transactions?.lastTransactionDate || 0).getTime();
+      const dateA = (a.Transactions?.lastTransactionDate ?? '').replace('_IDLE', '').trim();
+      const dateB = (b.Transactions?.lastTransactionDate ?? '').replace('_IDLE', '').trim();
+      valA = new Date(dateA || 0).getTime();
+      valB = new Date(dateB || 0).getTime();
     }
-
-    return sort.direction === 'asc' ? valA - valB : valB - valA;
+  
+    if (valA === valB) return monthA.localeCompare(monthB);
+  
+    return sort.direction === 'dec' ? valA - valB : valB - valA;
   }
   private setupTotals() {
     const totals$ = this.filteredCustomers$.pipe(
