@@ -11,7 +11,22 @@
 
   </header>
 
-  <mat-tab-group dynamicHeight animationDuration="200ms" (selectedTabChange)="onTabChange()">
+  <div class="mobile-tab-nav">
+    <button class="chevron-btn" [disabled]="activeTabIndex === 0" (click)="prevTab()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <div class="tab-label-block">
+      <span class="tab-label-text">{{ tabLabels[activeTabIndex] }}</span>
+      <!-- <span class="tab-counter">{{ activeTabIndex + 1 }} of {{ tabLabels.length }}</span> -->
+    </div>
+    <button class="chevron-btn" [disabled]="activeTabIndex === tabLabels.length - 1" (click)="nextTab()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <mat-tab-group dynamicHeight animationDuration="200ms"
+                      [selectedIndex]="activeTabIndex"
+                      (selectedTabChange)="onTabChange($event)">
 
     <mat-tab label="Vehicles">
       <div class="tab-content">

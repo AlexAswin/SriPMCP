@@ -465,8 +465,90 @@ mat-card {
 
 .full-width { width: 100%; }
 
-/* Animation */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+.mobile-tab-nav {
+  display: none;
+}
+
+@media (max-width: 767px) {
+
+  .mobile-tab-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    // background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0 8px;
+    height: 52px;
+    position: sticky;
+    top: 56px; 
+    z-index: 99;
+
+    .chevron-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: #fafafa;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        color: black;
+      }
+
+      &:hover:not([disabled]) {
+        background: #f0f0f0;
+      }
+
+      &[disabled] {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+    }
+
+    .tab-label-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+
+      .tab-label-text {
+        font-size: 15px;
+        font-weight: 500;
+        color: #1a1a1a;
+      }
+
+      .tab-counter {
+        font-size: 11px;
+        color: #888;
+        margin-top: 1px;
+      }
+    }
+  }
+
+@media (max-width: 767px) {
+  ::ng-deep .mat-mdc-tab-header {
+    display: none !important;
+  }
+
+  ::ng-deep .mat-mdc-tab-body-wrapper .mat-mdc-tab-body {
+    display: none !important;
+  }
+
+  ::ng-deep .mat-mdc-tab-body-wrapper .mat-mdc-tab-body.mat-mdc-tab-body-active {
+    display: block !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
 }
