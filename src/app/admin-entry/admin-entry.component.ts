@@ -63,6 +63,9 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   isDeleting = false;
   alert: boolean = false
 
+  tabLabels = ['Vehicles', 'Expenses & Methods', 'Maintenance', 'Ledger'];
+  activeTabIndex = 0;
+
   @ViewChild(MonthlyIncomeComponent) monthlyIncomeComponent!: MonthlyIncomeComponent;
 
   constructor(
@@ -139,7 +142,7 @@ cancelEdit() {
   this.vehicleUpdateForm.reset({ duration: 'Monthly' });
 }
 
-onTabChange(): void {
+onTabChange(event: any): void {
   this.vehicleForm.reset();
   this.vehicleUpdateForm.reset();
   this.expenseForm.reset();
@@ -500,6 +503,18 @@ async getCustomerRecord() {
         console.error('Adjustment Error:', err);
         this.showAlert('Failed to update the pending amount. Please try again.', 'error');
       }
+    }
+  }
+
+  prevTab(): void {
+    if (this.activeTabIndex > 0) {
+      this.activeTabIndex--;
+    }
+  }
+   
+  nextTab(): void {
+    if (this.activeTabIndex < this.tabLabels.length - 1) {
+      this.activeTabIndex++;
     }
   }
 
