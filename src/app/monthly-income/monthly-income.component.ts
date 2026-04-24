@@ -362,6 +362,11 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
     const minVal = minPending ?? 0;
     const maxVal = maxPending ?? Number.MAX_SAFE_INTEGER;
   
+    const getIdleDate = (tx: Transaction, monthKey: string): string =>
+      tx.transactionDate && !tx.transactionDate.includes('No Transaction')
+        ? tx.transactionDate
+        : monthKey;
+  
     const baseList = customers
       .filter((c) => {
         const vehicleMatch = !vehicleFilter || c.vehicleNumber?.toUpperCase().includes(vehicleFilter.toUpperCase());
@@ -386,11 +391,13 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           FullTransactionHistory: sortedHistory.map((tx, index) => {
             const isIdle = tx.id?.includes('_IDLE') || tx.transactionType === 'No Transactions';
             const monthKey = isIdle ? (tx.id?.substring(0, 7) ?? '') : (tx.transactionDate ?? '').substring(0, 7);
-            
-            const monthlyCost = tx.isCostAdjustmentMade === true ? 0 : (c.monthlyTransactions?.[monthKey]?.monthlyCost ?? c.amount ?? 0);
-
+  
+            const monthlyCost = tx.isCostAdjustmentMade === true
+              ? 0
+              : (c.monthlyTransactions?.[monthKey]?.monthlyCost ?? c.amount ?? 0);
+  
             let previousPending = 0;
-
+  
             if (index === 0) {
               const rawPending = tx.existingPending ?? 0;
               previousPending = rawPending === monthlyCost ? 0 : Math.max(0, rawPending - monthlyCost);
@@ -399,9 +406,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               const prevMonth = prevTx.id?.includes('_IDLE')
                 ? (prevTx.id?.substring(0, 7) ?? '')
                 : (prevTx.transactionDate ?? '').substring(0, 7);
-
+  
               if (prevMonth === monthKey) {
-                // Same month — reuse previousPending from the first tx of this month
                 const firstTxOfMonth = sortedHistory.find(t => {
                   const tMonth = t.id?.includes('_IDLE')
                     ? (t.id?.substring(0, 7) ?? '')
@@ -411,16 +417,15 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
                 const rawPending = firstTxOfMonth?.existingPending ?? 0;
                 previousPending = rawPending === monthlyCost ? 0 : Math.max(0, rawPending - monthlyCost);
               } else {
-                // Different month — carry forward last tx's newPending
                 previousPending = Math.max(prevTx.newPending ?? 0, 0);
               }
             }
-
+  
             return {
               ...tx,
               monthlyCost,
               previousPending,
-              transactionDate: isIdle ? (tx.transactionDate ?? `No Transaction`) : tx.transactionDate,
+              transactionDate: isIdle ? getIdleDate(tx, monthKey) : tx.transactionDate,
             };
           }),
         };
@@ -469,8 +474,8 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
             if (!validMonths.includes(mKey)) {
               const txsInThisMonth = rangeTxs.filter(t => (t.transactionDate ?? '').substring(0, 7) === mKey);
               const firstTx = txsInThisMonth[0];
-              const lastTx = txsInThisMonth[txsInThisMonth.length - 1];
-              const prevBal = firstTx.existingPending ?? 0;
+              const lastTx  = txsInThisMonth[txsInThisMonth.length - 1];
+              const prevBal  = firstTx.existingPending ?? 0;
   
               crossLedgerRows.push({
                 ...customer,
@@ -493,25 +498,39 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
         const rangeFirstMonth = targetMonths[0];
         let runningBalance = (() => {
-          const lastTxBeforeRange = fullHistory.filter(t => (t.transactionDate ?? '').substring(0, 7) < rangeFirstMonth).at(-1);
+          const lastTxBeforeRange = fullHistory
+            .filter(t => (t.transactionDate ?? '').substring(0, 7) < rangeFirstMonth)
+            .at(-1);
           if (lastTxBeforeRange) return lastTxBeforeRange.newPending ?? 0;
-          const lastMonthBeforeRange = Object.keys(monthlyTxMap).filter(m => m < rangeFirstMonth).sort((a, b) => b.localeCompare(a))[0];
+          const lastMonthBeforeRange = Object.keys(monthlyTxMap)
+            .filter(m => m < rangeFirstMonth)
+            .sort((a, b) => b.localeCompare(a))[0];
           return lastMonthBeforeRange ? (monthlyTxMap[lastMonthBeforeRange]?.currentPending ?? 0) : 0;
         })();
   
         const normalRows = validMonths.map((monthKey): Customer | null => {
-          const monthTrans  = monthlyTxMap[monthKey] ?? {};
-          const monthlyCost = monthTrans.monthlyCost ?? customer.amount ?? 0;
+          const monthTrans    = monthlyTxMap[monthKey] ?? {};
+          const monthlyCost   = monthTrans.monthlyCost ?? customer.amount ?? 0;
           const allTxsInMonth = fullHistory.filter(t => (t.transactionDate ?? '').substring(0, 7) === monthKey);
-          const txsInMonth = allTxsInMonth.filter(t => (t.transactionDate ?? '').substring(0, 10) >= rangeStart && (t.transactionDate ?? '').substring(0, 10) <= rangeEnd);
+          const txsInMonth    = allTxsInMonth.filter(t =>
+            (t.transactionDate ?? '').substring(0, 10) >= rangeStart &&
+            (t.transactionDate ?? '').substring(0, 10) <= rangeEnd
+          );
   
-          const isIdle = txsInMonth.length > 0 && txsInMonth.every(t => t.transactionType === 'No Transactions' || t.id?.includes('_IDLE'));
-          const previousPending = runningBalance;
-          const amountToPay = previousPending + monthlyCost;
+          const isIdle = txsInMonth.length > 0 && txsInMonth.every(t =>
+            t.transactionType === 'No Transactions' || t.id?.includes('_IDLE')
+          );
+  
+          const previousPending   = runningBalance;
+          const amountToPay       = previousPending + monthlyCost;
           const totalPaidAllMonth = allTxsInMonth.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
-          
+  
           runningBalance = amountToPay - totalPaidAllMonth;
+  
           const paidInRange = txsInMonth.reduce((sum, t) => sum + (t.transactionAmount ?? 0), 0);
+  
+          const idleTx   = txsInMonth.find(t => t.id?.includes('_IDLE') || t.transactionType === 'No Transactions');
+          const idleDate = idleTx ? getIdleDate(idleTx, monthKey) : monthKey;
   
           return {
             ...customer,
@@ -523,8 +542,12 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
               amountToPay,
               transactionAmount: paidInRange,
               currentPending: amountToPay - paidInRange,
-              lastTransactionDate: isIdle ? monthKey+'_IDEL' : (txsInMonth.at(-1)?.transactionDate ?? null),
-              paymentMethod: isIdle ? 'Not Done' : txsInMonth.length > 1 ? 'Multiple' : (txsInMonth[0]?.transactionType ?? 'Not Done'),
+              lastTransactionDate: isIdle ? idleDate : (txsInMonth.at(-1)?.transactionDate ?? null),
+              paymentMethod: isIdle
+                ? 'Not Done'
+                : txsInMonth.length > 1
+                  ? 'Multiple'
+                  : (txsInMonth[0]?.transactionType ?? 'Not Done'),
             },
           };
         }).filter((row): row is Customer => row !== null);
@@ -539,7 +562,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   
     return baseList
       .map((c) => {
-        const trans = c.Transactions ?? {};
+        const trans       = c.Transactions ?? {};
         const monthlyCost = trans.monthlyCost ?? 0;
         const amountToPay = trans.currentMonthTotal ?? monthlyCost;
   
@@ -550,6 +573,16 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
           finalPreviousPending = amountToPay === monthlyCost ? 0 : Math.max(0, amountToPay - monthlyCost);
         }
   
+        const isIdle = trans.lastTransactionDate?.includes('_IDEL') ||
+                       trans.lastTransactionDate === 'No Transaction' ||
+                       trans.paymentMethod === 'Not Done';
+  
+        const idleDate = isIdle
+          ? (trans.lastTransactionDate?.includes('_IDEL')
+              ? trans.lastTransactionDate.replace('_IDEL', '').trim()
+              : (trans.lastTransactionDate ?? ''))
+          : trans.lastTransactionDate;
+  
         return {
           ...c,
           Transactions: {
@@ -559,6 +592,7 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
             amountToPay: finalPreviousPending + monthlyCost,
             transactionAmount: trans.transactionAmount ?? 0,
             currentPending: trans.currentPending ?? 0,
+            lastTransactionDate: idleDate,
           },
         };
       })
