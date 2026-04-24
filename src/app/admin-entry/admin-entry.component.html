@@ -85,7 +85,7 @@
                   </mat-form-field>
 
                   <div class="row" *ngIf="vehicleUpdateForm.get('selectedVehicleId')?.value">
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Monthly Rate</mat-label>
                       <input matInput type="number" formControlName="monthlyCost"
                         (keydown)="restrictNegativeVehicleInput($event)">
@@ -361,6 +361,8 @@
             type="text"
             [(ngModel)]="vehicleNumber"
             placeholder="Enter Vehicle Number"
+            (keydown)="restrictVehicleInput($event)"
+            (input)="onVehicleNumberInput($event)"
             class="form-control"
           />
           <button (click)="deleteCustomer(vehicleNumber)" [disabled]="!vehicleNumber.trim()">

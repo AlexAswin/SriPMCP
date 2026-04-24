@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { addDoc, collectionData, deleteDoc, doc, getDoc, setDoc, updateDoc } from '@angular/fire/firestore';
+import { addDoc, collectionData, deleteDoc, doc, getDoc, limit, setDoc, updateDoc } from '@angular/fire/firestore';
 import { Firestore, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
@@ -155,22 +155,20 @@ async deleteCustomerByVehicleNumber(vehicleNumber: string): Promise<void> {
   try {
     const customerQuery = query(
       collection(this.firestore, 'CustomerEntry'),
-      where('vehicleNumber', '==', vehicleNumber)
+      where('vehicleNumber', '==', vehicleNumber),
+      limit(1) 
     );
 
     const querySnapshot = await getDocs(customerQuery);
 
     if (querySnapshot.empty) {
-      throw new Error(`No customer found with vehicle number: ${vehicleNumber}`);
+      throw new Error('NOT_FOUND');
     }
 
-    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
-
-    console.log(`Customer(s) with vehicle number ${vehicleNumber} deleted successfully.`);
+    await deleteDoc(querySnapshot.docs[0].ref);
 
   } catch (error) {
-    console.error('Error deleting customer:', error);
+    console.error('Firestore Delete Error:', error);
     throw error;
   }
 }
