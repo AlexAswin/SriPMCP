@@ -589,12 +589,19 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   }
 
   deleteCustomer(vehicleNumber: string): void {
+    if (!confirm(`Are you sure you want to delete vehicle ${vehicleNumber}?`)) return;
+  
     this.adminService.deleteCustomerByVehicleNumber(vehicleNumber)
       .then(() => {
-        console.log('Deleted successfully');
+        this.showAlert('Customer Deleted Successfully', 'success');
+        this.deleteCustomerForm.reset();
       })
       .catch(err => {
-        console.error('Failed to delete:', err.message);
+        const message = err.message === 'NOT_FOUND' 
+          ? 'No record found for this vehicle.' 
+          : 'Failed to delete. Please check your connection.';
+        
+        this.showAlert(message, 'error');
       });
   }
 
