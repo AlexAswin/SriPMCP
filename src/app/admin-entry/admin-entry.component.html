@@ -124,11 +124,13 @@
         <mat-card appearance="outlined">
           <mat-card-header><mat-card-title>Expense Categories</mat-card-title></mat-card-header>
           <mat-card-content>
-            <form [formGroup]="expenseForm" (ngSubmit)="saveExpense()" class="inline-form">
+            <form [formGroup]="expenseForm" (ngSubmit)="saveExpense(formDirective)" #formDirective="ngForm" class="inline-form">
               <mat-form-field appearance="outline">
                 <input matInput placeholder="New Expense Type" formControlName="expenseType">
               </mat-form-field>
-              <button mat-mini-fab color="primary"><mat-icon>add</mat-icon></button>
+              <button mat-mini-fab color="primary" type="submit">
+                <mat-icon>add</mat-icon>
+              </button>
             </form>
 
             <mat-chip-set class="expense-chips">
@@ -147,7 +149,9 @@
               <mat-form-field appearance="outline">
                 <input matInput placeholder="e.g. UPI, Cash" formControlName="paymentMethod">
               </mat-form-field>
-              <button mat-mini-fab color="primary"><mat-icon>add</mat-icon></button>
+              <button mat-mini-fab color="primary" type="submit">
+                <mat-icon>add</mat-icon>
+              </button>
             </form>
 
             <mat-chip-set class="expense-chips">
@@ -160,6 +164,8 @@
         </mat-card>
       </div>
     </mat-tab>
+
+
     <mat-tab label="Maintenance">
       <div class="tab-content maintenance-container">
     
@@ -282,7 +288,6 @@
               </mat-card-actions>
             </ng-container>
     
-            <!-- Delete Last Transaction -->
             <ng-container *ngIf="activeScenario === 'deleteLast'">
               <mat-card-header>
                 <span class="panel-badge warn">Delete Last Transaction</span>
@@ -305,7 +310,6 @@
               </mat-card-actions>
             </ng-container>
     
-            <!-- Delete by ID -->
             <ng-container *ngIf="activeScenario === 'deleteById'">
               <mat-card-header>
                 <span class="panel-badge danger">Delete by Transaction ID</span>
@@ -357,7 +361,7 @@
       <mat-card-content class="alert-content">
         <mat-icon>{{ alertType === 'success' ? 'check_circle' : 'error' }}</mat-icon>
         <span>{{ alertMessage }}</span>
-        <button mat-icon-button (click)="alertMessage = ''">
+        <button mat-icon-button (click)="alert = false; alertMessage = ''">
           <mat-icon>close</mat-icon>
         </button>
       </mat-card-content>
