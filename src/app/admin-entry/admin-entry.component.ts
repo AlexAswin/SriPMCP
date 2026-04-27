@@ -117,9 +117,7 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     });
 
     this.vehicleUpdateForm = this.fb.group({
-      // Match the formControlName in your HTML mat-select
       selectedVehicleId: ['', Validators.required],
-      // Match the formControlNames in your price inputs
       monthlyCost: ['', priceValidators],
       dailyCost: ['', priceValidators],
     });
@@ -454,43 +452,34 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   }
 
   async getCustomerRecord() {
-    if (this.deleteCustomerForm.invalid) return;
-
+    if (this.deleteCustomerForm.invalid) {
+      this.showAlert('Enter valid vehicle number.', 'error');
+      return;
+    }
+  
     const vNbr = this.deleteCustomerForm.value.vehicleNumber;
     const formattedVehicleNbr = this.normalizeVehicleNumber(vNbr);
-
+  
     try {
-      const customerDetails =
-        await this.newCustomerEntryService.getVehicleByNumber(
-          formattedVehicleNbr,
-          'vehicleNbr'
-        );
-
+      const customerDetails = await this.newCustomerEntryService.getVehicleByNumber(
+        formattedVehicleNbr,
+        'vehicleNbr'
+      );
+  
       if (!customerDetails) {
-        this.showSettlementDetails = false;
         this.showAlert('Vehicle not found. Please try again.', 'error');
         return;
       }
 
-      // Fetch current month's Transaction subdoc directly
-      const now = new Date();
-      const currentMonthId = `${now.getFullYear()}-${String(
-        now.getMonth() + 1
-      ).padStart(2, '0')}`;
-
-      const currentMonthPending =
-        customerDetails.monthlyTransactions?.[currentMonthId]?.currentPending ??
-        customerDetails.Transactions?.currentPending ?? // fallback if still on main doc
-        0;
-
       this.showSettlementDetails = true;
+      const currentMonthPending = customerDetails.Transactions?.currentPending ?? 0;
       this.monthlyStatus = customerDetails.monthlyStatus;
-
+  
       this.deleteCustomerForm.patchValue({
         currentPending: currentMonthPending,
       });
+  
     } catch (err) {
-      this.showSettlementDetails = false;
       this.showAlert('Invalid vehicle. Please try again.', 'error');
       console.error('Error fetching customer record:', err);
     }
@@ -605,124 +594,105 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
       });
   }
 
-  async downloadActiveCustomerPDF() {
+  async downloadActiveCustomerPDF(withDetails?: boolean) {
     const activeCustomers = await firstValueFrom(
       this.transactionService.getActiveMonthlyCustomers()
     );
-
+  
     const doc = new jsPDF('l', 'mm', 'a4');
-
-    const pageWidth = doc.internal.pageSize.getWidth();
+  
+    const pageWidth  = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-
+  
     doc.setFillColor(217, 217, 217);
     doc.rect(0, 0, pageWidth, 18, 'F');
-
+  
     doc.setTextColor(0);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.text('PMCP', 14, 13);
-
+  
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-
-    const monthLabel = new Date(`${this.currentMonth}-01`).toLocaleDateString(
-      'en-IN',
-      { month: 'long' }
-    );
-    doc.text(`Active Customer Sheet - ${monthLabel}`, pageWidth / 2, 13, {
-      align: 'center',
-    });
-
-    const today = new Date().toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+  
+    const monthLabel = new Date(`${this.currentMonth}-01`).toLocaleDateString('en-IN', { month: 'long' });
+    doc.text(`Active Customer Sheet - ${monthLabel}`, pageWidth / 2, 13, { align: 'center' });
+  
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     doc.text(today, pageWidth - 14, 13, { align: 'right' });
-
+  
     doc.setTextColor(0, 0, 0);
-
-    const tableBody = (activeCustomers ?? []).map((c: any) => [
-      c.lotNumber ?? c.lotNumber,
-      c.vehicleNumber ?? '',
-      c.customerName ?? '',
-      `${c.Transactions?.currentPending ?? 0}`,
-      '',
-      '',
-      '',
-      '',
-      '',
-    ]);
-
-    const marginLeft = 10;
+  
+    const marginLeft  = 10;
     const marginRight = 10;
     const usableWidth = pageWidth - marginLeft - marginRight;
-
+  
     const colWidths = {
-      lotNumber: usableWidth * 0.06,
-      vehicle: usableWidth * 0.12,
-      name: usableWidth * 0.12,
+      lotNumber:   usableWidth * 0.06,
+      vehicle:     usableWidth * 0.12,
+      name:        usableWidth * 0.12,
       amountToPay: usableWidth * 0.1,
-      paid: usableWidth * 0.1,
-      balance: usableWidth * 0.1,
-      date: usableWidth * 0.1,
+      paid:        usableWidth * 0.1,
+      balance:     usableWidth * 0.1,
+      date:        usableWidth * 0.1,
       paymentType: usableWidth * 0.1,
-      note: usableWidth * 0.16,
+      note:        usableWidth * 0.16,
     };
-
-    autoTable(doc, {
-      head: [
-        [
-          'Lot Number',
-          'Vehicle',
-          'Name',
-          'Amount To Pay',
-          'Paid',
-          'Balance',
-          'Transaction Date',
-          'Payment Type',
-          'Note',
-        ],
-      ],
-      body: tableBody,
+  
+    const commonConfig = {
       startY: 24,
       margin: { left: marginLeft, right: marginRight },
       tableWidth: usableWidth,
-      styles: {
-        lineWidth: 0.5,
-        lineColor: [0, 0, 0],
-        fontSize: 10,
-        cellPadding: 4,
-      },
-      headStyles: {
-        fillColor: [217, 217, 217],
-        textColor: 0,
-        halign: 'center',
-      },
-      bodyStyles: {
-        fillColor: [245, 245, 245],
-        textColor: [0, 0, 0],
-        lineWidth: 0.3,
-      },
-      alternateRowStyles: {
-        fillColor: [255, 255, 255],
-      },
+      styles:          { lineWidth: 0.5, lineColor: [0, 0, 0] as any, fontSize: 10, cellPadding: 4 },
+      headStyles:      { fillColor: [217, 217, 217] as any, textColor: 0, halign: 'center' as const },
+      bodyStyles:      { fillColor: [245, 245, 245] as any, textColor: [0, 0, 0] as any, lineWidth: 0.3 },
+      alternateRowStyles: { fillColor: [255, 255, 255] as any },
       columnStyles: {
-        0: { cellWidth: colWidths.lotNumber, halign: 'center' },
-        1: { cellWidth: colWidths.vehicle, halign: 'center' },
-        2: { cellWidth: colWidths.name, halign: 'center' },
-        3: { cellWidth: colWidths.amountToPay, halign: 'center' },
-        4: { cellWidth: colWidths.paid, halign: 'center' },
-        5: { cellWidth: colWidths.balance, halign: 'center' },
-        6: { cellWidth: colWidths.date, halign: 'center' },
-        7: { cellWidth: colWidths.paymentType, halign: 'center' },
-        8: { cellWidth: colWidths.note, halign: 'center' },
+        0: { cellWidth: colWidths.lotNumber,   halign: 'center' as const },
+        1: { cellWidth: colWidths.vehicle,     halign: 'center' as const },
+        2: { cellWidth: colWidths.name,        halign: 'center' as const },
+        3: { cellWidth: colWidths.amountToPay, halign: 'center' as const },
+        4: { cellWidth: colWidths.paid,        halign: 'center' as const },
+        5: { cellWidth: colWidths.balance,     halign: 'center' as const },
+        6: { cellWidth: colWidths.date,        halign: 'center' as const },
+        7: { cellWidth: colWidths.paymentType, halign: 'center' as const },
+        8: { cellWidth: colWidths.note,        halign: 'center' as const },
       },
-      theme: 'grid',
-    });
-
-    doc.save(`Monthly-Balance-Sheet ${monthLabel}.pdf`);
+      theme: 'grid' as const,
+    };
+  
+    if (withDetails) {
+      const tableBody = (activeCustomers ?? []).map((c: any) => [
+        c.lotNumber ?? '',
+        c.vehicleNumber ?? '',
+        c.customerName ?? '',
+        `${c.Transactions?.amountToPay     ?? 0}`,
+        `${c.Transactions?.transactionAmount ?? 0}`,
+        `${c.Transactions?.currentPending  ?? 0}`,
+        c.Transactions?.lastTransactionDate ?? '',
+        c.Transactions?.paymentMethod       ?? '',
+        '',
+      ]);
+  
+      autoTable(doc, { head: [['Lot Number','Vehicle','Name','Amount To Pay','Paid','Balance','Transaction Date','Payment Type','Note']], body: tableBody, ...commonConfig });
+  
+    } else {
+      const tableBody = (activeCustomers ?? []).map((c: any) => [
+        c.lotNumber ?? '',
+        c.vehicleNumber ?? '',
+        c.customerName ?? '',
+        `${c.Transactions?.currentPending ?? 0}`,
+        '', '', '', '', '',
+      ]);
+  
+      autoTable(doc, { head: [['Lot Number','Vehicle','Name','Amount To Pay','Paid','Balance','Transaction Date','Payment Type','Note']], body: tableBody, ...commonConfig });
+    }
+  
+    const filename = withDetails
+      ? `Monthly-Balance-Sheet-Details ${monthLabel}.pdf`
+      : `Monthly-Balance-Sheet ${monthLabel}.pdf`;
+  
+    doc.save(filename);
   }
 
   showAlert(message: string, type: 'success' | 'error'): void {
