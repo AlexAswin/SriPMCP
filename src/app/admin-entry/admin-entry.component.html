@@ -185,7 +185,7 @@
                        formControlName="vehicleNumber"
                        (keydown)="restrictVehicleInput($event)"
                        (input)="onVehicleNumberInput($event)"
-                       (keydown.enter)="getCustomerRecord()"
+                       (ngSubmit)="getCustomerRecord()"
                        class="uppercase-bold"
                        maxlength="13">
                 <mat-icon matSuffix>directions_car</mat-icon>
@@ -193,14 +193,13 @@
               <app-button 
                 label="Search" 
                 variant="primary" 
-                type="button"
-                (click)="getCustomerRecord()">
+                (click)="getCustomerRecord()"
+                type="submit">
               </app-button>
             </form>
           </mat-card-content>
         </mat-card>
     
-        <!-- Mini Dashboard -->
         <div *ngIf="showSettlementDetails" class="maintenance-dashboard">
     
           <!-- Scenario Selector -->
@@ -345,12 +344,16 @@
     </mat-tab>
 
     <mat-tab label="Ledger">
-      <div class="filter-section">
+      <div>
         <app-button variant="primary" label="Create New Ledger" (clicked)="createNewLedger()"></app-button>
       </div>
 
-      <div class="filter-section">
+      <div>
         <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
+      </div>
+
+      <div>
+        <app-button variant="secondary" label="Download Customers Details" (clicked)="downloadActiveCustomerPDF(true)"></app-button>
       </div>
 
       <div class="container">

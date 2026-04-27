@@ -511,7 +511,13 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
         })();
   
         const normalRows = validMonths.map((monthKey): Customer | null => {
-          const monthTrans    = monthlyTxMap[monthKey] ?? {};
+          const monthTrans = monthlyTxMap[monthKey] ?? {};
+
+          // ✅ Skip row if no monthly ledger exists, unless customer is InActive
+          if (Object.keys(monthTrans).length === 0 && customer.monthlyStatus !== 'InActive') {
+            return null;
+          }
+
           const monthlyCost   = monthTrans.monthlyCost ?? customer.amount ?? 0;
           const allTxsInMonth = fullHistory.filter(t => (t.transactionDate ?? '').substring(0, 7) === monthKey);
           const txsInMonth    = allTxsInMonth.filter(t =>
@@ -603,11 +609,15 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
   }
 
   private applySorting(a: any, b: any, sort: any): number {
+    const vehicleA = a.vehicleNumber ?? '';
+    const vehicleB = b.vehicleNumber ?? '';
+  
     const monthA = a.displayMonth ?? a.Transactions?.lastTransactionDate?.substring(0, 7) ?? '';
     const monthB = b.displayMonth ?? b.Transactions?.lastTransactionDate?.substring(0, 7) ?? '';
   
     if (!sort?.key) {
-      return monthA.localeCompare(monthB); 
+      const vehicleComp = vehicleA.localeCompare(vehicleB);
+      return vehicleComp !== 0 ? vehicleComp : monthA.localeCompare(monthB);
     }
   
     let valA: any, valB: any;
@@ -622,7 +632,12 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       valB = new Date(dateB || 0).getTime();
     }
   
-    if (valA === valB) return monthA.localeCompare(monthB);
+    if (vehicleA === vehicleB) return monthA.localeCompare(monthB);
+  
+    if (valA === valB) {
+      const vehicleComp = vehicleA.localeCompare(vehicleB);
+      return vehicleComp !== 0 ? vehicleComp : monthA.localeCompare(monthB);
+    }
   
     return sort.direction === 'dec' ? valA - valB : valB - valA;
   }
