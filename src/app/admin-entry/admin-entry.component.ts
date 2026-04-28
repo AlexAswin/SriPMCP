@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, computed } from '@angular/core';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {FormBuilder, FormGroup, FormGroupDirective, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -21,6 +21,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { MonthlyIncomeComponent } from '../monthly-income/monthly-income.component';
 import autoTable from 'jspdf-autotable';
 import jsPDF from 'jspdf';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-admin-entry',
@@ -42,11 +43,14 @@ import jsPDF from 'jspdf';
     MatTabsModule,
     MatChipsModule,
     MatCardModule,
+    MatCheckboxModule
   ],
   templateUrl: './admin-entry.component.html',
   styleUrl: './admin-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
+
 export class AdminEntryComponent implements OnInit, OnDestroy {
   vehicleTypes = signal<VehicleType[]>([]);
   editVehicleDetails = signal<boolean>(false);
@@ -84,8 +88,14 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   errorMessage = '';
   isLoading = false;
 
-  @ViewChild(MonthlyIncomeComponent)
-  monthlyIncomeComponent!: MonthlyIncomeComponent;
+  readonly task = signal ({
+    name: 'PreCheck For Ledger Creation',
+    completed: false,
+    subtasks: [
+      {name: 'Customers Inactivated', completed: false},
+      {name: 'Made all the Payments for the Customers', completed: false},
+    ],
+  });
 
   constructor(
     private fb: FormBuilder,
@@ -173,6 +183,7 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   }
 
   createNewLedger = () => {
+
     try {
       this.transactionService.createNewMonthLedger();
       this.showAlert('New ledger created successfully!', 'success');
@@ -583,6 +594,7 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     this.adminService.deleteCustomerByVehicleNumber(vehicleNumber)
       .then(() => {
         this.showAlert('Customer Deleted Successfully', 'success');
+        this.vehicleNumber = ''
         this.deleteCustomerForm.reset();
       })
       .catch(err => {
@@ -699,6 +711,36 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
   
     doc.save(filename);
   }
+
+  readonly partiallyComplete = computed(() => {
+    const task = this.task();
+    if (!task.subtasks) {
+      return false;
+    }
+    return task.subtasks.some(t => t.completed) && !task.subtasks.every(t => t.completed);
+  });
+
+  update(completed: boolean, index?: number) {
+    this.task.update(task => {
+      if (index === undefined) {
+        task.completed = completed;
+        task.subtasks?.forEach(t => (t.completed = completed));
+      } else {
+        task.subtasks![index].completed = completed;
+        task.completed = task.subtasks?.every(t => t.completed) ?? true;
+      }
+      return {...task};
+    });
+  }
+
+  completedCount = computed(() =>
+  this.task().subtasks.filter(s => s.completed).length
+);
+
+completionPercent = computed(() => {
+  const total = this.task().subtasks.length;
+  return total ? Math.round((this.completedCount() / total) * 100) : 0;
+});
 
   showAlert(message: string, type: 'success' | 'error'): void {
     this.alertMessage = message;

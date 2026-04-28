@@ -344,45 +344,142 @@
     </mat-tab>
 
     <mat-tab label="Ledger">
-      <div>
-        <app-button variant="primary" label="Create New Ledger" (clicked)="createNewLedger()"></app-button>
-      </div>
-
-      <div>
-        <app-button variant="secondary" label="Download Active Customers" (clicked)="downloadActiveCustomerPDF()"></app-button>
-      </div>
-
-      <div>
-        <app-button variant="secondary" label="Download Customers Details" (clicked)="downloadActiveCustomerPDF(true)"></app-button>
-      </div>
-
-      <div class="container">
-        <h2>Delete Customer by Vehicle Number</h2>
-      
-        <div class="form-group">
-          <input
-            type="text"
-            [(ngModel)]="vehicleNumber"
-            placeholder="Enter Vehicle Number"
-            (keydown)="restrictVehicleInput($event)"
-            (input)="onVehicleNumberInput($event)"
-            class="form-control"
-          />
-          <button (click)="deleteCustomer(vehicleNumber)" [disabled]="!vehicleNumber.trim()">
-            Delete Customer
-          </button>
-        </div>
-      
-        <div class="alert success" *ngIf="successMessage">
-          ✅ {{ successMessage }}
-        </div>
-      
-        <div class="alert error" *ngIf="errorMessage">
-          ❌ {{ errorMessage }}
-        </div>
-      
-        <div class="loading" *ngIf="isLoading">
-          Deleting... please wait
+      <div class="ledger-tab">
+        <div class="ledger-columns">
+    
+          <!-- ── Column 1: Create Ledger ──────────────────── -->
+          <div class="ledger-col">
+            <div class="ledger-col__head">
+              <h3 class="ledger-col__title">Create ledger</h3>
+            </div>
+    
+            <div class="ledger-col__body">
+              <section class="checklist">
+                <label class="checklist__item checklist__item--parent">
+                  <mat-checkbox
+                    [checked]="task().completed"
+                    [indeterminate]="partiallyComplete()"
+                    (change)="update($event.checked)">
+                    {{ task().name }}
+                  </mat-checkbox>
+                </label>
+    
+                <div class="checklist__divider"></div>
+    
+                <ul class="checklist__list">
+                  <li *ngFor="let subtask of task().subtasks; track subtask; let i = index"
+                      class="checklist__item">
+                    <mat-checkbox
+                      [checked]="subtask.completed"
+                      (change)="update($event.checked, i)">
+                      {{ subtask.name }}
+                    </mat-checkbox>
+                  </li>
+                </ul>
+    
+                <div class="checklist__progress">
+                  <div class="checklist__progress-bar">
+                    <div class="checklist__progress-fill"
+                      [style.width.%]="completionPercent()">
+                    </div>
+                  </div>
+                  <div class="checklist__progress-meta">
+                    <span class="checklist__progress-label">
+                      {{ completedCount() }} of {{ task().subtasks.length }} complete
+                    </span>
+                    <span class="checklist__badge"
+                      [class.checklist__badge--ready]="task().completed">
+                      {{ task().completed ? 'Ready' : 'Locked' }}
+                    </span>
+                  </div>
+                </div>
+              </section>
+            </div>
+    
+            <div class="ledger-col__footer">
+              <app-button
+                variant="primary"
+                label="+ Create new ledger"
+                [disabled]="!task().completed"
+                (clicked)="createNewLedger()">
+              </app-button>
+            </div>
+          </div>
+    
+          <!-- ── Column 2: Download ───────────────────────── -->
+          <div class="ledger-col">
+            <div class="ledger-col__head">
+              <h3 class="ledger-col__title">Download customers</h3>
+            </div>
+    
+            <div class="ledger-col__body">
+              <p class="ledger-col__hint">
+                Download customer records as PDF.
+              </p>
+    
+              <div class="ledger-col__divider"></div>
+    
+              <button class="download-btn" (click)="downloadActiveCustomerPDF()">
+                <mat-icon class="download-btn__icon">download</mat-icon>
+                Download active customers
+              </button>
+    
+              <button class="download-btn" (click)="downloadActiveCustomerPDF(true)">
+                <mat-icon class="download-btn__icon">download</mat-icon>
+                Download customer details
+              </button>
+            </div>
+    
+            <div class="ledger-col__footer">
+              <p class="ledger-col__hint">Files download as PDF. Includes all active records.</p>
+            </div>
+          </div>
+    
+          <!-- ── Column 3: Delete ─────────────────────────── -->
+          <div class="ledger-col ledger-col--danger">
+            <div class="ledger-col__head">
+              <h3 class="ledger-col__title">Delete customer</h3>
+            </div>
+    
+            <div class="ledger-col__body">
+              <p class="ledger-col__hint">
+                Permanently removes all records associated with a vehicle. This cannot be undone.
+              </p>
+    
+              <div class="ledger-col__divider"></div>
+    
+              <label class="delete-label">Vehicle number</label>
+              <input
+                type="text"
+                class="delete-input"
+                [(ngModel)]="vehicleNumber"
+                placeholder="e.g. KA01AB1234"
+                (keydown)="restrictVehicleInput($event)"
+                (input)="onVehicleNumberInput($event)"
+                minlength="13"
+              />
+    
+              <div class="alert alert--success" *ngIf="successMessage">
+                {{ successMessage }}
+              </div>
+              <div class="alert alert--error" *ngIf="errorMessage">
+                {{ errorMessage }}
+              </div>
+              <div class="alert alert--loading" *ngIf="isLoading">
+                <span class="spinner"></span> Deleting, please wait...
+              </div>
+            </div>
+    
+            <div class="ledger-col__footer">
+              <button
+                class="delete-btn"
+                (click)="deleteCustomer(vehicleNumber)"
+                [disabled]="!vehicleNumber.trim()">
+                Delete customer
+              </button>
+            </div>
+          </div>
+    
         </div>
       </div>
     </mat-tab>
@@ -400,5 +497,4 @@
       </mat-card-content>
     </mat-card>
   </div>
-
 </div>
