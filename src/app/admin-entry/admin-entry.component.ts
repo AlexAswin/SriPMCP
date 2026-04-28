@@ -643,21 +643,10 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
       startY: 24,
       margin: { left: marginLeft, right: marginRight },
       tableWidth: usableWidth,
-      styles:          { lineWidth: 0.5, lineColor: [0, 0, 0] as any, fontSize: 10, cellPadding: 4 },
-      headStyles:      { fillColor: [217, 217, 217] as any, textColor: 0, halign: 'center' as const },
-      bodyStyles:      { fillColor: [245, 245, 245] as any, textColor: [0, 0, 0] as any, lineWidth: 0.3 },
+      styles:             { lineWidth: 0.5, lineColor: [0, 0, 0] as any, fontSize: 10, cellPadding: 4 },
+      headStyles:         { fillColor: [217, 217, 217] as any, textColor: 0, halign: 'center' as const },
+      bodyStyles:         { fillColor: [245, 245, 245] as any, textColor: [0, 0, 0] as any, lineWidth: 0.3 },
       alternateRowStyles: { fillColor: [255, 255, 255] as any },
-      columnStyles: {
-        0: { cellWidth: colWidths.lotNumber,   halign: 'center' as const },
-        1: { cellWidth: colWidths.vehicle,     halign: 'center' as const },
-        2: { cellWidth: colWidths.name,        halign: 'center' as const },
-        3: { cellWidth: colWidths.amountToPay, halign: 'center' as const },
-        4: { cellWidth: colWidths.paid,        halign: 'center' as const },
-        5: { cellWidth: colWidths.balance,     halign: 'center' as const },
-        6: { cellWidth: colWidths.date,        halign: 'center' as const },
-        7: { cellWidth: colWidths.paymentType, halign: 'center' as const },
-        8: { cellWidth: colWidths.note,        halign: 'center' as const },
-      },
       theme: 'grid' as const,
     };
   
@@ -666,16 +655,17 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
         c.lotNumber ?? '',
         c.vehicleNumber ?? '',
         c.customerName ?? '',
-        `${c.Transactions?.amountToPay     ?? 0}`,
-        `${c.Transactions?.transactionAmount ?? 0}`,
-        `${c.Transactions?.currentPending  ?? 0}`,
-        c.Transactions?.lastTransactionDate ?? '',
-        c.Transactions?.paymentMethod       ?? '',
-        '',
+        c.customerPhoneNbr ?? '',
+        c.monthlyStatus ?? c.dailyStatus,
+        c.address ?? '',
       ]);
-  
-      autoTable(doc, { head: [['Lot Number','Vehicle','Name','Amount To Pay','Paid','Balance','Transaction Date','Payment Type','Note']], body: tableBody, ...commonConfig });
-  
+
+      autoTable(doc, {
+        head: [['Lot Number', 'Vehicle', 'Name', 'Phone Number', 'Status', 'Address']],
+        body: tableBody,
+        ...commonConfig,
+      });
+
     } else {
       const tableBody = (activeCustomers ?? []).map((c: any) => [
         c.lotNumber ?? '',
@@ -684,8 +674,23 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
         `${c.Transactions?.currentPending ?? 0}`,
         '', '', '', '', '',
       ]);
-  
-      autoTable(doc, { head: [['Lot Number','Vehicle','Name','Amount To Pay','Paid','Balance','Transaction Date','Payment Type','Note']], body: tableBody, ...commonConfig });
+
+      autoTable(doc, {
+        head: [['Lot Number', 'Vehicle', 'Name', 'Amount To Pay', 'Paid', 'Balance', 'Transaction Date', 'Payment Type', 'Note']],
+        body: tableBody,
+        ...commonConfig,
+        columnStyles: {
+          0: { cellWidth: colWidths.lotNumber,   halign: 'center' as const },
+          1: { cellWidth: colWidths.vehicle,     halign: 'center' as const },
+          2: { cellWidth: colWidths.name,        halign: 'center' as const },
+          3: { cellWidth: colWidths.amountToPay, halign: 'center' as const },
+          4: { cellWidth: colWidths.paid,        halign: 'center' as const },
+          5: { cellWidth: colWidths.balance,     halign: 'center' as const },
+          6: { cellWidth: colWidths.date,        halign: 'center' as const },
+          7: { cellWidth: colWidths.paymentType, halign: 'center' as const },
+          8: { cellWidth: colWidths.note,        halign: 'center' as const },
+        },
+      });
     }
   
     const filename = withDetails

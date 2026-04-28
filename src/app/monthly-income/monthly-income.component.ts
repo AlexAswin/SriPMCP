@@ -956,7 +956,10 @@ if (subTitle) {
   const totalPaid    = this.CustomersWithLedgerData?.reduce((sum: number, c: any) => sum + Number(c.Transactions?.transactionAmount ?? 0), 0) ?? 0;
   const totalBalance = this.CustomersWithLedgerData?.reduce((sum: number, c: any) => sum + Number(c.Transactions?.currentPending    ?? 0), 0) ?? 0;
 
+  const tableStartY = subTitle ? 32 : 22;
+
   autoTable(doc, {
+    startY: tableStartY,  // ✅ add this
     head: [['Vehicle', 'Name', 'Total Amount', 'Paid', 'Balance', 'Transaction Date', 'Payment Type']],
     body: tableBody,
     foot: [['Total', '', `${totalAmount}`, `${totalPaid}`, `${totalBalance}`, '', '']],
