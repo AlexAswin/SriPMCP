@@ -97,7 +97,6 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       .pipe(
         debounceTime(500),
         distinctUntilChanged(),
-        // filter(value => value?.length >= 9 ),
         takeUntil(this.destroy$)
       )
       .subscribe((value) => {
@@ -166,13 +165,8 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   onMonthlyStatusChange(status: string | null) {
     if (status === 'Active') {
       this.isStatusInActive = false;
-      // this.isMonthlyActiveCustomer = true;
-      // this.dailyToMonthlyCustomer = true;
-      // this.isMonthlyInActiveCustomer = false
     } else if (status === 'InActive') {
       this.isStatusInActive = true;
-      // this.isMonthlyActiveCustomer = false;
-      // this.isMonthlyInActiveCustomer = true
     }
   }
 
@@ -192,16 +186,16 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
     const year = now.getFullYear();
     const month = now.getMonth();
 
-    // this.minDate = this.formatToISO(new Date(year, month, 1));
+    this.minDate = this.formatToISO(new Date(year, month, 1));
     this.maxDate = this.formatToISO(new Date(year, month + 1, 0));
 
-    // this.fromDateMonthly.valueChanges.subscribe(value => {
-    //   if (value && this.isNewMonthlyCustomer) {
-    //     if (value < this.minDate || value > this.maxDate) {
-    //       this.fromDateMonthly.setValue('');
-    //     }
-    //   }
-    // });
+    this.fromDateMonthly.valueChanges.subscribe(value => {
+      if (value && this.isNewMonthlyCustomer) {
+        if (value < this.minDate || value > this.maxDate) {
+          this.fromDateMonthly.setValue('');
+        }
+      }
+    });
   };
 
   formatToISO(date: Date): string {

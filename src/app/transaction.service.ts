@@ -26,27 +26,23 @@ export class TransactionService {
       const customerRef  = customerDoc.ref;
       const customerData = customerDoc.data();
   
-      // ── Determine target month ─────────────────────────────────────────
-      // InActive customers always use their endDateMonthly ledger
       let targetMonthId: string;
-      let needsIdleEntry = false; // ← true when payment date is beyond end month
+      let needsIdleEntry = false; 
   
       if (transactionData.customerStatus === 'InActive') {
         const endDate = customerData['endDateMonthly'];
         if (!endDate) return false;
   
-        targetMonthId = endDate.substring(0, 7); // always use end month doc
+        targetMonthId = endDate.substring(0, 7); 
   
         const dateParts      = transactionData.transactionDate.split('-');
         const paymentMonthId = `${dateParts[0]}-${dateParts[1]}`;
   
-        // Payment month is beyond end month → flag for IDLE entry in FullTransactionHistory
         needsIdleEntry = paymentMonthId > targetMonthId;
       } else {
         const dateParts = transactionData.transactionDate.split('-');
         targetMonthId   = `${dateParts[0]}-${dateParts[1]}`;
       }
-      // ──────────────────────────────────────────────────────────────────
   
       const targetMonthRef  = doc(customerRef, 'Transactions', targetMonthId);
       const targetMonthSnap = await getDoc(targetMonthRef);
@@ -303,7 +299,6 @@ export class TransactionService {
             `CustomerEntry/${customer.id}/Transactions`
           );
   
-          // Fetch ALL month docs so history amount column works correctly
           return collectionData(txRef, { idField: 'monthId' }).pipe(
             map((txns: any[]) => {
               const monthlyTransactions: Record<string, any> = {};
@@ -371,12 +366,9 @@ export class TransactionService {
   private getCurrentMonth(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-
-    // return `2026-04`;
   }
 
   createNewMonthLedger = () => {
-    // const currentMonth = '2026-04';
     const currentMonth = this.getCurrentMonth();
     this.createNewMonthLedgerForActiveCustomers(currentMonth)
   }
@@ -522,8 +514,6 @@ export class TransactionService {
   getMonthIdFromDate(dateStr: string): string {
     const [y, m] = dateStr.split('-').map(Number);
     return `${y}-${String(m).padStart(2, '0')}`;
-
-    // return `2026-04`;
   }
 
   async deleteCustomerCurrentMonthTransaction(vehicleNumber: string) {
@@ -713,19 +703,11 @@ export class TransactionService {
       const oldMonthlyTotal  = Number(currentData['currentMonthTotal'] ?? 0);
       const oldMonthlyCost   = Number(currentData['monthlyCost'] ?? 0);
   
-      // shiftAmount = how much the total debt changes
-      // positive = debt reduced, negative = debt increased
-      const shiftAmount = oldPending - settlementAmount;
-  
-      // The new opening balance for this month = previousPending (carry-forward only)
-      // = oldMonthlyTotal - oldMonthlyCost (strips out the monthly charge)
+      const shiftAmount = oldPending - settlementAmount;  
       const previousMonthCarryForward = Math.max(oldMonthlyTotal - oldMonthlyCost, 0);
-  
       const batch = writeBatch(this.firestore);
   
-      // --- 1. Update Current Month Doc ---
       if (history.length === 0) {
-        // No transactions yet — simple update
         batch.update(currentMonthRef, {
           isCostAdjustmentMade: true,
           currentPending:       settlementAmount,
@@ -733,8 +715,6 @@ export class TransactionService {
           monthlyCost:          0,
         });
       } else {
-        // Recalculate entire transaction chain with new opening balance
-        // New opening = previousMonthCarryForward + 0 (monthlyCost now 0)
         const newOpeningBalance = previousMonthCarryForward;
   
         let runningPending = newOpeningBalance;
@@ -765,7 +745,6 @@ export class TransactionService {
         });
       }
   
-      // --- 2. Cascade to Future Months ---
       const allMonthsSnap = await getDocs(
         collection(this.firestore, `${customerRef.path}/Transactions`)
       );

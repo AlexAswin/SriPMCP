@@ -40,8 +40,8 @@ export class NewCustomerEntryService {
     );
 
     const dateParts = customerDetails.fromDateMonthly.split('-');
-    // const monthId = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
-    const monthId = `2026-03`;
+    const monthId = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
+    // const monthId = `2026-03`;
 
 
     const transactionRef = doc(
@@ -169,28 +169,25 @@ export class NewCustomerEntryService {
     const customerId   = docSnap.id;
     const customerData = docSnap.data();
   
-    // Try current month first
     const currentMonthRef  = doc(this.firestore, `CustomerEntry/${customerId}/Transactions/${currentMonth}`);
     const currentMonthSnap = await getDoc(currentMonthRef);
   
     let transactionData: any = {};
   
     if (currentMonthSnap.exists()) {
-      // Current month doc exists — use it
       transactionData = currentMonthSnap.data();
     } else {
-      // Current month missing — fetch all and use the latest
       const allMonthsSnap = await getDocs(
         collection(this.firestore, `CustomerEntry/${customerId}/Transactions`)
       );
   
       if (!allMonthsSnap.empty) {
         const sorted = allMonthsSnap.docs
-          .sort((a, b) => b.id.localeCompare(a.id)); // latest month first
+          .sort((a, b) => b.id.localeCompare(a.id)); 
   
         transactionData = {
           ...sorted[0].data(),
-          monthId: sorted[0].id, // so you know which month this came from
+          monthId: sorted[0].id, 
         };
       }
     }
@@ -266,7 +263,5 @@ export class NewCustomerEntryService {
   private getCurrentMonth(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-
-    // return `2026-04`;
   }
 }
