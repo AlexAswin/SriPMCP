@@ -53,7 +53,6 @@ body {
   background-color: #fdfdfd;
   flex-direction: column;
 
-
   // ------------------------------------------
   // Admin Header
   // ------------------------------------------
@@ -95,9 +94,7 @@ body {
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
 
-      mat-icon {
-        color: #555;
-      }
+      mat-icon { color: #555; }
 
       @include respond-to(sm) {
         margin-left: 12px;
@@ -137,7 +134,7 @@ body {
     @include respond-to(sm) {
       margin: 16px auto;
       padding: 0 12px;
-      min-width: 100%
+      min-width: 100%;
     }
 
     // ----------------------------------------
@@ -189,12 +186,16 @@ body {
       border-radius: 8px;
 
       h2 {
-        font-size: 14px;
+        font-size: 1.1rem;
         font-weight: 700;
         margin-bottom: 10px;
         color: #444;
         padding-bottom: 6px;
         border-bottom: 1px solid #eee;
+        text-align: left;
+        width: 100%;
+        align-self: flex-start;
+        
 
         @include respond-to(sm) { font-size: 13px; }
       }
@@ -237,55 +238,105 @@ body {
 
       &.full-width { flex: 1 1 100%; }
 
-      // Input Row — horizontal: label | input
+      // ----------------------------------------
+      // Input Row
+      // ----------------------------------------
       .input-row {
         display: flex;
-        align-items: center;
-        gap: 0;
+        flex-direction: column;
+        align-items: flex-start;
         width: 100%;
 
         label {
-          min-width: $label-width;
-          font-size: 13px;
-          font-weight: bold;
-          color: #555;
-          white-space: nowrap;
-          flex-shrink: 0;
+          text-align: left;
+          // width: 100%;
+          font-size: 0.8rem;
+          font-weight: 500;
+          // letter-spacing: 0.8px;
+          text-transform: uppercase;
+          color: #666;
+        //   margin-bottom: 4px;
+        //   min-width: unset;
+        //   white-space: nowrap;
+        //   flex-shrink: 0;
         }
 
         input,
         mat-select,
         textarea {
-          flex: 1;
-          border: 1px solid grey;
-          // border-bottom: 1px solid $border-color;
-          padding: 10px 5px;
+          width: 100%;
+          box-sizing: border-box;
+          border: none;
+          border-bottom: 1.5px solid $border-color;
+          border-radius: 0;
+          padding: 6px 0 8px 0;
           outline: none;
           background: transparent;
           font-family: $font-stack;
           font-size: 14px;
+          color: #333;
+          box-shadow: none;
 
-          &:focus        { border-bottom: 2px solid $primary-blue; }
+          &:focus        { border-bottom: 1.5px solid #555; }
           &[readonly]    { background: #f9f9f9; color: #888; cursor: not-allowed; }
         }
 
         textarea {
-          resize: vertical;
+          resize: none;
+          display: block;
           min-height: 52px;
+          min-width: 0;
           padding-top: 4px;
         }
 
-        .radio-group {
-          display: flex;
-          gap: 20px;
-          flex-wrap: wrap;
-          align-items: center;
+        // ----------------------------------------
+        // Mat-Select Overrides
+        // ----------------------------------------
+        .mat-mdc-text-field-wrapper,
+        .mdc-text-field {
+          padding: 0 !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
 
-          label {
-            min-width: auto;
-            font-weight: normal;
-            cursor: pointer;
-          }
+        .mdc-notched-outline {
+          display: none !important;
+        }
+
+        .mat-mdc-form-field-infix {
+          border-top: none !important;
+          padding: 6px 0 8px 0 !important;
+          border-bottom: 1.5px solid $border-color;
+        }
+
+        // ----------------------------------------
+        // Radio Group
+        // ----------------------------------------
+// Radio Group
+.radio-group {
+  display: flex;
+  flex-direction: row;  // same line
+  gap: 20px;
+  flex-wrap: nowrap;    // prevent wrapping to next line
+  align-items: center;
+  width: 100%;
+  border-bottom: none;
+  padding-bottom: 0;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: auto;
+    font-weight: normal;
+    font-size: 13px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #333;
+    cursor: pointer;
+  }
+
 
           @include respond-to(sm) {
             flex-direction: column;
@@ -294,13 +345,13 @@ body {
         }
       }
 
+      // ----------------------------------------
       // Error Container
+      // ----------------------------------------
       .error-container {
-        position: absolute;
-        top: 36px;
-        left: calc(#{$label-width} + #{$input-gap});
         display: flex;
         flex-direction: column;
+        margin-top: 2px;
         z-index: 10;
         pointer-events: none;
 
@@ -321,18 +372,6 @@ body {
     .mt-20 { margin-top: 25px; }
 
     // ----------------------------------------
-    // Note Section
-    // ----------------------------------------
-    .note-section {
-      .note-box {
-        border: 1px solid $border-color !important;
-        padding: 8px !important;
-        border-radius: 4px;
-        min-height: 30px;
-      }
-    }
-
-    // ----------------------------------------
     // Form Actions
     // ----------------------------------------
     .form-actions {
@@ -348,20 +387,10 @@ body {
         gap: 10px;
         padding-bottom: 30px;
 
-        app-button {
-          width: 100%;
-        }
+        app-button { width: 100%; }
       }
     }
   }
-}
-
-// =============================================
-// Animations
-// =============================================
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 
 // =============================================
@@ -374,14 +403,7 @@ body {
     .customer-info,
     .billing-row {
       flex-direction: column;
-      gap: 1;
-    }
-
-    .form-group {
-      .error-container {
-        left: calc(#{$label-width} + #{$input-gap});
-        top: 36px;
-      }
+      gap: 0;
     }
   }
 }
@@ -392,6 +414,14 @@ body {
 @include respond-to(sm) {
   .parent-container .form-container {
 
+    .leftContainer,
+    .rightContainer,
+    .half-width {
+      flex: 1 1 100%;
+      min-width: 100%;
+      font-size: 1.1rem;
+    }
+
     .form-group .input-row {
       flex-direction: column;
       align-items: flex-start;
@@ -401,8 +431,12 @@ body {
         min-width: unset;
       }
 
-      input, mat-select, textarea {
+      input,
+      mat-select,
+      textarea {
         width: 100%;
+        box-sizing: border-box;
+        min-width: 0;
       }
     }
 
@@ -413,4 +447,12 @@ body {
       margin-top: 2px;
     }
   }
+}
+
+// =============================================
+// Animations
+// =============================================
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 // Variables
-$font-main: 'Roboto', sans-serif;
+$font-main: 'Montserrat', sans-serif;
 $border-color: #e0e0e0;
 $primary-black: #000;
 $error-red: #d32f2f;
@@ -132,7 +132,7 @@ $bp-lg:   900px;
         // Rows and Groups
         .row {
             display: flex;
-            gap: 0px;
+            gap: 55px;
             margin-bottom: 35px; // Extra space for absolute error messages
             align-items: flex-end;
             flex-wrap: wrap;
@@ -272,4 +272,141 @@ $bp-lg:   900px;
             }
         }
     }
+}
+// =============================================
+// Mobile Only Override
+// =============================================
+@media (max-width: 480px) {
+  .parent-container .form-container {
+    padding: 16px !important;
+    max-width: 90% !important;
+
+            .form-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding-bottom: 60px;
+
+            
+
+            button {
+                height: 42px;
+                padding: 0 50px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                border-radius: 2px;
+                font-family: $font-main;
+                transition: all 0.2s ease;
+            }
+
+
+            .btn-save {
+                background: $primary-black;
+                color: #fff;
+                border: 1px solid $primary-black;
+                &:hover { background: #333; }
+            }
+
+            .btn-cancel {
+                background: #fff;
+                color: $primary-black;
+                border: 1px solid #ccc;
+                &:hover { background: #f5f5f5; }
+            }
+        }
+       .section-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin: 10px 0 10px 0;
+            color: #444;
+        }
+
+
+    .row {
+      flex-direction: column !important;
+      margin-bottom: 0 !important;
+      gap: 0 !important;
+    }
+
+    .form-group {
+      min-width: 100% !important;
+      margin-bottom: 16px !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+
+      label {
+        flex: unset !important;
+        width: 100% !important;
+        text-align: left !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        // letter-spacing: 0.8px !important;
+        text-transform: uppercase !important;
+        color: #888 !important;
+        padding-bottom: 4px !important;
+        margin-bottom: 0 !important;
+      }
+
+      .input-wrapper {
+        width: 100% !important;
+
+        input,
+        textarea,
+        mat-select {
+          width: 100% !important;
+          box-sizing: border-box !important;
+          border: none !important;
+          border-bottom: 1.5px solid #ccc !important;
+          border-radius: 0 !important;
+          padding: 6px 0 8px 0 !important;
+          background: transparent !important;
+          font-size: 14px !important;
+          outline: none !important;
+
+          &:focus { border-bottom: 1.5px solid #000 !important; }
+        }
+
+        input[readonly] {
+          background: transparent !important;
+          border-bottom: 1.5px solid #ccc !important;
+          color: #888 !important;
+          cursor: not-allowed !important;
+        }
+
+        textarea {
+          resize: none !important;
+          display: block !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          box-sizing: border-box !important;
+        }
+      }
+
+      .radio-group {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 20px !important;
+        align-items: center !important;
+        border-bottom: none !important;
+        margin-top: 6px !important;
+
+        label {
+          font-size: 13px !important;
+          font-weight: 400 !important;
+          text-transform: none !important;
+          letter-spacing: 0 !important;
+          color: #333 !important;
+          display: flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          width: auto !important;
+          padding-bottom: 0 !important;
+          cursor: pointer !important;
+        }
+      }
+    }
+  }
 }
