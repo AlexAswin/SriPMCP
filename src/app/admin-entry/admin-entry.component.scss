@@ -1,4 +1,6 @@
-// ─────────────────────────────────────────────────────────────
+// =============================================
+// Variables
+// =============================================// ─────────────────────────────────────────────────────────────
 // Variables
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
@@ -6,11 +8,11 @@
 // ─────────────────────────────────────────────────────────────
 $primary-color: #3f51b5;
 $primary:       #3f51b5;
-$danger-color:  #b91c1c;
+$danger-color:   #b91c1c;
 $danger-rgb:    200, 50, 50;   // ← fixed: was `red`, needs tuple for rgba()
-$border-color:  #f3f4f6;
-$text-main:     #111827;
-$text-muted:    #6b7280;
+$border-color:   #f3f4f6;
+$text-main:         #111827;
+$text-muted:       #6b7280;
 $radius-sm:     8px;
 $radius-lg:     12px;
 
@@ -97,6 +99,9 @@ $radius-lg:     12px;
 // ─────────────────────────────────────────────────────────────
 // Layout
 // ─────────────────────────────────────────────────────────────
+// =============================================
+// Admin Wrapper
+// =============================================
 .admin-wrapper {
   padding: 24px;
   min-height: 100vh;
@@ -157,8 +162,24 @@ $radius-lg:     12px;
     height: 60px;
     margin-right: 40px;
   }
+    img {
+      width: 40px;
+      height: 40px;
+      margin-right: 12px;
+    }
+  }
 }
 
+// =============================================
+// Button Width
+// =============================================
+.buttonwidth {
+  min-width: 246px;
+}
+
+// =============================================
+// Grid Layouts
+// =============================================
 .master-detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -184,7 +205,22 @@ $radius-lg:     12px;
 // ─────────────────────────────────────────────────────────────
 // Material Card
 // ─────────────────────────────────────────────────────────────
+// =============================================
+// Mat Card — No Box
+// =============================================
 mat-card {
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+
+  mat-card-header,
+  mat-card-content,
+  mat-card-actions {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
   border-radius: $radius-lg !important;
   background: #fff;
   padding: 8px 16px 20px;
@@ -200,6 +236,37 @@ mat-card {
   }
 }
 
+// =============================================
+// Danger Card — Exception (keep border)
+// =============================================
+.danger-card {
+  max-width: 500px;
+  border: 1px solid #fee2e2 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+
+  mat-card-title {
+    color: $danger-color !important;
+  }
+
+  .settlementDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 16px;
+    background: #fff5f5;
+    border-radius: 8px;
+
+    .button-group {
+      margin-top: 8px;
+    }
+  }
+}
+
+// =============================================
+// Forms
+// =============================================
 // ─────────────────────────────────────────────────────────────
 // Forms
 // ─────────────────────────────────────────────────────────────
@@ -216,6 +283,7 @@ mat-card {
     gap: 12px;
     width: 100%;
 
+    mat-form-field { flex: 1; }
     mat-form-field { flex: 1; }
     mat-form-field { flex: 1; }
 
@@ -256,8 +324,55 @@ mat-card {
 // ─────────────────────────────────────────────────────────────
 // Tab content
 // ─────────────────────────────────────────────────────────────
+// =============================================
+// Underline Input Override (all form fields)
+// =============================================
+.vertical-form,
+.inline-form {
+  mat-form-field {
+    .mdc-text-field--outlined .mdc-notched-outline {
+      display: none !important;
+    }
+
+    .mdc-text-field {
+      padding: 0 !important;
+      background: transparent !important;
+    }
+
+    .mat-mdc-text-field-wrapper {
+      background: transparent !important;
+      padding: 0 !important;
+      border-bottom: 1.5px solid #ccc !important;
+      border-radius: 0 !important;
+
+      &:focus-within {
+        border-bottom-color: $primary-color !important;
+      }
+    }
+
+    .mat-mdc-form-field-infix {
+      padding: 8px 0 !important;
+      border-top: none !important;
+      min-height: unset !important;
+    }
+
+    .mat-mdc-floating-label {
+      color: #888 !important;
+      font-size: 13px !important;
+    }
+
+    .mdc-line-ripple {
+      display: none !important;
+    }
+  }
+}
+
+// =============================================
+// Tab Content
+// =============================================
 .tab-content {
   padding: 24px 0;
+
 
 
   &.centered {
@@ -302,6 +417,30 @@ mat-card {
 // ─────────────────────────────────────────────────────────────
 // Alert / Notification system
 // ─────────────────────────────────────────────────────────────
+// =============================================
+// Utilities
+// =============================================
+.full-width    { width: 100%; }
+.buttonwidth   { min-width: 246px; }
+
+.hint-text {
+  text-align: center;
+  color: $text-muted;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+.expense-chips { margin-top: 16px; }
+
+.uppercase-bold {
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+// =============================================
+// Alert
+// =============================================
 .alert-container {
   position: fixed;
   bottom: 24px;
@@ -326,9 +465,15 @@ mat-card {
     flex: 1;
     font-weight: 500;
   }
+
+  span {
+    flex: 1;
+    font-weight: 500;
+  }
 }
 
 .success-alert {
+  background-color: #e8f5e9;
   background-color: #e8f5e9;
   background-color: #e8f5e9;
   color: #2e7d32;
@@ -338,6 +483,7 @@ mat-card {
 }
 
 .error-alert {
+  background-color: #ffebee;
   background-color: #ffebee;
   background-color: #ffebee;
   color: #c62828;
@@ -354,22 +500,29 @@ mat-card {
 // ─────────────────────────────────────────────────────────────
 // Maintenance / Search
 // ─────────────────────────────────────────────────────────────
+}
+
+// =============================================
+// Maintenance
+// =============================================
 .maintenance-container {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   padding: 2.5rem 4rem;
+  margin-top: 50px;
 }
 
 .search-card {
   .search-form {
     display: flex;
     gap: 12px;
-    align-items:center;
+    align-items: center;
     margin-top: 0.5rem;
     flex-direction: column;
   }
 
+  .vehicle-input { flex: 1; }
   .vehicle-input { flex: 1; }
   .vehicle-input { flex: 1; }
 }
@@ -385,6 +538,9 @@ mat-card {
 // Scenario selector
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
+// =============================================
+// Scenario Selector
+// =============================================
 .scenario-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -409,10 +565,14 @@ mat-card {
 
   &:hover { background: rgba(0, 0, 0, 0.02); }
   &:hover { background: rgba(0, 0, 0, 0.02); }
+  &:hover { background: rgba(0, 0, 0, 0.02); }
 
   &.active {
     border-width: 2px;
 
+    &:has(.scenario-icon.accent) { border-color: #7986cb; }
+    &:has(.scenario-icon.warn)   { border-color: #ffb74d; }
+    &:has(.scenario-icon.danger) { border-color: #e57373; }
     &:has(.scenario-icon.accent) { border-color: #7986cb; }
     &:has(.scenario-icon.warn)   { border-color: #ffb74d; }
     &:has(.scenario-icon.danger) { border-color: #e57373; }
@@ -463,12 +623,17 @@ mat-card {
   }
 }
 
+// =============================================
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
-// Action panel
+// Action Panel
+// =============================================
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
 .action-panel {
+  mat-card-header  { padding: 1rem 1.25rem 0; }
+  mat-card-content { padding: 0.75rem 1.25rem; }
+  mat-card-actions { padding: 0.5rem 1.25rem 1rem; }
   mat-card-header  { padding: 1rem 1.25rem 0; }
   mat-card-content { padding: 0.75rem 1.25rem; }
   mat-card-actions { padding: 0.5rem 1.25rem 1rem; }
@@ -491,6 +656,9 @@ mat-card {
   &.accent { background: rgba(121, 134, 203, 0.12); color: #5c6bc0; }
   &.warn   { background: rgba(255, 183, 77,  0.12); color: #f57c00; }
   &.danger { background: rgba(229, 115, 115, 0.12); color: #c62828; }
+  &.accent { background: rgba(121, 134, 203, 0.12); color: #5c6bc0; }
+  &.warn   { background: rgba(255, 183, 77, 0.12);  color: #f57c00; }
+  &.danger { background: rgba(229, 115, 115, 0.12); color: #c62828; }
 }
 
 .panel-hint {
@@ -500,6 +668,9 @@ mat-card {
   line-height: 1.6;
 }
 
+// =============================================
+// Balance Display
+// =============================================
 .balance-display {
   display: flex;
   justify-content: space-between;
@@ -533,6 +704,11 @@ mat-card {
   }
 }
 
+.section-divider { margin: 1rem 0 !important; }
+
+// =============================================
+// Preview Box
+// =============================================
 .preview-box {
   display: flex;
   align-items: flex-start;
@@ -566,8 +742,13 @@ mat-card {
 // Mobile tab nav
 // ─────────────────────────────────────────────────────────────
 .mobile-tab-nav { display: none; }
+// =============================================
+// Mobile Tab Nav
+// =============================================
+.mobile-tab-nav { display: none; }
 
 @media (max-width: 767px) {
+@media (max-width: 480px) {
   .mobile-tab-nav {
     display: flex;
     align-items: center;
@@ -576,6 +757,7 @@ mat-card {
     padding: 0 8px;
     height: 52px;
     position: sticky;
+    top: 56px;
     top: 56px;
     top: 56px;
     z-index: 99;
@@ -604,6 +786,8 @@ mat-card {
       &[disabled]             { opacity: 0.3; cursor: not-allowed; }
       &:hover:not([disabled]) { background: #f0f0f0; }
       &[disabled]             { opacity: 0.3; cursor: not-allowed; }
+      &:hover:not([disabled]) { background: #f0f0f0; }
+      &[disabled] { opacity: 0.3; cursor: not-allowed; }
     }
 
     .tab-label-block {
@@ -900,6 +1084,14 @@ mat-card {
     background: #f3f4f6;
     color: $text-muted;
     border: 0.5px solid rgba(0, 0, 0, 0.08);
+  @media (max-width: 768px) {
+    .search-row > div {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .search-row mat-form-field { flex: 1; }
   }
 }
 
@@ -915,4 +1107,13 @@ mat-card {
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
   display: inline-block;
+
+// =============================================
+// Animations
+// =============================================
+.edit-pane { animation: fadeIn 0.3s ease-in-out; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
