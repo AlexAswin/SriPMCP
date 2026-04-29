@@ -1,70 +1,19 @@
 // =============================================
 // Variables
-// =============================================// ─────────────────────────────────────────────────────────────
-// Variables
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// Variables
-// ─────────────────────────────────────────────────────────────
+// =============================================
 $primary-color: #3f51b5;
 $primary:       #3f51b5;
-$danger-color:   #b91c1c;
-$danger-rgb:    200, 50, 50;   // ← fixed: was `red`, needs tuple for rgba()
-$border-color:   #f3f4f6;
-$text-main:         #111827;
-$text-muted:       #6b7280;
-$radius-sm:     8px;
-$radius-lg:     12px;
-
-// ─────────────────────────────────────────────────────────────
-// Animations
-// ─────────────────────────────────────────────────────────────
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────────────────────
-.full-width    { width: 100%; }
-
-.uppercase-bold {
-  text-transform: uppercase;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-.hint-text {
-  text-align: center;
-  color: $text-muted;
-  font-size: 14px;
-  margin-top: 12px;
-}
-
-.section-divider { margin: 1rem 0 !important; }
-.expense-chips   { margin-top: 16px; }
-.edit-pane       { animation: fadeIn 0.3s ease-in-out; }
-
-// ─────────────────────────────────────────────────────────────
-// Layout
-// ─────────────────────────────────────────────────────────────
-$primary:       #3f51b5;
 $danger-color:  #b91c1c;
-$danger-rgb:    200, 50, 50;   // ← fixed: was `red`, needs tuple for rgba()
+$danger-rgb:    200, 50, 50;
 $border-color:  #f3f4f6;
 $text-main:     #111827;
 $text-muted:    #6b7280;
 $radius-sm:     8px;
 $radius-lg:     12px;
 
-// ─────────────────────────────────────────────────────────────
+// =============================================
 // Animations
-// ─────────────────────────────────────────────────────────────
+// =============================================
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -74,10 +23,11 @@ $radius-lg:     12px;
   to { transform: rotate(360deg); }
 }
 
-// ─────────────────────────────────────────────────────────────
+// =============================================
 // Utilities
-// ─────────────────────────────────────────────────────────────
+// =============================================
 .full-width    { width: 100%; }
+.buttonwidth   { min-width: 246px; }
 
 .uppercase-bold {
   text-transform: uppercase;
@@ -96,17 +46,13 @@ $radius-lg:     12px;
 .expense-chips   { margin-top: 16px; }
 .edit-pane       { animation: fadeIn 0.3s ease-in-out; }
 
-// ─────────────────────────────────────────────────────────────
-// Layout
-// ─────────────────────────────────────────────────────────────
 // =============================================
-// Admin Wrapper
+// Layout — Admin Wrapper
 // =============================================
 .admin-wrapper {
   padding: 24px;
   min-height: 100vh;
 }
-}
 
 .admin-header {
   display: flex;
@@ -114,19 +60,7 @@ $radius-lg:     12px;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 32px;
-.admin-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 32px;
 
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    color: $text-main;
-  }
   h1 {
     margin: 0;
     font-size: 24px;
@@ -162,19 +96,6 @@ $radius-lg:     12px;
     height: 60px;
     margin-right: 40px;
   }
-    img {
-      width: 40px;
-      height: 40px;
-      margin-right: 12px;
-    }
-  }
-}
-
-// =============================================
-// Button Width
-// =============================================
-.buttonwidth {
-  min-width: 246px;
 }
 
 // =============================================
@@ -187,7 +108,6 @@ $radius-lg:     12px;
   align-items: start;
 
   @media (max-width: 950px) { grid-template-columns: 1fr; }
-  @media (max-width: 950px) { grid-template-columns: 1fr; }
 }
 
 .dual-grid {
@@ -196,23 +116,17 @@ $radius-lg:     12px;
   gap: 24px;
 
   @media (max-width: 768px) { grid-template-columns: 1fr; }
-  @media (max-width: 768px) { grid-template-columns: 1fr; }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Material Card
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// Material Card
-// ─────────────────────────────────────────────────────────────
 // =============================================
-// Mat Card — No Box
+// Material Card
 // =============================================
 mat-card {
   box-shadow: none !important;
   border: none !important;
   background: transparent !important;
-  border-radius: 0 !important;
+  border-radius: $radius-lg !important;
+  padding: 8px 16px 20px;
 
   mat-card-header,
   mat-card-content,
@@ -220,10 +134,6 @@ mat-card {
     padding-left: 0 !important;
     padding-right: 0 !important;
   }
-
-  border-radius: $radius-lg !important;
-  background: #fff;
-  padding: 8px 16px 20px;
 
   mat-card-header {
     margin-bottom: 20px;
@@ -237,7 +147,7 @@ mat-card {
 }
 
 // =============================================
-// Danger Card — Exception (keep border)
+// Danger Card
 // =============================================
 .danger-card {
   max-width: 500px;
@@ -256,23 +166,15 @@ mat-card {
     margin-top: 16px;
     padding: 16px;
     background: #fff5f5;
-    border-radius: 8px;
+    border-radius: $radius-sm;
 
-    .button-group {
-      margin-top: 8px;
-    }
+    .button-group { margin-top: 8px; }
   }
 }
 
 // =============================================
 // Forms
 // =============================================
-// ─────────────────────────────────────────────────────────────
-// Forms
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// Forms
-// ─────────────────────────────────────────────────────────────
 .vertical-form {
   display: flex;
   flex-direction: column;
@@ -284,16 +186,12 @@ mat-card {
     width: 100%;
 
     mat-form-field { flex: 1; }
-    mat-form-field { flex: 1; }
-    mat-form-field { flex: 1; }
 
-    @media (max-width: 480px) { flex-direction: column; }
     @media (max-width: 480px) { flex-direction: column; }
   }
 
   .button-row {
     display: flex;
-    justify-content: space-between;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
@@ -318,14 +216,8 @@ mat-card {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Tab content
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// Tab content
-// ─────────────────────────────────────────────────────────────
 // =============================================
-// Underline Input Override (all form fields)
+// Underline Input Override
 // =============================================
 .vertical-form,
 .inline-form {
@@ -373,8 +265,6 @@ mat-card {
 .tab-content {
   padding: 24px 0;
 
-
-
   &.centered {
     display: flex;
     justify-content: center;
@@ -382,64 +272,8 @@ mat-card {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Danger card
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// Danger card
-// ─────────────────────────────────────────────────────────────
-.danger-card {
-  max-width: 500px;
-  border: 1px solid #fee2e2 !important;
-
-  mat-card-title { color: $danger-color !important; }
-
-  mat-card-title { color: $danger-color !important; }
-
-  .settlementDetails {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 16px;
-    padding: 16px;
-    background: #fff5f5;
-    border-radius: $radius-sm;
-    border-radius: $radius-sm;
-
-    .button-group { margin-top: 8px; }
-    .button-group { margin-top: 8px; }
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Alert / Notification system
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// Alert / Notification system
-// ─────────────────────────────────────────────────────────────
 // =============================================
-// Utilities
-// =============================================
-.full-width    { width: 100%; }
-.buttonwidth   { min-width: 246px; }
-
-.hint-text {
-  text-align: center;
-  color: $text-muted;
-  font-size: 14px;
-  margin-top: 12px;
-}
-
-.expense-chips { margin-top: 16px; }
-
-.uppercase-bold {
-  text-transform: uppercase;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-// =============================================
-// Alert
+// Alert / Notification System
 // =============================================
 .alert-container {
   position: fixed;
@@ -461,45 +295,20 @@ mat-card {
     flex: 1;
     font-weight: 500;
   }
-  span {
-    flex: 1;
-    font-weight: 500;
-  }
-
-  span {
-    flex: 1;
-    font-weight: 500;
-  }
 }
 
 .success-alert {
   background-color: #e8f5e9;
-  background-color: #e8f5e9;
-  background-color: #e8f5e9;
   color: #2e7d32;
   border-left: 5px solid #2e7d32;
-  border-radius: 0;
   border-radius: 0;
 }
 
 .error-alert {
   background-color: #ffebee;
-  background-color: #ffebee;
-  background-color: #ffebee;
   color: #c62828;
   border-left: 5px solid #c62828;
   border-radius: 0;
-}
-
-// ─────────────────────────────────────────────────────────────
-// Maintenance / Search
-// ─────────────────────────────────────────────────────────────
-  border-radius: 0;
-}
-
-// ─────────────────────────────────────────────────────────────
-// Maintenance / Search
-// ─────────────────────────────────────────────────────────────
 }
 
 // =============================================
@@ -523,8 +332,16 @@ mat-card {
   }
 
   .vehicle-input { flex: 1; }
-  .vehicle-input { flex: 1; }
-  .vehicle-input { flex: 1; }
+
+  @media (max-width: 768px) {
+    .search-row > div {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .search-row mat-form-field { flex: 1; }
+  }
 }
 
 .maintenance-dashboard {
@@ -533,11 +350,6 @@ mat-card {
   gap: 1rem;
 }
 
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// Scenario selector
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
 // =============================================
 // Scenario Selector
 // =============================================
@@ -546,7 +358,6 @@ mat-card {
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 
-  @media (max-width: 640px) { grid-template-columns: 1fr; }
   @media (max-width: 640px) { grid-template-columns: 1fr; }
 }
 
@@ -557,25 +368,15 @@ mat-card {
   padding: 1rem 1.25rem;
   border: 1px solid var(--mat-outlined-card-outline-color, rgba(0, 0, 0, 0.12));
   border-radius: $radius-lg;
-  border: 1px solid var(--mat-outlined-card-outline-color, rgba(0, 0, 0, 0.12));
-  border-radius: $radius-lg;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
   background: transparent;
 
   &:hover { background: rgba(0, 0, 0, 0.02); }
-  &:hover { background: rgba(0, 0, 0, 0.02); }
-  &:hover { background: rgba(0, 0, 0, 0.02); }
 
   &.active {
     border-width: 2px;
 
-    &:has(.scenario-icon.accent) { border-color: #7986cb; }
-    &:has(.scenario-icon.warn)   { border-color: #ffb74d; }
-    &:has(.scenario-icon.danger) { border-color: #e57373; }
-    &:has(.scenario-icon.accent) { border-color: #7986cb; }
-    &:has(.scenario-icon.warn)   { border-color: #ffb74d; }
-    &:has(.scenario-icon.danger) { border-color: #e57373; }
     &:has(.scenario-icon.accent) { border-color: #7986cb; }
     &:has(.scenario-icon.warn)   { border-color: #ffb74d; }
     &:has(.scenario-icon.danger) { border-color: #e57373; }
@@ -600,9 +401,6 @@ mat-card {
   &.accent { background: rgba(121, 134, 203, 0.12); mat-icon { color: #7986cb; } }
   &.warn   { background: rgba(255, 183, 77,  0.12); mat-icon { color: #ffb74d; } }
   &.danger { background: rgba(229, 115, 115, 0.12); mat-icon { color: #e57373; } }
-  &.accent { background: rgba(121, 134, 203, 0.12); mat-icon { color: #7986cb; } }
-  &.warn   { background: rgba(255, 183, 77,  0.12); mat-icon { color: #ffb74d; } }
-  &.danger { background: rgba(229, 115, 115, 0.12); mat-icon { color: #e57373; } }
 }
 
 .scenario-info {
@@ -624,19 +422,9 @@ mat-card {
 }
 
 // =============================================
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
 // Action Panel
 // =============================================
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
 .action-panel {
-  mat-card-header  { padding: 1rem 1.25rem 0; }
-  mat-card-content { padding: 0.75rem 1.25rem; }
-  mat-card-actions { padding: 0.5rem 1.25rem 1rem; }
-  mat-card-header  { padding: 1rem 1.25rem 0; }
-  mat-card-content { padding: 0.75rem 1.25rem; }
-  mat-card-actions { padding: 0.5rem 1.25rem 1rem; }
   mat-card-header  { padding: 1rem 1.25rem 0; }
   mat-card-content { padding: 0.75rem 1.25rem; }
   mat-card-actions { padding: 0.5rem 1.25rem 1rem; }
@@ -652,12 +440,6 @@ mat-card {
 
   &.accent { background: rgba(121, 134, 203, 0.12); color: #5c6bc0; }
   &.warn   { background: rgba(255, 183, 77,  0.12); color: #f57c00; }
-  &.danger { background: rgba(229, 115, 115, 0.12); color: #c62828; }
-  &.accent { background: rgba(121, 134, 203, 0.12); color: #5c6bc0; }
-  &.warn   { background: rgba(255, 183, 77,  0.12); color: #f57c00; }
-  &.danger { background: rgba(229, 115, 115, 0.12); color: #c62828; }
-  &.accent { background: rgba(121, 134, 203, 0.12); color: #5c6bc0; }
-  &.warn   { background: rgba(255, 183, 77, 0.12);  color: #f57c00; }
   &.danger { background: rgba(229, 115, 115, 0.12); color: #c62828; }
 }
 
@@ -677,12 +459,10 @@ mat-card {
   align-items: center;
   background: rgba(0, 0, 0, 0.03);
   border-radius: $radius-sm;
-  border-radius: $radius-sm;
   padding: 12px 16px;
   margin-bottom: 1rem;
 
-  .balance-label  { font-size: 13px; color: rgba(0, 0, 0, 0.5); }
-  .balance-label  { font-size: 13px; color: rgba(0, 0, 0, 0.5); }
+  .balance-label { font-size: 13px; color: rgba(0, 0, 0, 0.5); }
 
   .balance-value {
     font-size: 22px;
@@ -704,8 +484,6 @@ mat-card {
   }
 }
 
-.section-divider { margin: 1rem 0 !important; }
-
 // =============================================
 // Preview Box
 // =============================================
@@ -714,7 +492,6 @@ mat-card {
   align-items: flex-start;
   gap: 10px;
   padding: 12px 16px;
-  border-radius: $radius-sm;
   border-radius: $radius-sm;
   font-size: 13px;
   line-height: 1.6;
@@ -734,20 +511,11 @@ mat-card {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Mobile tab nav
-// ─────────────────────────────────────────────────────────────
-.mobile-tab-nav { display: none; }
-// ─────────────────────────────────────────────────────────────
-// Mobile tab nav
-// ─────────────────────────────────────────────────────────────
-.mobile-tab-nav { display: none; }
 // =============================================
 // Mobile Tab Nav
 // =============================================
 .mobile-tab-nav { display: none; }
 
-@media (max-width: 767px) {
 @media (max-width: 480px) {
   .mobile-tab-nav {
     display: flex;
@@ -758,15 +526,12 @@ mat-card {
     height: 52px;
     position: sticky;
     top: 56px;
-    top: 56px;
-    top: 56px;
     z-index: 99;
 
     .chevron-btn {
       width: 36px;
       height: 36px;
       border: none;
-      border-radius: $radius-sm;
       border-radius: $radius-sm;
       background: #fafafa;
       cursor: pointer;
@@ -784,10 +549,6 @@ mat-card {
 
       &:hover:not([disabled]) { background: #f0f0f0; }
       &[disabled]             { opacity: 0.3; cursor: not-allowed; }
-      &:hover:not([disabled]) { background: #f0f0f0; }
-      &[disabled]             { opacity: 0.3; cursor: not-allowed; }
-      &:hover:not([disabled]) { background: #f0f0f0; }
-      &[disabled] { opacity: 0.3; cursor: not-allowed; }
     }
 
     .tab-label-block {
@@ -825,9 +586,9 @@ mat-card {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Ledger tab                      ← fixed: moved OUT of @media
-// ─────────────────────────────────────────────────────────────
+// =============================================
+// Ledger Tab
+// =============================================
 .ledger-tab {
   padding: 1.5rem 0;
 }
@@ -905,9 +666,9 @@ mat-card {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
+// =============================================
 // Checklist
-// ─────────────────────────────────────────────────────────────
+// =============================================
 .checklist {
   display: flex;
   flex-direction: column;
@@ -983,9 +744,9 @@ mat-card {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Download buttons
-// ─────────────────────────────────────────────────────────────
+// =============================================
+// Download Buttons
+// =============================================
 .download-btn {
   display: flex;
   align-items: center;
@@ -1011,9 +772,9 @@ mat-card {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Delete form
-// ─────────────────────────────────────────────────────────────
+// =============================================
+// Delete Form
+// =============================================
 .delete-label {
   font-size: 12px;
   color: $text-muted;
@@ -1057,9 +818,9 @@ mat-card {
   &:disabled             { opacity: 0.4; cursor: not-allowed; }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Alerts
-// ─────────────────────────────────────────────────────────────
+// =============================================
+// Alerts (inline)
+// =============================================
 .alert {
   font-size: 12px;
   padding: 8px 12px;
@@ -1084,20 +845,12 @@ mat-card {
     background: #f3f4f6;
     color: $text-muted;
     border: 0.5px solid rgba(0, 0, 0, 0.08);
-  @media (max-width: 768px) {
-    .search-row > div {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .search-row mat-form-field { flex: 1; }
   }
 }
 
-// ─────────────────────────────────────────────────────────────
+// =============================================
 // Spinner
-// ─────────────────────────────────────────────────────────────
+// =============================================
 .spinner {
   width: 12px;
   height: 12px;
@@ -1107,13 +860,4 @@ mat-card {
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
   display: inline-block;
-
-// =============================================
-// Animations
-// =============================================
-.edit-pane { animation: fadeIn 0.3s ease-in-out; }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
