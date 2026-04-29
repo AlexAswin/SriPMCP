@@ -6,12 +6,89 @@ $border-color: #e0e0e0;
 $primary-black: #000;
 $error-red: #d32f2f;
 $label-width: 150px;
+$text-main:     #111827;
+
+// =============================================
+// Breakpoints
+// =============================================
+$bp-sm:   480px;
+$bp-md:   768px;
+$bp-lg:   900px;
+
+@mixin respond-to($bp) {
+  @if $bp == sm { @media (max-width: #{$bp-sm}) { @content; } }
+  @if $bp == md { @media (max-width: #{$bp-md}) { @content; } }
+  @if $bp == lg { @media (max-width: #{$bp-lg}) { @content; } }
+}
 
 .parent-container {
-    display: flex;
+    display: column;
     background-color: #fff;
     min-height: 100vh;
     font-family: $font-main;
+
+    .admin-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+
+    h1 {
+      margin: 0 auto;
+      font-size: 24px;
+      font-weight: 600;
+      color: $text-main;
+
+      @include respond-to(md) { font-size: 20px; }
+      @include respond-to(sm) { font-size: 16px; }
+    }
+
+    button {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      margin-right: 20px;
+      margin-left: 40px;
+      flex-shrink: 0;
+
+      &:hover {
+        background-color: #fff;
+        transform: translateX(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      mat-icon {
+        color: #555;
+      }
+
+      @include respond-to(sm) {
+        margin-left: 12px;
+        margin-right: 8px;
+        width: 38px;
+        height: 38px;
+      }
+    }
+
+    img {
+      width: 60px;
+      height: 60px;
+      margin-right: 40px;
+
+      @include respond-to(sm) {
+        width: 40px;
+        height: 40px;
+        margin-right: 12px;
+      }
+    }
+  }
 
     // Sidebar with Back Arrow
     .sidebar {
@@ -55,7 +132,7 @@ $label-width: 150px;
         // Rows and Groups
         .row {
             display: flex;
-            gap: 80px;
+            gap: 0px;
             margin-bottom: 35px; // Extra space for absolute error messages
             align-items: flex-end;
             flex-wrap: wrap;

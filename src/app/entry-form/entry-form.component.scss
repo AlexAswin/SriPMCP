@@ -70,3 +70,53 @@ body {
     background-color: rgb(244 244 244); 
     color: red;         
   }
+
+  // ─── Mobile responsive overrides ───────────────────────────────────────────
+
+@media (max-width: 480px) {
+
+  .searchGroup {
+
+    h1 {
+      margin-top: 24px;
+      font-size: 1.4rem;
+      padding: 12px 16px;
+    }
+
+    .info-card {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 12px 16px;
+
+      p {
+        font-size: small;
+      }
+    }
+
+    .search-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      min-height: unset;
+
+      h2 {
+        font-size: 1.1rem;
+      }
+
+      mat-form-field {
+        min-width: 100%;
+        width: 100%;
+      }
+    }
+  }
+
+  .alert-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 12px 16px;
+  }
+}

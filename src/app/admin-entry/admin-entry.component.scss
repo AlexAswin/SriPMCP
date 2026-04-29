@@ -7,7 +7,6 @@ $text-muted: #6b7280;
 
 .admin-wrapper {
   padding: 24px;
-  background-color: #f9fafb;
   min-height: 100vh;
 
   .admin-header {
@@ -27,7 +26,7 @@ $text-muted: #6b7280;
     button {
       background: white;
       border: 1px solid #ddd;
-      border-radius: 50%;
+      border-radius: 50px;
       width: 45px;
       height: 45px;
       display: flex;
@@ -42,7 +41,7 @@ $text-muted: #6b7280;
       &:hover {
         background-color: #fff;
         transform: translateX(-3px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 8px rgb(235, 232, 232);
       }
   
       mat-icon {
@@ -51,13 +50,16 @@ $text-muted: #6b7280;
     }
 
     img {
-      width: 60px;
-      height: 60px;
-      margin-right: 40px;
+      width: 40px;
+      height: 40px;
+      margin-right: 12px;
     }
   }
 }
 
+.buttonwidth{
+  min-width: 246px;
+}
 
 .master-detail-grid {
   display: grid;
@@ -83,15 +85,15 @@ $text-muted: #6b7280;
 mat-card {
   border-radius: 12px !important;
   background: #ffffff;
-  padding: 8px 16px 20px 16px; 
+  // padding: 8px 16px 20px 16px; 
   
   mat-card-header {
-    margin-bottom: 20px;
+    // margin-bottom: 20px;
     
     mat-card-title {
-      font-size: 18px;
+      font-size: 13px;
       font-weight: 500;
-      color: #374151;
+      color: #374151f7;
     }
   }
 }
@@ -99,7 +101,7 @@ mat-card {
 .vertical-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 11px;
 
   .row {
     display: flex;
@@ -243,7 +245,7 @@ mat-card {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 2.5rem 4rem;
+  padding: 200;
   margin-top: 50px;
 }
 
@@ -251,8 +253,9 @@ mat-card {
   .search-form {
     display: flex;
     gap: 12px;
-    align-items: flex-start;
+    align-items:center;
     margin-top: 0.5rem;
+    flex-direction: column;
   }
 
   .vehicle-input {
@@ -478,7 +481,7 @@ mat-card {
   display: none;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 480px) {
 
   .mobile-tab-nav {
     display: flex;
@@ -541,19 +544,15 @@ mat-card {
     }
   }
 
-@media (max-width: 767px) {
-  ::ng-deep .mat-mdc-tab-header {
-    display: none !important;
+@media (max-width: 768px) {
+  .search-row > div {
+    display: flex;
+    gap: 10px;
+    width: 100%;
   }
 
-  ::ng-deep .mat-mdc-tab-body-wrapper .mat-mdc-tab-body {
-    display: none !important;
-  }
-
-  ::ng-deep .mat-mdc-tab-body-wrapper .mat-mdc-tab-body.mat-mdc-tab-body-active {
-    display: block !important;
-    transform: none !important;
-    animation: none !important;
+  .search-row mat-form-field {
+    flex: 1;
   }
 }
 }
