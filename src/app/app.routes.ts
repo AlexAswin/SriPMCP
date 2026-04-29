@@ -8,16 +8,30 @@ import { MonthlyIncomeComponent } from './monthly-income/monthly-income.componen
 import { MonthlyPaymentsComponent } from './monthly-payments/monthly-payments.component';
 import { ExpenseDetailsComponent } from './expense-details/expense-details.component';
 import { DailyIncomeComponent } from './daily-income/daily-income.component';
+import { authGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LogInComponent },
-  { path: 'dashBoard', component: DashBoardComponent },
-  { path: 'monthlyCustomer', component: MonthlyCustomerDetailsComponent },
-  { path: 'dailyCustomer', component: DailyCustomerDetailsComponent },
-  { path: 'adminEntry', component: AdminEntryComponent },
-  { path: 'monthlyPayments', component: MonthlyPaymentsComponent },
-  { path: 'reports/monthlyIncome', component: MonthlyIncomeComponent },
-  { path: 'reports/expense', component: ExpenseDetailsComponent },
-  { path: 'reports/dailyIncome', component: DailyIncomeComponent },
 
+  {
+    path: '',
+    canActivate: [authGuard],
+    children: [
+      { path: 'dashBoard',        component: DashBoardComponent },
+      { path: 'monthlyCustomer',  component: MonthlyCustomerDetailsComponent },
+      { path: 'dailyCustomer',    component: DailyCustomerDetailsComponent },
+      { path: 'adminEntry',       component: AdminEntryComponent },
+      { path: 'monthlyPayments',  component: MonthlyPaymentsComponent },
+      {
+        path: 'reports',
+        children: [
+          { path: 'monthlyIncome', component: MonthlyIncomeComponent },
+          { path: 'dailyIncome',   component: DailyIncomeComponent },
+          { path: 'expense',       component: ExpenseDetailsComponent },
+        ]
+      }
+    ]
+  },
+
+  { path: '**', redirectTo: '' }
 ];

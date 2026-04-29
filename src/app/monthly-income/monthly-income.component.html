@@ -34,11 +34,15 @@
           <input type="number" 
                  [(ngModel)]="minPending" 
                  placeholder="Min"
+                 min="0"
+                 (input)="minPending = minPending < 0 ? 0 : minPending"
                  (keydown.enter)="showFilteredPending()">
           <span>To</span>
           <input type="number" 
                  [(ngModel)]="maxPending" 
                  placeholder="Max"
+                 min="0"
+                 (input)="maxPending = maxPending < 0 ? 0 : maxPending"
                  (keydown.enter)="showFilteredPending()">
         </div>
       
@@ -312,7 +316,7 @@
       </mat-card>
 
     </div>
-    <pre>{{ filteredCustomers$ | async | json }}</pre>
+    <!-- <pre>{{ filteredCustomers$ | async | json }}</pre> -->
 
   </mat-sidenav-content>
 

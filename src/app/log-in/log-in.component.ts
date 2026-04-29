@@ -31,14 +31,19 @@ export class LogInComponent {
     if (this.loginForm.valid) {
       const { email, password } = this.loginForm.value;
       if (email === 'boopathi@gmail.com' && password === '123456') {
+        localStorage.setItem('User', 'boopathi')
         this.router.navigate(['/dashBoard']);
-        console.log(this.loginForm.value); 
       }
       else {
         this.loginForm.markAllAsTouched();
         alert('Login UnSuccessful!');
       }
     } 
+  }
+
+  onSignin() {
+    this.router.navigate(['/SignIn']);
+
   }
 
 }

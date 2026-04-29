@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { addDoc, collectionData, deleteDoc, doc, getDoc, limit, setDoc, updateDoc } from '@angular/fire/firestore';
+import { addDoc, collectionData, deleteDoc, doc, getDoc, limit, setDoc, updateDoc, writeBatch } from '@angular/fire/firestore';
 import { Firestore, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
@@ -153,23 +153,28 @@ async adjustVehicleCostForCurrentMonth(vehicleType: string, monthlyCost: number,
 
 async deleteCustomerByVehicleNumber(vehicleNumber: string): Promise<void> {
   try {
-    const customerQuery = query(
-      collection(this.firestore, 'CustomerEntry'),
-      where('vehicleNumber', '==', vehicleNumber),
-      limit(1) 
-    );
+    const customerRef = collection(this.firestore, 'CustomerEntry');
+    const q = query(customerRef, where('vehicleNumber', '==', vehicleNumber), limit(1));
+    const querySnapshot = await getDocs(q);
 
-    const querySnapshot = await getDocs(customerQuery);
+    if (querySnapshot.empty) return;
 
-    if (querySnapshot.empty) {
-      throw new Error('NOT_FOUND');
-    }
+    const customerDoc = querySnapshot.docs[0];
+    const batch = writeBatch(this.firestore);
 
-    await deleteDoc(querySnapshot.docs[0].ref);
+    const transactionsSnap = await getDocs(collection(customerDoc.ref, 'Transactions'));
+    transactionsSnap.forEach(doc => batch.delete(doc.ref));
 
+    const historySnap = await getDocs(collection(customerDoc.ref, 'statusHistory'));
+    historySnap.forEach(doc => batch.delete(doc.ref));
+
+    batch.delete(customerDoc.ref);
+
+    await batch.commit();
+    
+    console.log('Customer and all sub-collections wiped successfully.');
   } catch (error) {
-    console.error('Firestore Delete Error:', error);
-    throw error;
+    console.error('Delete failed:', error);
   }
 }
 
