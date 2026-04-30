@@ -32,6 +32,11 @@ export class LogInComponent {
       const { email, password } = this.loginForm.value;
       if (email === 'boopathi@gmail.com' && password === '123456') {
         localStorage.setItem('User', 'boopathi')
+        localStorage.setItem('UserType', 'admin')
+        this.router.navigate(['/dashBoard']);
+      } else if (email === 'users@gmail.com' && password === '123456') {
+        localStorage.setItem('User', 'user')
+        localStorage.setItem('UserType', 'user')
         this.router.navigate(['/dashBoard']);
       }
       else {

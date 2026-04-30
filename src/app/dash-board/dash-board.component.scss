@@ -1,53 +1,101 @@
 .layout {
-    display: grid;
-    grid-template-columns: 25% 1fr;
-    height: calc(100vh - 120px);
-  }
-  
+  display: grid;
+  grid-template-columns: 25% 1fr;
+  height: calc(100vh - 120px);
+}
 
-  .sidebar {
-    background-color: #f3f2ee;
-    padding: 16px;
-    border-right: 1px solid lightgray;
-  
-    mat-nav-list {
+.mobile-menu-btn {
+  display: none;
+}
+
+.sidebar {
+  background-color: #f3f2ee;
+  padding: 16px;
+  border-right: 1px solid lightgray;
+
+  mat-nav-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    justify-content: space-between;
+
+    .navItems {
+      gap: 15px 0px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-  
-      a {
-        border: 1px solid #000;
-        text-align: center;
-        border-radius: 4px;
+    }
+
+    a {
+      border: 1px solid #000;
+      text-align: center;
+      border-radius: 4px;
+    }
+
+    .logOutBtn {
+      background-color: black;
+
+      h3 {
+        color: white;
+        margin-bottom: 0px;
       }
     }
   }
-  
-  .content {
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    margin: 20px;
+}
+
+
+.content {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  margin: 20px;
+  position: relative;
+}
+
+
+.nested-menu {
+  padding-left: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  a {
+    font-size: 14px;
+  }
+}
+
+
+@media (max-width: 768px) {
+
+  .layout {
+    grid-template-columns: 1fr;
   }
 
+  .sidebar {
+    display: none;
+  }
+
+
+  .sidebar.mobile-open {
+    display: block;
+  }
+
+
+  .mobile-menu-btn-wrapper {
+
+    background-color: #f3f2ee;
+    padding: 10px 10px;
+
+  .mobile-menu-btn {
+    display: block;
+    position: sticky;
+    z-index: 1001;
+    background: #fff;
+    border-radius: 50%;
+    margin-left: auto;
+  }
+}
+
   .nested-menu {
-    padding-left: 100px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  
-    a {
-      font-size: 14px;
-    }
+    padding-left: 16px;
   }
-  
-  @media (max-width: 768px) {
-    .layout {
-      grid-template-columns: 1fr;
-    }
-  
-    .sidebar {
-      border-bottom: 1px solid #ccc;
-    }
-  }
-  
+}

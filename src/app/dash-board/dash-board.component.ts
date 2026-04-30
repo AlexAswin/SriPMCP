@@ -27,10 +27,21 @@ export class DashBoardComponent {
   monthlyCustomerForm: boolean = false;
   dailyCustomerForm: boolean = false;
 
+  isAdmin: boolean = false
+  isMobileMenuOpen = false;
+
   constructor (private router: Router) {
 
   }
 
+  ngOnInit(): void {
+    const userType = localStorage.getItem('UserType');
+    if(userType === 'admin') {
+      this.isAdmin = true;
+    } else {
+      this.isAdmin = false;
+    }
+  }
 
   openMonthlyCustomerForm() {
       this.router.navigate(['/monthlyCustomer']);
@@ -42,6 +53,15 @@ export class DashBoardComponent {
 
   toggleReports() {
     this.showReports = !this.showReports;
+  }
+
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  LogOut() {
+    localStorage.removeItem('UserType');
+    localStorage.removeItem('User')
   }
 
 }
