@@ -6,7 +6,7 @@ $error-red:     #c62828;
 $border-color:  #ccc;
 $label-width:   120px;
 $input-gap:     10px;
-$text-main:     #111827;
+$text-main:     black;
 
 @mixin flex-row-layout {
   display: flex;
@@ -36,7 +36,7 @@ body {
     h1 {
       margin: 0 auto;
       font-size: 24px;
-      font-weight: 600;
+      font-weight: 900;
       color: $text-main;
     }
 
@@ -85,7 +85,7 @@ body {
 
       h2 {
         font-size: 16px;
-        font-weight: 700;
+        font-weight: 900;
         margin-bottom: 15px;
         color: #444;
         padding-bottom: 8px;
@@ -123,7 +123,7 @@ body {
         label {
           min-width: $label-width;
           font-size: 13px;
-          font-weight: bold;
+          font-weight: 900;
           color: #555;
           white-space: nowrap;
         }
@@ -148,7 +148,7 @@ body {
 
           label {
             min-width: auto;
-            font-weight: normal;
+            font-weight: 900;
             cursor: pointer;
           }
         }
@@ -166,7 +166,7 @@ body {
         small {
           color: $error-red;
           font-size: 13px;
-          font-weight: 500;
+          font-weight: 900;
           line-height: 1.1;
           white-space: nowrap;
         }
@@ -281,7 +281,7 @@ body {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 480px) { 
   .parent-container {
     .admin-header {
       gap: 8px;

@@ -696,12 +696,12 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
         c.vehicleNumber ?? '',
         c.customerName ?? '',
         c.customerPhoneNbr ?? '',
-        c.monthlyStatus ?? c.dailyStatus,
+        c.vehicleName ?? c.vehicleName,
         c.address ?? '',
       ]);
 
       autoTable(doc, {
-        head: [['Lot Number', 'Vehicle', 'Name', 'Phone Number', 'Status', 'Address']],
+        head: [['Lot Number', 'Vehicle', 'Name', 'Phone Number', 'vehicle Name', 'Address']],
         body: tableBody,
         ...commonConfig,
       });
