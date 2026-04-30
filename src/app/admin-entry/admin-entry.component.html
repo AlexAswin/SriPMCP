@@ -10,6 +10,7 @@
     <img src="assets/murugar_.jpg" alt="" [routerLink]="['/dashBoard']">
 
   </header>
+  
 
   <div class="mobile-tab-nav">
     <button class="chevron-btn" [disabled]="activeTabIndex === 0" (click)="prevTab()">
@@ -32,7 +33,7 @@
       <div class="tab-content">
         <div class="master-detail-grid">
           <div class="form-column">
-            <mat-card appearance="outlined">
+            <mat-card appearance="raised">
               <mat-card-header>
                 <mat-card-title>Add Vehicle Type</mat-card-title>
               </mat-card-header>
@@ -52,7 +53,7 @@
                       <span matTextPrefix>₹&nbsp;</span>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field appearance="outline" class="full-width">
                       <mat-label>Daily Rate</mat-label>
                       <input matInput type="number" formControlName="dailyCost" min="1"
                         (keydown)="restrictNegativeVehicleInput($event)">
@@ -67,7 +68,7 @@
           </div>
 
           <div class="list-column">
-            <mat-card appearance="outlined">
+            <mat-card appearance="raised">
               <mat-card-header>
                 <mat-card-title>Manage Existing Vehicles</mat-card-title>
               </mat-card-header>
@@ -190,7 +191,7 @@
                        maxlength="13">
                 <mat-icon matSuffix>directions_car</mat-icon>
               </mat-form-field>
-              <app-button 
+              <app-button class="buttonwidth"
                 label="Search" 
                 variant="primary" 
                 (click)="getCustomerRecord()"
@@ -244,7 +245,7 @@
           </div>
     
           <!-- Action Panel -->
-          <mat-card appearance="outlined" class="action-panel">
+          <mat-card appearance="raised" class="action-panel">
     
             <!-- Adjust Balance -->
             <ng-container *ngIf="activeScenario === 'adjust'">
@@ -268,7 +269,7 @@
                   </span>
                 </div>
                 <mat-divider class="section-divider"></mat-divider>
-                <mat-form-field appearance="outline" class="full-width">
+                <mat-form-field appearance="fill" class="full-width">
                   <mat-label>New Settlement Amount</mat-label>
                   <span matTextPrefix>₹&nbsp;</span>
                   <input matInput
@@ -317,7 +318,7 @@
                 <p class="panel-hint">
                   Enter the exact transaction ID to permanently remove it.
                 </p>
-                <mat-form-field appearance="outline" class="full-width">
+                <mat-form-field appearance="fill" class="full-width">
                   <mat-label>Transaction ID</mat-label>
                   <input matInput
                          #idInput

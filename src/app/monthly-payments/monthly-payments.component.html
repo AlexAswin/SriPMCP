@@ -1,15 +1,19 @@
 <div class="parent-container">
+ <header class="admin-header">
+        <button mat-icon-button (click)="closeForm()" class="back-btn">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h1>Monthly Payment Details</h1>
 
-  <button (click)="closeForm()">
+        <img src="assets/murugar_.jpg" alt="" (click)="closeForm()">
+    </header>
+  <!-- <button (click)="closeForm()">
     <mat-icon>arrow_back</mat-icon>
-  </button>
+  </button> -->
 
   <div class="paymentForm">
     <div class="searchGroup">
-      <div>
-        <h1>Monthly Payments</h1>
-      </div>
-  
+     
       <!-- <div class="search-row">
         <h2 class="search-label">Vehicle Number</h2>
   

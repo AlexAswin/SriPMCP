@@ -8,8 +8,9 @@
   </div>
 
   <div class="search-row">
+   
     <h2 class="search-label">Vehicle Number</h2>
-
+   
     <mat-form-field appearance="outline" class="search-input">
       <input matInput placeholder="Enter Vehicle Number" [formControl]="searchWithVehicleNbr" maxlength="13" [formControl]="searchWithVehicleNbr" (input)="onVehicleNumberInput($event)"
       (keydown)="restrictVehicleInput($event)"/>
@@ -17,9 +18,11 @@
 
     <app-button variant="primary" label="Search" width="20%" style="min-height: 50px;" mat-raised-button color="primary"
       (click)="checkExistingUser('vehicleNbr')">
-
     </app-button>
+   
   </div>
+
+  
   <div class="search-row">
     <h2 class="search-label">Billing Number</h2>
 
@@ -42,3 +45,4 @@
 
 <!-- <app-new-customer-entry-form *ngIf="newCustomer" (formClosed)="handleFormClose($event)"></app-new-customer-entry-form> -->
 <!-- <app-existing-customer-details *ngIf="existingCustomer"></app-existing-customer-details> -->
+

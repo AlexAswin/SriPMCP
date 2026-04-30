@@ -72,7 +72,7 @@
                         <div class="form-group">
                             <div class="input-row">
                               <label>LoT Number</label>
-                              <input type="text" placeholder="Lot number" formControlName="lotNumber" (keydown)="restrictDigits($event)" />
+                              <input type="text" placeholder="12" formControlName="lotNumber" (keydown)="restrictDigits($event)" />
                             </div>
                           
                             <div class="error-container" *ngIf="vehicleDetailsForm.get('lotNumber')?.invalid && 
@@ -105,7 +105,7 @@
                     <div class="form-group half-width">
                         <div class="input-row">
                             <label>Phone Number</label>
-                            <input type="text" placeholder="Phone Number" maxlength="10" formControlName="customerPhoneNbr" (keydown)="restrictDigits($event)" />
+                            <input type="text" placeholder="9123456789" maxlength="10" formControlName="customerPhoneNbr" (keydown)="restrictDigits($event)" />
                         </div>
                         <div class="error-container" *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.invalid && (vehicleDetailsForm.get('customerPhoneNbr')?.dirty || vehicleDetailsForm.get('customerPhoneNbr')?.touched)">
                             <small>Valid 10-digit number is required</small>
@@ -116,6 +116,7 @@
                         <div class="input-row">
                             <label>Address</label>
                             <textarea rows="2" formControlName="address"></textarea>
+                        
                         </div>
                     </div>
                 </div>

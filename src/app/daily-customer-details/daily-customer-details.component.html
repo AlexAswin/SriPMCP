@@ -1,12 +1,16 @@
 <div class="parent-container">
-    <div class="sidebar">
-        <button class="back-btn" (click)="closeForm()">
-            <mat-icon>arrow_back</mat-icon>
+    <header class="admin-header">
+        <button mat-icon-button (click)="closeForm()" class="back-btn">
+          <mat-icon>arrow_back</mat-icon>
         </button>
-    </div>
+        <h1>Daily Customer Details</h1>
+
+        <img src="assets/murugar_.jpg" alt="" (click)="closeForm()">
+    </header>
+
 
     <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
-        <h1>Daily Customer Details</h1>
+        <!-- <h1>Daily Customer Details</h1> -->
 
         <div class="alert-card" *ngIf="showAlert" [ngClass]="type">
             <mat-icon>{{ type === 'success' ? 'check_circle' : 'error' }}</mat-icon>
@@ -58,7 +62,7 @@
                 <div class="form-group">
                     <label>Phone Number</label>
                     <div class="input-wrapper">
-                        <input type="text" placeholder="Phone Number" formControlName="customerPhoneNbr" />
+                        <input type="text" placeholder="9123456789" formControlName="customerPhoneNbr" />
                         <div class="error-msg" *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.invalid && vehicleDetailsForm.get('customerPhoneNbr')?.touched">
                             <small>Invalid phone number</small>
                         </div>
