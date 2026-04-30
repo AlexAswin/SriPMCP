@@ -533,30 +533,56 @@ export class TransactionService {
     console.log('Deleted successfully');
   }
 
-  async deleteTransactionByID(vehicleNumber: string, transactionId: string) {
+  async deleteTransactionByID(vehicleNumber: string, transactionId: string): Promise<void> {
     try {
+      if (!vehicleNumber?.trim()) {
+        throw new Error('Vehicle number is required.');
+      }
+      if (!transactionId?.trim()) {
+        throw new Error('Transaction ID is required.');
+      }
+  
+      const parts = transactionId.split('-');
+      if (parts.length < 3) {
+        throw new Error(`Invalid transaction ID format: "${transactionId}".`);
+      }
+  
+      const monthId = parts.slice(parts.length - 3, parts.length - 1).join('-');
+      const isValidMonth = /^\d{4}-\d{2}$/.test(monthId);
+      if (!isValidMonth) {
+        throw new Error(`Could not extract a valid month (YYYY-MM) from transaction ID "${transactionId}". Got: "${monthId}".`);
+      }
+  
       const customerQuery = query(
         collection(this.firestore, 'CustomerEntry'),
         where('vehicleNumber', '==', vehicleNumber)
       );
       const snapshot = await getDocs(customerQuery);
-      if (snapshot.empty) return;
+      if (snapshot.empty) {
+        throw new Error(`No customer found with vehicle number "${vehicleNumber}".`);
+      }
   
-      const customerDoc = snapshot.docs[0];
-      const customerRef = customerDoc.ref;
+      const customerDoc  = snapshot.docs[0];
+      const customerRef  = customerDoc.ref;
       const customerData = customerDoc.data();
-  
-      const parts   = transactionId.split('-');
-      const monthId = parts.slice(parts.length - 3, parts.length - 1).join('-');
   
       const monthDocRef = doc(this.firestore, `${customerRef.path}/Transactions/${monthId}`);
       const monthSnap   = await getDoc(monthDocRef);
-      if (!monthSnap.exists()) return;
+      if (!monthSnap.exists()) {
+        throw new Error(`No transaction record found for month "${monthId}" on vehicle "${vehicleNumber}".`);
+      }
   
       const monthData = monthSnap.data();
       const history: any[] = monthData['transactionHistory'] || [];
+  
+      if (history.length === 0) {
+        throw new Error(`Transaction history for month "${monthId}" is empty. ID "${transactionId}" does not exist.`);
+      }
+  
       const toRemove = history.find((t: any) => t.id === transactionId);
-      if (!toRemove) return;
+      if (!toRemove) {
+        throw new Error(`Transaction ID "${transactionId}" not found in month "${monthId}" for vehicle "${vehicleNumber}".`);
+      }
   
       const amount = toRemove.transactionAmount ?? 0;
       const batch  = writeBatch(this.firestore);
@@ -578,14 +604,13 @@ export class TransactionService {
               t.transactionDate > toRemove.transactionDate ||
               (t.transactionDate === toRemove.transactionDate && t.id > transactionId);
   
-            if (isAfter) {
-              return {
-                ...t,
-                existingPending: (t.existingPending ?? 0) + amount,
-                newPending:      (t.newPending      ?? 0) + amount,
-              };
-            }
-            return t;
+            return isAfter
+              ? {
+                  ...t,
+                  existingPending: (t.existingPending ?? 0) + amount,
+                  newPending:      (t.newPending      ?? 0) + amount,
+                }
+              : t;
           });
   
         const sortedRemaining = [...updatedMonthHistory].sort((a, b) =>
@@ -615,8 +640,8 @@ export class TransactionService {
           const mHistory: any[] = mData['transactionHistory'] || [];
   
           const updateObj: any = {
-            currentPending:      increment(amount),
-            currentMonthTotal:   increment(amount),
+            currentPending:    increment(amount),
+            currentMonthTotal: increment(amount),
           };
   
           if (mHistory.length > 0) {
@@ -632,7 +657,6 @@ export class TransactionService {
       });
   
       const fullHistory: any[] = customerData['FullTransactionHistory'] || [];
-  
       const updatedFullHistory = fullHistory
         .filter((t) => t.id !== transactionId)
         .map((t) => {
@@ -640,32 +664,30 @@ export class TransactionService {
           const isAfter =
             tMonth > monthId ||
             (tMonth === monthId && t.transactionDate > toRemove.transactionDate) ||
-            (tMonth === monthId && t.transactionDate === toRemove.transactionDate && t.id > transactionId);
+            (tMonth === monthId &&
+              t.transactionDate === toRemove.transactionDate &&
+              t.id > transactionId);
   
-          if (isAfter) {
-            return {
-              ...t,
-              existingPending: (t.existingPending ?? 0) + amount,
-              newPending:      (t.newPending      ?? 0) + amount,
-            };
-          }
-          return t;
+          return isAfter
+            ? {
+                ...t,
+                existingPending: (t.existingPending ?? 0) + amount,
+                newPending:      (t.newPending      ?? 0) + amount,
+              }
+            : t;
         });
   
-      const customerUpdate: any = {};
+      batch.update(customerRef, {
+        FullTransactionHistory: updatedFullHistory.length === 0
+          ? deleteField()
+          : updatedFullHistory,
+      });
   
-      if (updatedFullHistory.length === 0) {
-        customerUpdate.FullTransactionHistory = deleteField();
-      } else {
-        customerUpdate.FullTransactionHistory = updatedFullHistory;
-      }
-  
-      batch.update(customerRef, customerUpdate); 
       await batch.commit();
   
     } catch (error) {
       console.error('Deletion failed:', error);
-      throw error;
+      throw error;  
     }
   }
 

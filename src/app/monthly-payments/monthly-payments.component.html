@@ -100,5 +100,17 @@
       </div>
     </form>
   </div>
+
+  <div class="alert-container" *ngIf="alert">
+    <mat-card [ngClass]="alertType === 'success' ? 'success-alert' : 'error-alert'">
+      <mat-card-content class="alert-content">
+        <mat-icon>{{ alertType === 'success' ? 'check_circle' : 'error' }}</mat-icon>
+        <span>{{ alertMessage }}</span>
+        <button mat-icon-button (click)="alert = false; alertMessage = ''">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
 </div>
 

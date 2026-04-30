@@ -1,8 +1,5 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat');
 
-// =============================================
-// Variables
-// =============================================
 $font-stack:    'Montserrat', sans-serif;
 $primary-blue:  #3f51b5;
 $error-red:     #c62828;
@@ -11,17 +8,6 @@ $label-width:   120px;
 $input-gap:     10px;
 $text-main:     #111827;
 
-// =============================================
-// Breakpoints
-// =============================================
-$bp-sm:  480px;
-$bp-md:  768px;
-$bp-lg:  850px;
-$bp-xl:  1100px;
-
-// =============================================
-// Mixins
-// =============================================
 @mixin flex-row-layout {
   display: flex;
   gap: 30px;
@@ -29,47 +15,31 @@ $bp-xl:  1100px;
   align-items: flex-start;
 }
 
-@mixin respond-to($bp) {
-  @if $bp == sm  { @media (max-width: #{$bp-sm})  { @content; } }
-  @if $bp == md  { @media (max-width: #{$bp-md})  { @content; } }
-  @if $bp == lg  { @media (max-width: #{$bp-lg})  { @content; } }
-  @if $bp == xl  { @media (max-width: #{$bp-xl})  { @content; } }
-}
-
-// =============================================
-// Base
-// =============================================
 body {
   font-family: $font-stack;
   margin: 0;
   padding: 0;
 }
 
-// =============================================
-// Parent Container
-// =============================================
 .parent-container {
   display: flex;
   background-color: #fdfdfd;
   flex-direction: column;
 
-  // ------------------------------------------
-  // Admin Header
-  // ------------------------------------------
   .admin-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 20px;
+    gap: 16px;
+    padding: 10px 0px;
+    // margin-top: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06),
+            0 8px 16px rgba(0, 0, 0, 0.08);
 
     h1 {
       margin: 0 auto;
       font-size: 24px;
       font-weight: 600;
       color: $text-main;
-
-      @include respond-to(md) { font-size: 20px; }
-      @include respond-to(sm) { font-size: 16px; }
     }
 
     button {
@@ -95,51 +65,136 @@ body {
       }
 
       mat-icon { color: #555; }
-
-      @include respond-to(sm) {
-        margin-left: 12px;
-        margin-right: 8px;
-        width: 38px;
-        height: 38px;
-      }
     }
 
     img {
       width: 60px;
       height: 60px;
       margin-right: 40px;
-
-      @include respond-to(sm) {
-        width: 40px;
-        height: 40px;
-        margin-right: 12px;
-      }
     }
   }
 
-  // ------------------------------------------
-  // Form Container
-  // ------------------------------------------
   .form-container {
     flex: 1;
-    max-width: $bp-xl;
-    margin: 20px auto;
+    max-width: 1100px;
+    margin: 40px auto;
     padding: 0 20px;
 
-    @include respond-to(md) {
-      margin: 24px auto;
-      padding: 0 16px;
+    .section {
+      background: #fff;
+      padding: 20px 15px;
+      border-radius: 8px;
+
+      h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #444;
+        padding-bottom: 8px;
+      }
     }
 
-    @include respond-to(sm) {
-      margin: 16px auto;
-      padding: 0 12px;
-      min-width: 100%;
+    .vehicle-info,
+    .customer-info,
+    .billing-row {
+      @include flex-row-layout;
+      justify-content: space-between;
     }
 
-    // ----------------------------------------
-    // Alert Card
-    // ----------------------------------------
+    .leftContainer,
+    .rightContainer,
+    .half-width {
+      flex: 1 1 45%;
+      min-width: 300px;
+    }
+
+    .form-group {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+
+      &.full-width { flex: 1 1 100%; }
+
+      .input-row {
+        display: flex;
+        align-items: center;
+        gap: $input-gap;
+        width: 100%;
+
+        label {
+          min-width: $label-width;
+          font-size: 13px;
+          font-weight: bold;
+          color: #555;
+          white-space: nowrap;
+        }
+
+        input, mat-select, textarea {
+          flex: 1;
+          border: none;
+          border-bottom: 1px solid $border-color;
+          padding: 6px 0;
+          outline: none;
+          background: transparent;
+          font-family: $font-stack;
+          font-size: 14px;
+
+          &:focus    { border-bottom: 2px solid $primary-blue; }
+          &[readonly] { background: #f9f9f9; color: #888; cursor: not-allowed; }
+        }
+
+        .radio-group {
+          display: flex;
+          gap: 20px;
+
+          label {
+            min-width: auto;
+            font-weight: normal;
+            cursor: pointer;
+          }
+        }
+      }
+
+      .error-container {
+        position: absolute;
+        top: 50px;
+        left: calc(#{$label-width} + #{$input-gap});
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        pointer-events: none;
+
+        small {
+          color: $error-red;
+          font-size: 13px;
+          font-weight: 500;
+          line-height: 1.1;
+          white-space: nowrap;
+        }
+      }
+    }
+
+    .mt-10 { margin-top: 10px; }
+    .mt-20 { margin-top: 25px; }
+
+    .note-section {
+      .note-box {
+        border: 1px solid $border-color !important;
+        padding: 8px !important;
+        border-radius: 4px;
+        min-height: 30px;
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 30px;
+      padding-bottom: 60px;
+    }
+
     .alert-card {
       display: flex;
       align-items: center;
@@ -151,308 +206,151 @@ body {
       font-size: 14px;
       animation: slideDown 0.3s ease-out;
 
-      &.success {
-        background: #e8f5e9;
-        color: #2e7d32;
-        border-left: 5px solid #2e7d32;
-      }
-
-      &.error {
-        background: #ffebee;
-        color: $error-red;
-        border-left: 5px solid $error-red;
-      }
-
-      &.warning {
-        background: #fff8e1;
-        color: #ef6c00;
-        border-left: 5px solid #ef6c00;
-      }
-
-      @include respond-to(sm) {
-        flex-direction: column;
-        text-align: center;
-        gap: 8px;
-        font-size: 13px;
-      }
+      &.success { background: #e8f5e9; color: #2e7d32; border-left: 5px solid #2e7d32; }
+      &.error   { background: #ffebee; color: $error-red; border-left: 5px solid $error-red; }
+      &.warning { background: #fff8e1; color: #ef6c00; border-left: 5px solid #ef6c00; }
     }
-
-    // ----------------------------------------
-    // Section
-    // ----------------------------------------
-    .section {
-      background: #fff;
-      padding: 16px 15px;
-      border-radius: 8px;
-
-      h2 {
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin-bottom: 10px;
-        color: #444;
-        padding-bottom: 6px;
-        border-bottom: 1px solid #eee;
-        text-align: left;
-        width: 100%;
-        align-self: flex-start;
-        
-
-        @include respond-to(sm) { font-size: 13px; }
-      }
-    }
-
-    // ----------------------------------------
-    // Layout Rows
-    // ----------------------------------------
-    .vehicle-info,
-    .customer-info,
-    .billing-row {
-      @include flex-row-layout;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    // ----------------------------------------
-    // Column Containers
-    // ----------------------------------------
-    .leftContainer,
-    .rightContainer,
-    .half-width {
-      flex: 1 1 45%;
-      min-width: 300px;
-
-      @include respond-to(lg) {
-        flex: 1 1 100%;
-        min-width: 100%;
-      }
-    }
-
-    // ----------------------------------------
-    // Form Group
-    // ----------------------------------------
-    .form-group {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 6px;
-
-      &.full-width { flex: 1 1 100%; }
-
-      // ----------------------------------------
-      // Input Row
-      // ----------------------------------------
-      .input-row {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        width: 100%;
-
-        label {
-          text-align: left;
-          // width: 100%;
-          font-size: 0.8rem;
-          font-weight: 500;
-          // letter-spacing: 0.8px;
-          text-transform: uppercase;
-          color: #666;
-        //   margin-bottom: 4px;
-        //   min-width: unset;
-        //   white-space: nowrap;
-        //   flex-shrink: 0;
-        }
-
-        input,
-        mat-select,
-        textarea {
-          width: 100%;
-          box-sizing: border-box;
-          border: none;
-          border-bottom: 1.5px solid $border-color;
-          border-radius: 0;
-          padding: 6px 0 8px 0;
-          outline: none;
-          background: transparent;
-          font-family: $font-stack;
-          font-size: 14px;
-          color: #333;
-          box-shadow: none;
-
-          &:focus        { border-bottom: 1.5px solid #555; }
-          &[readonly]    { background: #f9f9f9; color: #888; cursor: not-allowed; }
-        }
-
-        textarea {
-          resize: none;
-          display: block;
-          min-height: 52px;
-          min-width: 0;
-          padding-top: 4px;
-        }
-
-        // ----------------------------------------
-        // Mat-Select Overrides
-        // ----------------------------------------
-        .mat-mdc-text-field-wrapper,
-        .mdc-text-field {
-          padding: 0 !important;
-          background: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
-        }
-
-        .mdc-notched-outline {
-          display: none !important;
-        }
-
-        .mat-mdc-form-field-infix {
-          border-top: none !important;
-          padding: 6px 0 8px 0 !important;
-          border-bottom: 1.5px solid $border-color;
-        }
-
-        // ----------------------------------------
-        // Radio Group
-        // ----------------------------------------
-// Radio Group
-.radio-group {
-  display: flex;
-  flex-direction: row;  // same line
-  gap: 20px;
-  flex-wrap: nowrap;    // prevent wrapping to next line
-  align-items: center;
-  width: 100%;
-  border-bottom: none;
-  padding-bottom: 0;
-
-  label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: auto;
-    font-weight: normal;
-    font-size: 13px;
-    text-transform: none;
-    letter-spacing: 0;
-    color: #333;
-    cursor: pointer;
   }
+}
 
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-          @include respond-to(sm) {
-            flex-direction: column;
-            gap: 8px;
+@media (max-width: 850px) {
+  .parent-container {
+    .admin-header {
+      button {
+        margin-left: 16px;   
+      }
+
+      img {
+        margin-right: 16px; 
+      }
+    }
+
+    .form-container {
+      margin: 24px auto;
+
+      .vehicle-info,
+      .customer-info,
+      .billing-row {
+        flex-direction: column;
+        gap: 25px;
+      }
+
+      .leftContainer,
+      .rightContainer,
+      .half-width {
+        flex: 1 1 100%;
+        min-width: 100%;    
+      }
+
+      .form-group {
+        .error-container {
+          position: static;  
+          left: unset;
+          top: unset;
+          margin-top: 4px;
+          padding-left: 0;
+        }
+
+        .input-row {
+          flex-direction: column;
+          align-items: flex-start;
+
+          label {
+            min-width: unset;
+            margin-bottom: 5px;
+          }
+
+          input, mat-select, textarea {
+            width: 100%;
+          }
+
+          .radio-group {
+            flex-wrap: wrap;
+            gap: 100px;
           }
         }
       }
 
-      // ----------------------------------------
-      // Error Container
-      // ----------------------------------------
-      .error-container {
-        display: flex;
-        flex-direction: column;
-        margin-top: 2px;
-        z-index: 10;
-        pointer-events: none;
+      .form-actions {
+        padding-bottom: 40px;
+      }
+    }
+  }
+}
 
-        small {
-          color: $error-red;
-          font-size: 11px;
-          font-weight: 500;
-          line-height: 1.2;
-          white-space: nowrap;
+@media (max-width: 480px) {
+  .parent-container {
+    .admin-header {
+      gap: 8px;
+      margin-top: 12px;
+
+      h1 {
+        font-size: 18px;     
+      }
+
+      button {
+        width: 38px;
+        height: 38px;
+        margin-left: 10px;
+        margin-right: 10px;
+      }
+
+      img {
+        width: 44px;
+        height: 44px;
+        margin-right: 10px;
+      }
+    }
+
+    .form-container {
+      margin: 16px 0px;
+      padding: 0 12px;  
+
+      .section {
+        padding: 14px 10px;
+        border-radius: 6px;
+
+        h2 { font-size: 14px; }
+      }
+
+      .form-group {
+        margin-bottom: 16px; 
+        min-width: 100%;
+
+        .input-row {
+          input, mat-select, textarea {
+            font-size: 16px; 
+          }
+        }
+
+        .error-container small {
+          white-space: normal;
         }
       }
-    }
 
-    // ----------------------------------------
-    // Utility Spacing
-    // ----------------------------------------
-    .mt-10 { margin-top: 10px; }
-    .mt-20 { margin-top: 25px; }
-
-    // ----------------------------------------
-    // Form Actions
-    // ----------------------------------------
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 15px;
-      margin-top: 30px;
-      padding-bottom: 60px;
-
-      @include respond-to(sm) {
-        flex-direction: column-reverse;
+      .form-actions {
+        flex-direction: column; 
         align-items: stretch;
         gap: 10px;
+        margin-top: 20px;
         padding-bottom: 30px;
 
-        app-button { width: 100%; }
+        button, app-button {
+          width: 100%;
+        }
+      }
+
+      .alert-card {
+        font-size: 13px;
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
       }
     }
   }
-}
-
-// =============================================
-// Responsive Overrides — ≤ 850px
-// =============================================
-@include respond-to(lg) {
-  .parent-container .form-container {
-
-    .vehicle-info,
-    .customer-info,
-    .billing-row {
-      flex-direction: column;
-      gap: 0;
-    }
-  }
-}
-
-// =============================================
-// Responsive Overrides — ≤ 480px (mobile)
-// =============================================
-@include respond-to(sm) {
-  .parent-container .form-container {
-
-    .leftContainer,
-    .rightContainer,
-    .half-width {
-      flex: 1 1 100%;
-      min-width: 100%;
-      font-size: 1.1rem;
-    }
-
-    .form-group .input-row {
-      flex-direction: column;
-      align-items: flex-start;
-
-      label {
-        margin-bottom: 3px;
-        min-width: unset;
-      }
-
-      input,
-      mat-select,
-      textarea {
-        width: 100%;
-        box-sizing: border-box;
-        min-width: 0;
-      }
-    }
-
-    .form-group .error-container {
-      position: static;
-      left: unset;
-      top: unset;
-      margin-top: 2px;
-    }
-  }
-}
-
-// =============================================
-// Animations
-// =============================================
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: translateY(0); }
 }

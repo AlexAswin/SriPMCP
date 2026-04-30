@@ -940,9 +940,13 @@ if (subTitle) {
     this.CustomersWithLedgerData = await firstValueFrom(
       this.filteredCustomers$.pipe(take(1))
     );
+    this.CustomersWithLedgerData = this.CustomersWithLedgerData?.sort(
+      (a: any, b: any) => (a.lotNumber ?? 0) - (b.lotNumber ?? 0)
+    );
   }
 
   const tableBody = this.CustomersWithLedgerData?.map((c: any) => [
+    c.lotNumber,
     c.vehicleNumber,
     c.customerName,
     `${c.Transactions?.monthlyCost        ?? 0}`,
@@ -959,8 +963,8 @@ if (subTitle) {
   const tableStartY = subTitle ? 32 : 22;
 
   autoTable(doc, {
-    startY: tableStartY,  // ✅ add this
-    head: [['Vehicle', 'Name', 'Total Amount', 'Paid', 'Balance', 'Transaction Date', 'Payment Type']],
+    startY: tableStartY,
+    head: [['Lot Nbr','Vehicle', 'Name', 'Total Amount', 'Paid', 'Balance', 'Transaction Date', 'Payment Type']],
     body: tableBody,
     foot: [['Total', '', `${totalAmount}`, `${totalPaid}`, `${totalBalance}`, '', '']],
     styles: {

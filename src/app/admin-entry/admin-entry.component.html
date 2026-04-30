@@ -259,7 +259,6 @@
                 <div class="balance-display">
                   <span class="balance-label">Current Balance</span>
                   <span class="balance-value">
-                    ₹
                     <input class="balance-amount"
                            matInput
                            type="number"
@@ -271,7 +270,7 @@
                 <mat-divider class="section-divider"></mat-divider>
                 <mat-form-field appearance="fill" class="full-width">
                   <mat-label>New Settlement Amount</mat-label>
-                  <span matTextPrefix>₹&nbsp;</span>
+                  <span matTextPrefix>&nbsp;</span>
                   <input matInput
                          type="number"
                          formControlName="settlementAmount"
@@ -333,7 +332,7 @@
                   [label]="isDeleting ? 'Deleting...' : 'Delete Transaction'"
                   [disabled]="isDeleting || !idInput.value"
                   variant="primary"
-                  (click)="deleteTransactionById(idInput.value)">
+                  (click)="deleteTransactionById(idInput.value, idInput)">
                 </app-button>
               </mat-card-actions>
             </ng-container>
@@ -487,12 +486,12 @@
 
   </mat-tab-group>
 
-  <div class="alert-container" *ngIf="alert">
+  <div class="alert-container" *ngIf="showAlertBar">
     <mat-card [ngClass]="alertType === 'success' ? 'success-alert' : 'error-alert'">
       <mat-card-content class="alert-content">
         <mat-icon>{{ alertType === 'success' ? 'check_circle' : 'error' }}</mat-icon>
         <span>{{ alertMessage }}</span>
-        <button mat-icon-button (click)="alert = false; alertMessage = ''">
+        <button mat-icon-button (click)="showAlertBar = false; alertMessage = ''">
           <mat-icon>close</mat-icon>
         </button>
       </mat-card-content>

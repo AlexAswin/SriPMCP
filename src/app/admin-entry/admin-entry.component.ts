@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild, computed } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild, computed } from '@angular/core';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {FormBuilder, FormGroup, FormGroupDirective, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -10,7 +10,7 @@ import { AdminService, VehicleType } from '../admin.service';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { CommonModule } from '@angular/common';
-import { Observable, Subject, firstValueFrom, take, takeUntil, timer } from 'rxjs';
+import { Observable, Subject, Subscription, firstValueFrom, take, takeUntil, timer } from 'rxjs';
 import { MatListModule } from '@angular/material/list';
 import { RouterModule } from '@angular/router';
 import { TransactionService } from '../transaction.service';
@@ -73,12 +73,13 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
 
   alertMessage: string = '';
   alertType: 'success' | 'error' = 'success';
+  private alertTimer?: Subscription;
   activeScenario: 'adjust' | 'deleteLast' | 'deleteById' = 'adjust';
 
   monthlyStatus: string = '';
 
   isDeleting = false;
-  alert: boolean = false;
+  showAlertBar: boolean = false;
 
   tabLabels = ['Vehicles', 'Expenses & Methods', 'Maintenance', 'Ledger'];
   activeTabIndex = 0;
@@ -101,7 +102,8 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private adminService: AdminService,
     private transactionService: TransactionService,
-    private newCustomerEntryService: NewCustomerEntryService
+    private newCustomerEntryService: NewCustomerEntryService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -520,15 +522,35 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     }
   }
 
-  deleteTransactionById = async (id: string) => {
+  deleteTransactionById = async (id: string, inputRef: HTMLInputElement) => {
     const vehicleNbr = this.deleteCustomerForm.value.vehicleNumber;
     const tnxId = id.trim();
-
+  
+    if (!tnxId) {
+      this.showAlert('Please enter a transaction ID.', 'error');
+      return;
+    }
+  
+    if (this.isDeleting){
+      this.showAlert('Something went wrong. Please try again.', 'error');
+      return;
+    } 
+  
     try {
-      this.transactionService.deleteTransactionByID(vehicleNbr, tnxId);
-      this.showAlert('Transaction deleted successfully...', 'success');
-    } catch (error) {
-      this.showAlert('Something went wrong, Please try again.', 'error');
+      this.isDeleting = true;
+  
+      await this.transactionService.deleteTransactionByID(vehicleNbr, tnxId); 
+      
+      inputRef.value = '';
+      inputRef.dispatchEvent(new Event('input'));
+      this.showAlert('Transaction deleted successfully.', 'success');
+  
+    } catch (error: any) {
+      this.showAlert((error as any)?.message ?? 'Something went wrong.', 'error');
+      this.cdr.detectChanges();
+    } finally {
+      this.isDeleting = false;
+      this.cdr.detectChanges();
     }
   };
 
@@ -600,15 +622,18 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
       .catch(err => {
         const message = err.message === 'NOT_FOUND' 
           ? 'No record found for this vehicle.' 
-          : 'Failed to delete. Please check your connection.';
+          : err.message;
         
         this.showAlert(message, 'error');
       });
   }
 
   async downloadActiveCustomerPDF(withDetails?: boolean) {
-    const activeCustomers = await firstValueFrom(
+    const activeCustomersData = await firstValueFrom(
       this.transactionService.getActiveMonthlyCustomers()
+    );
+    const activeCustomers = activeCustomersData?.sort(
+      (a: any, b: any) => (a.lotNumber ?? 0) - (b.lotNumber ?? 0)
     );
   
     const doc = new jsPDF('l', 'mm', 'a4');
@@ -627,8 +652,11 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
   
-    const monthLabel = new Date(`${this.currentMonth}-01`).toLocaleDateString('en-IN', { month: 'long' });
-    doc.text(`Active Customer Sheet - ${monthLabel}`, pageWidth / 2, 13, { align: 'center' });
+    const now = new Date();
+  const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+  const timestamp = `${datePart}${timePart}`;
+    doc.text(`Active Customer Sheet - ${timestamp}`, pageWidth / 2, 13, { align: 'center' });
   
     const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     doc.text(today, pageWidth - 14, 13, { align: 'right' });
@@ -706,8 +734,8 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     }
   
     const filename = withDetails
-      ? `Monthly-Balance-Sheet-Details ${monthLabel}.pdf`
-      : `Monthly-Balance-Sheet ${monthLabel}.pdf`;
+      ? `Customer-Details ${timestamp}.pdf`
+      : `Monthly-ActiveCustomers-Balance-Sheet ${timestamp}.pdf`;
   
     doc.save(filename);
   }
@@ -742,20 +770,25 @@ completionPercent = computed(() => {
   return total ? Math.round((this.completedCount() / total) * 100) : 0;
 });
 
-  showAlert(message: string, type: 'success' | 'error'): void {
-    this.alertMessage = message;
-    this.alertType = type;
-    this.alert = true;
+showAlert(message: string, type: 'success' | 'error'): void {
+  this.alertTimer?.unsubscribe();
 
-    timer(4000).subscribe(() => {
-      this.alert = false;
-      this.alertMessage = '';
-    });
-  }
+  this.alertMessage = message;
+  this.alertType    = type;
+  this.showAlertBar       = true;
+  this.cdr.detectChanges();
+
+  this.alertTimer = timer(4000).subscribe(() => {
+    this.showAlertBar       = false;
+    this.alertMessage = '';
+    this.cdr.markForCheck();
+  });
+}
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+    this.alertTimer?.unsubscribe();
   }
 }  
 

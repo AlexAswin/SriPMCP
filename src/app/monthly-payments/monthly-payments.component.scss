@@ -1,33 +1,107 @@
-// =============================================
+// ─────────────────────────────────────────────────────────────
 // Variables
-// =============================================
-$primary-blue:    #007bff;
-$error-red:       #d32f2f;
-$bg-page:         #f4f7f6;
-$bg-card:         #fff;
-$text-heading:    #2c3e50;
-$text-label:      #666;
-$border-color:    #ccc;
-$radius-sm:       8px;
-$radius-lg:       12px;
+// ─────────────────────────────────────────────────────────────
+$primary-blue:  #007bff;
+$error-red:     #d32f2f;
+$bg-page:       #f4f7f6;
+$text-heading:  #2c3e50;
+$text-label:    #666;
+$border-color:  #ccc;
 $text-main:     #111827;
+$radius-sm:     8px;
+$radius-lg:     12px;
 
-// =============================================
-// Breakpoints
-// =============================================
-$bp-sm:   480px;
-$bp-md:   768px;
-$bp-lg:   900px;
+$bp-sm: 480px;
+$bp-md: 768px;
+$bp-lg: 900px;
 
+// ─────────────────────────────────────────────────────────────
+// Breakpoint mixin
+// ─────────────────────────────────────────────────────────────
 @mixin respond-to($bp) {
-  @if $bp == sm { @media (max-width: #{$bp-sm}) { @content; } }
-  @if $bp == md { @media (max-width: #{$bp-md}) { @content; } }
-  @if $bp == lg { @media (max-width: #{$bp-lg}) { @content; } }
+  @if      $bp == sm { @media (max-width: #{$bp-sm}) { @content; } }
+  @else if $bp == md { @media (max-width: #{$bp-md}) { @content; } }
+  @else if $bp == lg { @media (max-width: #{$bp-lg}) { @content; } }
 }
 
-// =============================================
-// Parent Container
-// =============================================
+// ─────────────────────────────────────────────────────────────
+// Animations
+// ─────────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Shared: back button
+// Extracted — was duplicated verbatim inside .admin-header
+// and again as a bare `button` rule on .parent-container
+// ─────────────────────────────────────────────────────────────
+@mixin back-button {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background-color: #fff;
+    transform: translateX(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  mat-icon { color: #555; }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Shared: form field base
+// Extracted — identical block repeated in .form-group input,
+// .transactionDate input/mat-select, .paymentInput input/mat-select
+// ─────────────────────────────────────────────────────────────
+@mixin field-base {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid $border-color;
+  border-radius: 0;
+  font-size: 0.95rem;
+  background: transparent;
+  transition: border-bottom 0.2s;
+
+  &:focus {
+    outline: none;
+    border-bottom: 2px solid $primary-blue;
+    box-shadow: none;
+  }
+
+  @include respond-to(sm) {
+    padding: 8px 0;
+    font-size: 16px;  // prevents iOS auto-zoom on focus
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Shared: field label
+// ─────────────────────────────────────────────────────────────
+@mixin field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $text-label;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Page shell
+// ─────────────────────────────────────────────────────────────
 .parent-container {
   display: flex;
   flex-direction: column;
@@ -37,355 +111,262 @@ $bp-lg:   900px;
 
   @include respond-to(md) { padding: 16px; }
   @include respond-to(sm) { padding: 12px; }
+}
 
-   .admin-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 20px;
+// ─────────────────────────────────────────────────────────────
+// Admin header
+// ─────────────────────────────────────────────────────────────
+.admin-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
 
-    h1 {
-      margin: 0 auto;
-      font-size: 24px;
-      font-weight: 600;
-      color: $text-main;
-
-      @include respond-to(md) { font-size: 20px; }
-      @include respond-to(sm) { font-size: 16px; }
-    }
-
-    button {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 50%;
-      width: 45px;
-      height: 45px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      transition: all 0.2s ease;
-      margin-right: 20px;
-      margin-left: 40px;
-      flex-shrink: 0;
-
-      &:hover {
-        background-color: #fff;
-        transform: translateX(-3px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      mat-icon {
-        color: #555;
-      }
-
-      @include respond-to(sm) {
-        margin-left: 12px;
-        margin-right: 8px;
-        width: 38px;
-        height: 38px;
-      }
-    }
-
-    img {
-      width: 60px;
-      height: 60px;
-      margin-right: 40px;
-
-      @include respond-to(sm) {
-        width: 40px;
-        height: 40px;
-        margin-right: 12px;
-      }
-    }
-  }
-
-  // ------------------------------------------
-  // Header Row (button + title inline)
-  // ------------------------------------------
-  .page-header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-    width: 100%;
-
-    h1 {
-      font-size: 1.5rem;
-      color: $text-heading;
-      font-family: 'Montserrat', sans-serif;
-      margin: 0;
-      line-height: 1;
-      vertical-align: middle;
-
-      @include respond-to(md) { font-size: 1.3rem; }
-      @include respond-to(sm) { font-size: 1.1rem; }
-    }
-  }
-
-  // ------------------------------------------
-  // Back Button
-  // ------------------------------------------
-  button {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-
-    &:hover {
-      background-color: #fff;
-      transform: translateX(-3px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    mat-icon { color: #555; }
-  }
-
-  // ------------------------------------------
-  // Payment Form Wrapper
-  // ------------------------------------------
-  .paymentForm {
-    flex: 1;
-    max-width: 1000px;
+  h1 {
     margin: 0 auto;
-    width: 100%;
+    font-size: 24px;
+    font-weight: 600;
+    color: $text-main;
 
-    // ----------------------------------------
-    // Form Card
-    // ----------------------------------------
-    form {
-      background: transparent;
-      border-radius: 0;
-      padding: 10px 0;
-      box-shadow: none;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
+    @include respond-to(md) { font-size: 20px; }
+    @include respond-to(sm) { font-size: 16px; }
+  }
 
-      // Section
-      .section {
+  button {
+    @include back-button;
+    margin-left: 40px;
+    margin-right: 20px;
 
-        h2 {
-          font-size: 1.3rem;
-          color: #333;
-          margin-bottom: 20px;
-          border-bottom: 2px solid #f0f0f0;
-          padding-bottom: 8px;
+    @include respond-to(sm) {
+      margin-left: 12px;
+      margin-right: 8px;
+      width: 38px;
+      height: 38px;
+    }
+  }
 
-          @include respond-to(sm) { font-size: 1.1rem; margin-bottom: 14px; }
-        }
+  img {
+    width: 60px;
+    height: 60px;
+    margin-right: 40px;
 
-        // Vehicle Info Grid
-        .vehicle-info {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-
-          @include respond-to(md) {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
-          }
-
-          @include respond-to(sm) {
-            grid-template-columns: 1fr;
-            gap: 10px;
-          }
-
-          // Form Group
-          .form-group {
-            display: flex;
-            flex-direction: column;
-            min-height: 85px;
-
-            @include respond-to(sm) { min-height: unset; }
-
-            label {
-              font-size: 0.8rem;
-              font-weight: 600;
-              color: $text-label;
-              margin-bottom: 6px;
-              text-transform: uppercase;
-            }
-
-            input {
-              width: 100%;
-              box-sizing: border-box;
-              padding: 10px 0;
-              border: none;
-              border-bottom: 1px solid $border-color;
-              border-radius: 0;
-              font-size: 0.95rem;
-              background: transparent;
-              transition: all 0.2s;
-
-              @include respond-to(sm) {
-                padding: 8px 0;
-                font-size: 0.9rem;
-              }
-
-              &:focus {
-                outline: none;
-                border-bottom: 2px solid $primary-blue;
-                box-shadow: none;
-              }
-
-              &[readonly] {
-                background-color: transparent;
-                color: #888;
-                cursor: not-allowed;
-              }
-            }
-          }
-        }
-
-        // Transaction Date & Payment Input
-        .transactionDate,
-        .paymentInput {
-          margin-top: 15px;
-          display: flex;
-          flex-direction: column;
-          width: 100%;
-          min-height: 90px;
-
-          @include respond-to(sm) { min-height: unset; margin-top: 10px; }
-
-          label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: $text-label;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-          }
-
-          input,
-          mat-select {
-            width: 100% !important;
-            box-sizing: border-box;
-            padding: 10px 0;
-            border: none;
-            border-bottom: 1px solid $border-color;
-            border-radius: 0;
-            font-size: 0.95rem;
-            background: transparent;
-
-            @include respond-to(sm) {
-              padding: 8px 0;
-              font-size: 0.9rem;
-            }
-
-            &:focus {
-              outline: none;
-              border-bottom: 2px solid $primary-blue;
-            }
-          }
-
-          mat-select {
-            display: flex;
-            align-items: center;
-          }
-        }
-
-        // Error Message
-        .error-msg {
-          margin-top: 4px;
-          min-height: 14px;
-
-          small {
-            color: $error-red;
-            font-size: 15px;
-            font-weight: 500;
-            display: block;
-            animation: fadeIn 0.3s ease;
-
-            @include respond-to(sm) { font-size: 12px; }
-          }
-        }
-
-        // Invalid state
-        input.ng-invalid.ng-touched,
-        mat-select.ng-invalid.ng-touched {
-          border-bottom-color: $error-red !important;
-          background-color: transparent;
-        }
-
-        // Button Group
-        .button-group {
-          display: flex;
-          justify-content: flex-end;
-          margin-top: 30px;
-          padding-top: 20px;
-          border-top: 1px solid #eee;
-
-          @include respond-to(sm) {
-            margin-top: 20px;
-            padding-top: 14px;
-            justify-content: stretch;
-          }
-
-          app-button {
-            min-width: 150px;
-
-            @include respond-to(sm) {
-              min-width: unset;
-              width: 100%;
-            }
-          }
-        }
-      }
+    @include respond-to(sm) {
+      width: 40px;
+      height: 40px;
+      margin-right: 12px;
     }
   }
 }
 
-// =============================================
-// Angular Material Select Override
-// =============================================
-::v-deep .mat-mdc-select-trigger {
+// ─────────────────────────────────────────────────────────────
+// Page header (title row with back button)
+// ─────────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
   width: 100%;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+    color: $text-heading;
+    line-height: 1;
+
+    @include respond-to(md) { font-size: 1.3rem; }
+    @include respond-to(sm) { font-size: 1.1rem; }
+  }
+
+  button { @include back-button; }
 }
 
-// =============================================
-// Snackbar Overrides
-// =============================================
-::v-deep .snackbar-success {
-  background: #4caf50 !important;
-  color: white !important;
+// ─────────────────────────────────────────────────────────────
+// Payment form
+// ─────────────────────────────────────────────────────────────
+.paymentForm {
+  flex: 1;
+  max-width: 1000px;
+  margin: 50px auto;
+  width: 100%;
+
+  form {
+    background: transparent;
+    border-radius: 0;
+    padding: 10px 0;
+    box-shadow: none;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+  }
 }
 
-::v-deep .snackbar-error {
-  background: #f44336 !important;
-  color: white !important;
+// ─────────────────────────────────────────────────────────────
+// Form section
+// ─────────────────────────────────────────────────────────────
+.section {
+  h2 {
+    font-size: 1.3rem;
+    color: #333;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 8px;
+
+    @include respond-to(sm) { font-size: 1.1rem; margin-bottom: 14px; }
+  }
+
+  // ── Validation state ──────────────────────────────────────
+  input.ng-invalid.ng-touched,
+  mat-select.ng-invalid.ng-touched {
+    border-bottom-color: $error-red !important;
+    background-color: transparent;
+  }
 }
 
-// =============================================
-// Animations
-// =============================================
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-3px); }
-  to   { opacity: 1; transform: translateY(0); }
+// ─────────────────────────────────────────────────────────────
+// Vehicle info grid
+// ─────────────────────────────────────────────────────────────
+.vehicle-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px 20px;
+
+  @include respond-to(md) { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @include respond-to(sm) { grid-template-columns: 1fr;            gap: 10px; }
+  @include respond-to(lg) { grid-template-columns: 1fr;            gap: 10px; }
 }
 
-// =============================================
-// Responsive Overrides — ≤ 900px (original)
-// =============================================
-@include respond-to(lg) {
-  .parent-container {
-    .paymentForm {
-      form {
-        padding: 10px 11px;
+// ─────────────────────────────────────────────────────────────
+// Form group
+// ─────────────────────────────────────────────────────────────
+.form-group {
+  display: flex;
+  flex-direction: column;
+  min-height: 85px;
 
-        .vehicle-info {
-          grid-template-columns: 1fr;
-          gap: 10px;
-        }
-      }
+  @include respond-to(sm) { min-height: unset; }
+
+  label { @include field-label; }
+
+  input {
+    @include field-base;
+
+    &[readonly] {
+      color: #888;
+      cursor: not-allowed;
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Transaction date + payment input
+// ─────────────────────────────────────────────────────────────
+.transactionDate,
+.paymentInput {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 90px;
+  margin-top: 15px;
+
+  @include respond-to(sm) { min-height: unset; margin-top: 10px; }
+
+  label { @include field-label; }
+
+  input,
+  mat-select {
+    @include field-base;
+  }
+
+  mat-select { display: flex; align-items: center; }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Error message
+// ─────────────────────────────────────────────────────────────
+.error-msg {
+  margin-top: 4px;
+  min-height: 14px;
+
+  small {
+    display: block;
+    color: $error-red;
+    font-size: 15px;
+    font-weight: 500;
+    animation: fadeIn 0.3s ease;
+
+    @include respond-to(sm) { font-size: 12px; }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Button group
+// ─────────────────────────────────────────────────────────────
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 30px;
+  padding-top: 20px;
+
+  @include respond-to(sm) {
+    margin-top: 20px;
+    padding-top: 14px;
+    justify-content: stretch;
+  }
+
+  app-button {
+    min-width: 150px;
+
+    @include respond-to(sm) {
+      min-width: unset;
+      width: 100%;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Snackbars
+// ─────────────────────────────────────────────────────────────
+.alert-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 90vw;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px !important;
+
+  span {
+    flex: 1;
+    font-weight: 500;
+  }
+}
+
+.success-alert {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-left: 5px solid #2e7d32;
+  border-radius: 0;
+}
+
+.error-alert {
+  background-color: #ffebee;
+  color: #c62828;
+  border-left: 5px solid #c62828;
+  border-radius: 0;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tablet override (lg breakpoint residual)
+// ─────────────────────────────────────────────────────────────
+@include respond-to(lg) {
+  .paymentForm form {
+    padding: 10px 11px;
   }
 }
