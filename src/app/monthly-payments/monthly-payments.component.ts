@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { ButtonComponent } from '../Common/button/button.component';
@@ -9,20 +9,22 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { MatDialog } from '@angular/material/dialog';
 import { PaymentConfirmationComponent } from '../payment-confirmation/payment-confirmation.component';
 import { TransactionService } from '../transaction.service';
-import { Observable, Subject, debounceTime, distinctUntilChanged, take, takeUntil } from 'rxjs';
+import { Observable, Subject, debounceTime, distinctUntilChanged, take, takeUntil, timer } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { AdminService } from '../admin.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
 
 @Component({
   selector: 'app-monthly-payments',
   standalone: true,
   imports: [MatFormFieldModule, CommonModule, ReactiveFormsModule, ButtonComponent, MatInputModule, MatOptionModule, MatSelectModule,
-            MatSnackBarModule, MatIconModule],
+            MatSnackBarModule, MatIconModule, MatCardModule],
   templateUrl: './monthly-payments.component.html',
-  styleUrl: './monthly-payments.component.scss'
+  styleUrl: './monthly-payments.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
 
@@ -42,8 +44,9 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   isSubmitting: boolean = false;
 
   maxDate!: string;
-
-  
+  alert: boolean = false;
+  alertType: 'success' | 'error' = 'success';
+  alertMessage: string = '';
 
   ngOnInit() {
     this.monthlyPaymentFormDetails();
@@ -276,50 +279,47 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   
     try {
       this.isSubmitting = true;
-
+  
       const rawForm = this.monthlyPaymentForm.getRawValue();
       const customer = this.searchWithVehicleNbr.value;
   
       const transactionData = {
-        monthlyCost: rawForm.amount, 
-        advance: rawForm.advance,       
-        paymentMethod: rawForm.paymentMethod,
+        monthlyCost:       rawForm.amount,
+        advance:           rawForm.advance,
+        paymentMethod:     rawForm.paymentMethod,
         transactionAmount: rawForm.payingAmount,
-        transactionDate: rawForm.transactionDate,
-        customerStatus: this.customerStatus
+        transactionDate:   rawForm.transactionDate,
+        customerStatus:    this.customerStatus,
       };
-
   
-      const proceedTransaction = await this.transactionService.customerMonthlyTransactionDetails(customer, transactionData);
-
-      if( proceedTransaction ) {
-        this.snackBar.open('Transaction successful!', 'Close', {
-          duration: 4000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['snackbar-success'],
-        });
-      this.resetAllFormStates();
+      const proceedTransaction = await this.transactionService
+        .customerMonthlyTransactionDetails(customer, transactionData);
+  
+      if (proceedTransaction) {
+        this.showAlert('Transaction successful!', 'success');
+        this.resetAllFormStates();
       } else {
-        this.snackBar.open('Transaction Failed! Please try again...', 'Close', {
-          duration: 4000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['snackbar-success'],
-        });
+      this.showAlert('Transaction failed! Please try again...', 'error');
       }
   
-  
     } catch (error) {
-      console.error('Transaction Error:', error);
-      this.snackBar.open('Transaction Failed. Try again!', 'Close', {
-        duration: 4000,
-        panelClass: ['snackbar-error'],
-      });
+      console.error('Transaction error:', error);
+      this.showAlert('Transaction failed! Please try again...', 'error');
     } finally {
       this.isSubmitting = false;
     }
   };
+
+  showAlert(message: string, type: 'success' | 'error'): void {
+    this.alertMessage = message;
+    this.alertType = type;
+    this.alert = true;
+
+    timer(4000).subscribe(() => {
+      this.alert = false;
+      this.alertMessage = '';
+    });
+  }
   
   private resetAllFormStates() {
     this.monthlyPaymentForm.reset();

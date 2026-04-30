@@ -157,9 +157,22 @@ async deleteCustomerByVehicleNumber(vehicleNumber: string): Promise<void> {
     const q = query(customerRef, where('vehicleNumber', '==', vehicleNumber), limit(1));
     const querySnapshot = await getDocs(q);
 
-    if (querySnapshot.empty) return;
+    if (querySnapshot.empty) {
+      throw new Error(`No customer found with vehicle number "${vehicleNumber}".`);
+    }
 
-    const customerDoc = querySnapshot.docs[0];
+    const customerDoc  = querySnapshot.docs[0];
+    const customerData = customerDoc.data();
+
+    const monthlyStatus = customerData['monthlyStatus'];
+
+    if (monthlyStatus !== 'InActive') {
+      throw new Error(
+        `Customer "${vehicleNumber}" is currently ${monthlyStatus ?? 'unknown'}. ` +
+        `Only inactive customers can be deleted.`
+      );
+    }
+
     const batch = writeBatch(this.firestore);
 
     const transactionsSnap = await getDocs(collection(customerDoc.ref, 'Transactions'));
@@ -171,10 +184,10 @@ async deleteCustomerByVehicleNumber(vehicleNumber: string): Promise<void> {
     batch.delete(customerDoc.ref);
 
     await batch.commit();
-    
-    console.log('Customer and all sub-collections wiped successfully.');
+
   } catch (error) {
     console.error('Delete failed:', error);
+    throw error;  
   }
 }
 
