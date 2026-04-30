@@ -180,29 +180,52 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       .toUpperCase()
       .replace(/^([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})$/, '$1 $2 $3 $4');
   }
-
   getMinDate = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-
-    this.minDate = this.formatToISO(new Date(year, month, 1));
-    this.maxDate = this.formatToISO(new Date(year, month + 1, 0));
-
+    const nowIST = this.getISTDate(); 
+    const year = nowIST.getFullYear();
+    const month = nowIST.getMonth(); 
+  
+    const startOfMonth = new Date(year, month, 1, 12, 0, 0); 
+    const endOfMonth = new Date(year, month + 1, 0, 12, 0, 0);
+  
+    this.minDate = this.formatToISO(startOfMonth);
+    this.maxDate = this.formatToISO(endOfMonth);
+  
+    // Validation Subscription
     this.fromDateMonthly.valueChanges.subscribe(value => {
       if (value && this.isNewMonthlyCustomer) {
+        // String comparison works for ISO format (YYYY-MM-DD)
         if (value < this.minDate || value > this.maxDate) {
-          this.fromDateMonthly.setValue('');
+          this.fromDateMonthly.setValue('', { emitEvent: false });
         }
       }
     });
   };
-
+  
+  getISTDate(): Date {
+    const now = new Date();
+    // IST is UTC + 5:30
+    const offset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + offset);
+    return istTime;
+  }
+  
   formatToISO(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  }
+
+  isEndDateInvalid(): boolean {
+    const start = this.fromDateMonthly.value;
+    const end = this.endDateMonthly.value;
+  
+    // Since you are using YYYY-MM-DD strings, you can compare them directly
+    if (start && end) {
+      return end < start;
+    }
+    return false;
   }
 
   restrictVehicleInput(event: KeyboardEvent) {
