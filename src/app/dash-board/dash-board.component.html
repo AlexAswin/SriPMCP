@@ -1,40 +1,59 @@
 <app-nav-bar></app-nav-bar>
 
+<div class="mobile-menu-btn-wrapper">
+  <button mat-icon-button 
+  class="mobile-menu-btn"
+  (click)="toggleMobileMenu()">
+  <mat-icon>menu</mat-icon>
+  </button>
+</div>
+
+
+
 <div class="layout">
 
-  <aside class="sidebar">
+  <aside class="sidebar" [class.mobile-open]="isMobileMenuOpen">
     <mat-nav-list>
-      <a mat-list-item (click)="openMonthlyCustomerForm()">
-        Monthly Customer
-      </a>
-
-      <a mat-list-item (click)="openDailyCustomerForm()">
-        Daily Customer
-      </a>
-      <a mat-list-item [routerLink]="['/adminEntry']">
-        Admin Entry
-      </a>
-      <a mat-list-item [routerLink]="['/monthlyPayments']">
-        Monthly Payments
-      </a>
-      <a mat-list-item (click)="toggleReports()">
-        Reports
-        <!-- <mat-icon class="ml-auto">
-          {{ showReports ? 'expand_less' : 'expand_more' }}
-        </mat-icon> -->
-      </a>
-
-      <div *ngIf="showReports" class="nested-menu">
-        <a mat-list-item routerLink="/reports/monthlyIncome">
-          Monthly Income
+      <div class="navItems">
+        <a mat-list-item (click)="openMonthlyCustomerForm()">
+          Monthly Customer
         </a>
-
-        <a mat-list-item routerLink="/reports/dailyIncome">
-          Daily Income
+  
+        <!-- <a mat-list-item (click)="openDailyCustomerForm()">
+          Daily Customer
+        </a> -->
+        <a mat-list-item [routerLink]="['/adminEntry']" *ngIf="isAdmin">
+          Admin Entry
         </a>
-    
-        <a mat-list-item routerLink="/reports/expense">
-          Expense Report
+        <a mat-list-item [routerLink]="['/monthlyPayments']">
+          Monthly Payments
+        </a>
+        <a mat-list-item (click)="toggleReports()">
+          Reports
+          <!-- <mat-icon class="ml-auto">
+            {{ showReports ? 'expand_less' : 'expand_more' }}
+          </mat-icon> -->
+        </a>
+  
+        <div *ngIf="showReports" class="nested-menu">
+          <a mat-list-item routerLink="/reports/monthlyIncome">
+            Monthly Income
+          </a>
+  
+          <!-- <a mat-list-item routerLink="/reports/dailyIncome">
+            Daily Income
+          </a> -->
+  <!--     
+          <a mat-list-item routerLink="/reports/expense">
+            Expense Report
+          </a> -->
+        </div>
+      </div>
+     
+
+      <div>
+        <a mat-list-item [routerLink]="['/']" (click)="LogOut()" class="logOutBtn">
+          <h3>LogOut</h3>
         </a>
       </div>
     </mat-nav-list>
