@@ -463,8 +463,8 @@ pre {
   .container {
 
     mat-sidenav {
-      min-width: 100vw !important;
-      width: 100vw !important;
+      // min-width: 100vw !important;
+      // width: 100vw !important;
 
       h2 {
         font-size: 1rem;
@@ -488,12 +488,13 @@ pre {
 
             input {
               max-width: 100%;
-              width: 100%;
+            }
+            span {
+              text-align: center;
             }
           }
 
           input[type="date"] {
-            width: 100%;
             font-size: 0.85rem;
           }
         }

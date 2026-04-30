@@ -121,11 +121,11 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     });
 
     this.expenseForm = this.fb.group({
-      expenseType: [''],
+      expenseType: ['', Validators.required],
     });
 
     this.paymentForm = this.fb.group({
-      paymentMethod: [''],
+      paymentMethod: ['', Validators.required],
     });
 
     this.vehicleUpdateForm = this.fb.group({
