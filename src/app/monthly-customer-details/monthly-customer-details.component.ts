@@ -545,28 +545,31 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   }
 
   isFormValid(): boolean {
-    const isMainValid = this.vehicleDetailsForm.valid;
-
+    const isMainValid = this.isNewMonthlyCustomer
+      ? this.vehicleDetailsForm.valid                   
+      : this.vehicleDetailsForm.valid ||                  
+        this.isLotNumberOnlyInvalid();
+  
     const isEndDateRequired = this.monthlyStatus.value === 'InActive';
-
+  
     const areStandalonesValid =
       this.advance.valid &&
       this.monthlyStatus.valid &&
       this.fromDateMonthly.valid &&
       this.note.valid &&
       (isEndDateRequired ? this.endDateMonthly.valid : true);
-
+  
     if (
       this.advance.value &&
       this.advance.value! > this.vehicleDetailsForm?.get('amount')?.value
     ) {
       return false;
     }
-
-    if(this.monthlyStatus.value === 'InActive') {
+  
+    if (this.monthlyStatus.value === 'InActive') {
       return true;
     }
-
+  
     if (!isMainValid || !areStandalonesValid) {
       this.vehicleDetailsForm.markAllAsTouched();
       this.advance.markAsTouched();
@@ -574,12 +577,21 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.fromDateMonthly.markAsTouched();
       this.note.markAsTouched();
       if (isEndDateRequired) this.endDateMonthly.markAsTouched();
-
+  
       this.logValidationErrors();
       return false;
     }
-
+  
     return true;
+  }
+
+  isLotNumberOnlyInvalid(): boolean {
+    const controls = this.vehicleDetailsForm.controls;
+    const invalidControls = Object.keys(controls).filter(
+      key => controls[key].invalid
+    );
+    return invalidControls.length === 0 ||
+      (invalidControls.length === 1 && invalidControls[0] === 'lotNumber');
   }
 
   private logValidationErrors() {
