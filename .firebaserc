@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "pm-cp-6d357"
-  }
+    "default": "pm-cp-6d357",
+    "prod": "sripmcp",
+    "dev": "pm-cp-6d357"
+  },
+  "targets": {},
+  "etags": {}
 }
