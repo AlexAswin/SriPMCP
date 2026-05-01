@@ -11,15 +11,23 @@ import { provideClientHydration } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes), provideClientHydration(), provideAnimationsAsync(), provideNativeDateAdapter(),
-    provideFirebaseApp(() => initializeApp({
-      apiKey: "AIzaSyA_1vOEzZSs5W8ylsJqU1NwkApPwjRlw_c",
-      authDomain: "pm-cp-6d357.firebaseapp.com",
-      projectId: "pm-cp-6d357",
-      storageBucket: "pm-cp-6d357.firebasestorage.app",
-      messagingSenderId: "1082300166194",
-      appId: "1:1082300166194:web:e6b1020e9fc251fd744c2b"
-    })),
+  providers: [
+    provideRouter(routes),
+    provideClientHydration(),
+    provideAnimationsAsync(),
+    provideNativeDateAdapter(),
+    provideFirebaseApp(() =>
+      initializeApp({
+        apiKey: "AIzaSyB-UYkc7rYy8E9IYeyG5mEtoCleTsBdpTA",
+        authDomain: "sripmcp.firebaseapp.com",
+        projectId: "sripmcp",
+        storageBucket: "sripmcp.firebasestorage.app",
+        messagingSenderId: "410118438687",
+        appId: "1:410118438687:web:a5068bafbf822bb9faba2a",
+        measurementId: "G-0G4LJWJP1L"
+      })
+    ),
     provideFirestore(() => getFirestore()),
-    provideAuth(() => getAuth())]
+    provideAuth(() => getAuth()),
+  ],
 };
