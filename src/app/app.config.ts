@@ -8,6 +8,7 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
 
 import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,15 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideNativeDateAdapter(),
     provideFirebaseApp(() =>
-      initializeApp({
-        apiKey: "AIzaSyB-UYkc7rYy8E9IYeyG5mEtoCleTsBdpTA",
-        authDomain: "sripmcp.firebaseapp.com",
-        projectId: "sripmcp",
-        storageBucket: "sripmcp.firebasestorage.app",
-        messagingSenderId: "410118438687",
-        appId: "1:410118438687:web:a5068bafbf822bb9faba2a",
-        measurementId: "G-0G4LJWJP1L"
-      })
+      initializeApp(environment.firebase)
     ),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
