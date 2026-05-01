@@ -367,7 +367,7 @@
                 <div class="checklist__divider"></div>
     
                 <ul class="checklist__list">
-                  <li *ngFor="let subtask of task().subtasks; track subtask; let i = index"
+                  <li *ngFor="let subtask of task().subtasks; trackBy: trackBySubtask; let i = index"
                       class="checklist__item">
                     <mat-checkbox
                       [checked]="subtask.completed"
