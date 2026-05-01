@@ -7,13 +7,11 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
 
 
 import { routes } from './app.routes';
-import { provideClientHydration } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideClientHydration(),
     provideAnimationsAsync(),
     provideNativeDateAdapter(),
     provideFirebaseApp(() =>
@@ -27,7 +25,7 @@ export const appConfig: ApplicationConfig = {
         measurementId: "G-0G4LJWJP1L"
       })
     ),
-    provideFirestore(() => getFirestore()),
     provideAuth(() => getAuth()),
+    provideFirestore(() => getFirestore()),
   ],
 };

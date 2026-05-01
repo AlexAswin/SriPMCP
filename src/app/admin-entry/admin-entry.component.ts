@@ -247,6 +247,10 @@ export class AdminEntryComponent implements OnInit, OnDestroy {
     }
   }
 
+  trackBySubtask(index: number, subtask: any): any {
+    return subtask.id ?? index;
+  }
+
   restrictVehicleInput(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
     const key = event.key;
