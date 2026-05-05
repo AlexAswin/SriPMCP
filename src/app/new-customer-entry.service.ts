@@ -4,6 +4,7 @@ import {
   collectionData,
   doc,
   getDoc,
+  or,
   setDoc,
   updateDoc,
   writeBatch,
@@ -39,7 +40,7 @@ export class NewCustomerEntryService {
       customerDetails.vehicleNumber
     );
 
-    const dateParts = customerDetails.fromDateMonthly.split('-');
+    const dateParts = customerDetails.customerType === 'monthly' ? customerDetails.fromDateMonthly.split('-') :  customerDetails.fromDateDaily.split('-');
     const monthId = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
     // const monthId = `2026-03`;
 
@@ -52,12 +53,23 @@ export class NewCustomerEntryService {
       monthId
     );
 
-    const transactionData = {
-      currentMonthTotal: Number(customerDetails.amount) || 0,
-      monthlyCost: Number(customerDetails.amount) || 0,
-      currentPending: Number(customerDetails.amount) || 0,
-      isTransactionMade: false,
-    };
+    let transactionData = {}
+
+    if(customerDetails.customerType === 'monthly') {
+      transactionData = {
+        currentMonthTotal: Number(customerDetails.amount) || 0,
+        monthlyCost: Number(customerDetails.amount) || 0,
+        currentPending: Number(customerDetails.amount) || 0,
+        isTransactionMade: false,
+      };
+    } else {
+      transactionData = {
+        currentDailyTotal: Number(customerDetails.amount) || 0,
+        dailyCost: Number(customerDetails.amount) || 0,
+        currentPending: Number(customerDetails.amount) || 0,
+        isTransactionMade: false,
+      };
+    }
 
     batch.set(customerRef, customerDetails);
     batch.set(transactionRef, transactionData);
@@ -213,7 +225,13 @@ export class NewCustomerEntryService {
 
   getActiveLotNumbers(): Observable<{ lotNumber: string, monthlyStatus: string }[]> {
     const customersRef = collection(this.firestore, 'CustomerEntry');
-    const q = query(customersRef, where('monthlyStatus', '==', 'Active'));
+    const q = query(
+      customersRef,
+      or(
+        where('monthlyStatus', '==', 'Active'),
+        where('dailyStatus', '==', 'Unpaid')
+      )
+    );
     
     return from(getDocs(q)).pipe(
       map((snapshot: any) => snapshot.docs.map((doc: any) => doc.data() as { lotNumber: string, monthlyStatus: string }))

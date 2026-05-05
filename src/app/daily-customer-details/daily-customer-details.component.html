@@ -10,8 +10,6 @@
 
 
     <form [formGroup]="vehicleDetailsForm" (ngSubmit)="submitForm()" class="form-container">
-        <!-- <h1>Daily Customer Details</h1> -->
-
         <div class="alert-card" *ngIf="showAlert" [ngClass]="type">
             <mat-icon>{{ type === 'success' ? 'check_circle' : 'error' }}</mat-icon>
             <span class="message">{{ message }}</span>
@@ -48,6 +46,39 @@
                 </div>
             </div>
 
+            <div class="row">
+                <div class="form-group">
+                    <label>Vehicle Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" placeholder="R15" formControlName="vehicleName" />
+                        <div class="error-msg" *ngIf="vehicleDetailsForm.get('vehicleName')?.invalid && (vehicleDetailsForm.get('vehicleName')?.dirty || vehicleDetailsForm.get('vehicleName')?.touched)">
+                            <small>Vehicle Name is required</small>
+                        </div>
+                    </div>
+                    
+                </div>
+
+                <div class="form-group">
+                    <label>LoT Number</label>
+                    <div class="input-wrapper">
+                      <input type="text" placeholder="12" formControlName="lotNumber" (keydown)="restrictDigits($event)" />
+                      <div class="error-msg" *ngIf="vehicleDetailsForm.get('lotNumber')?.invalid && 
+                      (vehicleDetailsForm.get('lotNumber')?.dirty || vehicleDetailsForm.get('lotNumber')?.touched)">
+                   <small *ngIf="vehicleDetailsForm.get('lotNumber')?.errors?.['required']">Lot Number is required</small>
+                   <small *ngIf="vehicleDetailsForm.get('lotNumber')?.errors?.['lotOccupied']" style="color: red;">
+                     Lot {{ vehicleDetailsForm.get('lotNumber')?.value }} is already occupied
+                   </small>
+                   <small *ngIf="vehicleDetailsForm.get('lotNumber')?.pending">Checking lot availability...</small>
+                 </div>
+                    </div>
+                  
+                   
+                  
+                  </div>
+            </div>
+
+            
+
             <div class="section-title">Customer Details</div>
             <div class="row">
                 <div class="form-group">
@@ -62,7 +93,7 @@
                 <div class="form-group">
                     <label>Phone Number</label>
                     <div class="input-wrapper">
-                        <input type="text" placeholder="9123456789" formControlName="customerPhoneNbr" />
+                        <input type="text" placeholder="9123456789" formControlName="customerPhoneNbr" maxlength="10" (keydown)="restrictDigits($event)"/>
                         <div class="error-msg" *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.invalid && vehicleDetailsForm.get('customerPhoneNbr')?.touched">
                             <small>Invalid phone number</small>
                         </div>
@@ -81,6 +112,12 @@
 
             <div class="row">
                 <div class="form-group">
+                    <label>Base Amount</label>
+                    <div class="input-wrapper">
+                        <input type="text" formControlName="amount" readonly class="readonly-input" />
+                    </div>
+                </div>
+                <div class="form-group">
                     <label>Status</label>
                     <div class="radio-group">
                         <label *ngFor="let status of dailystatus">
@@ -93,11 +130,12 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Base Amount</label>
+                    <label>Bill Number</label>
                     <div class="input-wrapper">
-                        <input type="text" formControlName="amount" readonly class="readonly-input" />
+                        <input type="text" [formControl]="billNbr"/>
                     </div>
                 </div>
+                
             </div>
             
             <div class="row">
@@ -118,7 +156,7 @@
                 </div>
             </div>
             
-            <div class="row" *ngIf="showPaidDetails || alreadyPaid">
+            <div class="row" *ngIf="alreadyPaid">
                 <div class="form-group">
                     <label>Exit Date</label>
                     <div class="input-wrapper">

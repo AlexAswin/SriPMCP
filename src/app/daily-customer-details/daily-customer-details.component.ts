@@ -2,12 +2,12 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ButtonComponent } from '../Common/button/button.component';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, AsyncValidatorFn, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, combineLatest, debounceTime, distinctUntilChanged, filter, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs';
+import { Observable, Subject, catchError, combineLatest, debounceTime, distinctUntilChanged, filter, first, map, of, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { AdminService, VehicleType } from '../admin.service';
@@ -46,7 +46,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   isMonthlyInActiveCustomer: boolean = false;
 
   billNbr = new FormControl<string>('', [Validators.required]);
-  dailyStatus = new FormControl<string>('', [Validators.required]);
+  dailyStatus = new FormControl<string>('Unpaid', [Validators.required]);
   fromDateDaily = new FormControl<string | null>(null, [Validators.required]);
   entryTime = new FormControl<string | null>(null, [Validators.required]);
   
@@ -116,6 +116,8 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.vehicleDetailsForm = this.fb.group({
       vehicleNumber: [{ value: '', disabled: false }, Validators.required],
       vehicleType: [{ value: '', disabled: false }, Validators.required],
+      vehicleName: [{ value: '', disabled: false }, [Validators.required]],
+      lotNumber: [{ value: '', disabled: false }, [Validators.required], [this.lotNumberOccupied()]],
 
       customerName: [{ value: '', disabled: false }, Validators.required],
       customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
@@ -128,9 +130,11 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   onDailylyStatusChange(status: string) {
     if (status === 'paid') {
+      this.alreadyPaid = true;
       this.actualCost.setValidators([Validators.required, Validators.pattern('^[0-9]*$')]);
       this.endDateDaily.setValidators([Validators.required]);
     } else {
+      this.alreadyPaid = false;
       this.actualCost.clearValidators();
       this.endDateDaily.clearValidators();
     }
@@ -257,6 +261,32 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
+
+  lotNumberOccupied(): AsyncValidatorFn {
+    return (control: AbstractControl): Observable<ValidationErrors | null> => {
+      if (!control.value) return of(null);
+
+      // const status = control.parent?.get('monthlyStatus')?.value;
+      // if (status === 'InActive') return of(null);
+  
+      return of(control.value).pipe(
+        debounceTime(300),
+        switchMap(lotNumber =>
+          this.newCustomerEntryService.getActiveLotNumbers().pipe(
+            map((activeLots: any) => {
+              const isOccupied = activeLots.some(
+                (lot: any) => String(lot.lotNumber) === String(lotNumber)
+              );
+              return isOccupied ? { lotOccupied: true } : null;
+            }),
+            catchError(() => of(null))
+          )
+        ),
+        first()
+      );
+    };
+  }
+
   getVehicleNbrAndCheckForExistence = () => {
     const vehicleNbr = this.vehicleDetailsForm.get('vehicleNumber');
     if (!vehicleNbr) {
@@ -276,7 +306,6 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
     if (!res) {
         this.isNewDailyCustomer = true;
-        this.resetFormForNewCustomer();
         return;
     }
 
@@ -291,6 +320,8 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         this.vehicleDetailsForm.patchValue({
             vehicleNumber: res.vehicleNumber,
             vehicleType: res.vehicleType,
+            vehicleName: res.vehicleName,
+            lotNumber: res.lotNumber,
             customerName: res.customerName,
             customerPhoneNbr: res.customerPhoneNbr,
             customerType: res.customerType,
@@ -378,9 +409,7 @@ private resetFormForNewCustomer() {
 
   this.billNbr.setValue('');
   this.dailyStatus.setValue('Unpaid'); 
-  this.fromDateDaily.setValue(new Date().toISOString().split('T')[0]); 
   this.endDateDaily.setValue(null);
-  this.entryTime.setValue(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   this.exitTime.setValue(null);
   this.billAmount.setValue('');
   this.actualCost.setValue('');
