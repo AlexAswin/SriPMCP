@@ -40,7 +40,7 @@ export class NewCustomerEntryService {
       customerDetails.vehicleNumber
     );
 
-    const dateParts = customerDetails.customerType === 'monthly' ? customerDetails.fromDateMonthly.split('-') :  customerDetails.fromDateDaily.split('-');
+    const dateParts = customerDetails.customerType === 'Monthly' ? customerDetails.fromDateMonthly.split('-') :  customerDetails.fromDateDaily.split('-');
     const monthId = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
     // const monthId = `2026-03`;
 
@@ -244,20 +244,20 @@ export class NewCustomerEntryService {
     historyPayload?: any
   ) {
     const ref = collection(this.firestore, 'CustomerEntry');
-
+  
     const q = query(ref, where('vehicleNumber', '==', vehicleNumber));
     const snapshot = await getDocs(q);
-
+  
     if (snapshot.empty) {
       throw new Error('Customer not found');
     }
-
+  
     const docSnap = snapshot.docs[0];
     const customerDocId = docSnap.id;
     const docRef = doc(this.firestore, 'CustomerEntry', docSnap.id);
-
+  
     await updateDoc(docRef, updateData);
-
+  
     if (historyPayload) {
       const historyRef = collection(
         this.firestore,
@@ -265,8 +265,17 @@ export class NewCustomerEntryService {
         customerDocId,
         'statusHistory'
       );
-      await addDoc(historyRef, historyPayload);
+  
+      const exitDate = historyPayload.Exit ?? historyPayload.Exit;
+  
+      if (!exitDate) {
+        throw new Error('Exit Date is required for history document name');
+      }
+  
+      const historyDocRef = doc(historyRef, exitDate); 
+      await setDoc(historyDocRef, historyPayload);        
     }
+  
     return docSnap.id;
   }
 
