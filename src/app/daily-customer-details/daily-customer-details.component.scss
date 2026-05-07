@@ -1,19 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
-// Variables
-$font-main: 'Montserrat', sans-serif;
-$border-color: #e0e0e0;
+$font-main:     'Montserrat', sans-serif;
+$border-color:  #e0e0e0;
 $primary-black: #000;
-$error-red: #d32f2f;
-$label-width: 150px;
+$error-red:     #d32f2f;
+$label-width:   150px;
 $text-main:     #111827;
 
-// =============================================
-// Breakpoints
-// =============================================
-$bp-sm:   480px;
-$bp-md:   768px;
-$bp-lg:   900px;
+$bp-sm: 480px;
+$bp-md: 768px;
+$bp-lg: 900px;
 
 @mixin respond-to($bp) {
   @if $bp == sm { @media (max-width: #{$bp-sm}) { @content; } }
@@ -21,13 +17,55 @@ $bp-lg:   900px;
   @if $bp == lg { @media (max-width: #{$bp-lg}) { @content; } }
 }
 
-.parent-container {
-    display: column;
-    background-color: #fff;
-    min-height: 100vh;
-    font-family: $font-main;
+%input-base {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid $border-color;
+  padding: 8px 0;
+  font-family: $font-main;
+  font-size: 14px;
+  outline: none;
+  background: transparent;
 
-    .admin-header {
+  &::placeholder { color: #bbb; }
+  &:focus        { border-bottom: 1px solid $primary-black; }
+
+  &.readonly-input {
+    color: #777;
+    border-bottom: 1px solid transparent;
+    background: #f9f9f9;
+    padding: 8px 10px;
+  }
+}
+
+%input-datetime {
+  @extend %input-base;
+  background: transparent;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  color: #111;
+
+  &::-webkit-calendar-picker-indicator {
+    opacity: 0.4;
+    cursor: pointer;
+    transition: opacity 180ms ease;
+    &:hover { opacity: 0.8; }
+  }
+
+  &.ng-invalid.ng-touched {
+    border-bottom: 1px solid $error-red;
+  }
+}
+
+.parent-container {
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  min-height: 100vh;
+  font-family: $font-main;
+
+  .admin-header {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -65,9 +103,7 @@ $bp-lg:   900px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
 
-      mat-icon {
-        color: #555;
-      }
+      mat-icon { color: #555; }
 
       @include respond-to(sm) {
         margin-left: 12px;
@@ -90,321 +126,336 @@ $bp-lg:   900px;
     }
   }
 
-    // Sidebar with Back Arrow
-    .sidebar {
-        width: 80px;
-        display: flex;
-        justify-content: center;
-        padding-top: 200px;
-        
-        .back-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #333;
-            transition: transform 0.2s;
-            &:hover { transform: translateX(-3px); }
-        }
+  .sidebar {
+    width: 80px;
+    display: flex;
+    justify-content: center;
+    padding-top: 200px;
+
+    .back-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #333;
+      transition: transform 0.2s;
+      &:hover { transform: translateX(-3px); }
+    }
+  }
+
+  .form-container {
+    flex: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 20px;
+
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      font-weight: 500;
+      margin-bottom: 60px;
+      color: #333;
     }
 
-    .form-container {
-        flex: 1;
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 40px 20px;
-
-        h1 {
-            text-align: center;
-            font-size: 24px;
-            font-weight: 500;
-            margin-bottom: 60px;
-            color: #333;
-        }
-
-        // Section Headers
-        .section-title {
-            font-weight: 700;
-            font-size: 15px;
-            margin: 45px 0 25px 0;
-            color: #000;
-        }
-
-        // Rows and Groups
-        .row {
-            display: flex;
-            gap: 55px;
-            margin-bottom: 35px; // Extra space for absolute error messages
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-
-        .form-group {
-            display: flex;
-            align-items: flex-end;
-            flex: 1;
-            min-width: 350px;
-            position: relative;
-
-            &.full-width { flex: 1 1 100%; }
-
-            label {
-                flex: 0 0 $label-width;
-                font-size: 14px;
-                font-weight: 500;
-                color: #444;
-                padding-bottom: 8px;
-            }
-
-            .input-wrapper {
-                flex: 1;
-                position: relative;
-
-                input, textarea, mat-select {
-                    width: 100%;
-                    border: none;
-                    border-bottom: 1px solid $border-color;
-                    padding: 8px 0;
-                    font-family: $font-main;
-                    font-size: 14px;
-                    outline: none;
-                    background: transparent;
-
-                    &::placeholder { color: #bbb; }
-                    &:focus { border-bottom: 1px solid $primary-black; }
-                    
-                    // Style for non-editable fields
-                    &.readonly-input {
-                        color: #777;
-                        border-bottom: 1px solid transparent;
-                        background: #f9f9f9;
-                        padding: 8px 10px;
-                    }
-                }
-
-                // Error Message Positioning
-                .error-msg {
-                    position: absolute;
-                    bottom: -18px;
-                    left: 0;
-                    
-                    small {
-                        color: $error-red;
-                        font-size: 11px;
-                        font-weight: 400;
-                        white-space: nowrap;
-                    }
-                }
-            }
-
-            // Status Radio Buttons
-            .radio-group {
-              display: flex;
-              gap: 25px;
-              align-items: center;
-              position: relative; // This is crucial for the error message below
-      
-              .error-msg {
-                  position: absolute;
-                  bottom: -22px; // Slightly lower for radios to clear the clickable area
-                  left: 0;
-                  
-                  small {
-                      color: $error-red;
-                      font-size: 11px;
-                  }
-              }
-          }
-        }
-
-        // Action Buttons
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-top: 80px;
-            padding-bottom: 60px;
-
-            button {
-                height: 42px;
-                padding: 0 50px;
-                font-size: 14px;
-                font-weight: 500;
-                cursor: pointer;
-                border-radius: 2px;
-                font-family: $font-main;
-                transition: all 0.2s ease;
-            }
-
-            .btn-save {
-                background: $primary-black;
-                color: #fff;
-                border: 1px solid $primary-black;
-                &:hover { background: #333; }
-            }
-
-            .btn-cancel {
-                background: #fff;
-                color: $primary-black;
-                border: 1px solid #ccc;
-                &:hover { background: #f5f5f5; }
-            }
-        }
-
-        // Alerts
-        .alert-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 15px 20px;
-            margin-bottom: 30px;
-            border-radius: 4px;
-            font-size: 14px;
-
-            &.success { 
-                background-color: #e8f5e9; 
-                color: #2e7d32; 
-                border: 1px solid #a5d6a7; 
-            }
-            &.error { 
-                background-color: #ffebee; 
-                color: #c62828; 
-                border: 1px solid #ef9a9a; 
-            }
-        }
+    .section-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin: 45px 0 25px 0;
+      color: #000;
     }
-}
-// =============================================
-// Mobile Only Override
-// =============================================
-@media (max-width: 480px) {
-  .parent-container .form-container {
-    padding: 16px !important;
-    max-width: 90% !important;
 
-            .form-actions {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            padding-bottom: 60px;
+    .row,
+    .row3 {
+      display: flex;
+      flex-wrap: wrap;          
+      gap: 55px;
+      margin-bottom: 35px;
+      align-items: flex-end;
 
-            
-
-            button {
-                height: 42px;
-                padding: 0 50px;
-                font-size: 14px;
-                font-weight: 500;
-                cursor: pointer;
-                border-radius: 2px;
-                font-family: $font-main;
-                transition: all 0.2s ease;
-            }
-
-
-            .btn-save {
-                background: $primary-black;
-                color: #fff;
-                border: 1px solid $primary-black;
-                &:hover { background: #333; }
-            }
-
-            .btn-cancel {
-                background: #fff;
-                color: $primary-black;
-                border: 1px solid #ccc;
-                &:hover { background: #f5f5f5; }
-            }
-        }
-       .section-title {
-            font-weight: 700;
-            font-size: 15px;
-            margin: 10px 0 10px 0;
-            color: #444;
-        }
-
-
-    .row {
-      flex-direction: column !important;
-      margin-bottom: 0 !important;
-      gap: 0 !important;
+      .form-group {
+        flex: 1 1 0;        
+        min-width: 0;         
+      }
     }
 
     .form-group {
-      min-width: 100% !important;
-      margin-bottom: 16px !important;
-      flex-direction: column !important;
-      align-items: flex-start !important;
+      display: flex;
+      align-items: flex-end;
+      position: relative;
+
+      &.full-width {
+        flex: 1 1 100% !important;
+      }
 
       label {
-        flex: unset !important;
-        width: 100% !important;
-        text-align: left !important;
-        font-size: 0.8rem !important;
-        font-weight: 500 !important;
-        // letter-spacing: 0.8px !important;
-        text-transform: uppercase !important;
-        color: #888 !important;
-        padding-bottom: 4px !important;
-        margin-bottom: 0 !important;
+        flex: 0 0 $label-width;
+        font-size: 14px;
+        font-weight: 500;
+        color: #444;
+        padding-bottom: 8px;
+      }
+
+      .time-selects {
+        border-bottom: 1px solid #ccc;
+
+        select {
+          border: none;
+          padding-bottom: 5px;
+        }
+      }
+
+      .time-selects select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background: none;       
+        padding: 10px;    
+      }
+
+      input[type="date"],
+      input[type="time"] {
+        @extend %input-datetime;
       }
 
       .input-wrapper {
-        width: 100% !important;
+        flex: 1;
+        position: relative;
 
         input,
         textarea,
         mat-select {
-          width: 100% !important;
-          box-sizing: border-box !important;
-          border: none !important;
-          border-bottom: 1.5px solid #ccc !important;
-          border-radius: 0 !important;
-          padding: 6px 0 8px 0 !important;
-          background: transparent !important;
-          font-size: 14px !important;
-          outline: none !important;
-
-          &:focus { border-bottom: 1.5px solid #000 !important; }
-        }
-
-        input[readonly] {
-          background: transparent !important;
-          border-bottom: 1.5px solid #ccc !important;
-          color: #888 !important;
-          cursor: not-allowed !important;
+          @extend %input-base;
         }
 
         textarea {
-          resize: none !important;
-          display: block !important;
-          width: 100% !important;
-          min-width: 0 !important;
-          box-sizing: border-box !important;
+          resize: none;
+          display: block;
+        }
+
+        .error-msg {
+          position: absolute;
+          bottom: -18px;
+          left: 0;
+
+          small {
+            color: $error-red;
+            font-size: 11px;
+            font-weight: 400;
+            white-space: nowrap;
+          }
         }
       }
 
       .radio-group {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 20px !important;
-        align-items: center !important;
-        border-bottom: none !important;
-        margin-top: 6px !important;
+        display: flex;
+        gap: 25px;
+        align-items: center;
+        position: relative;
+
+        .error-msg {
+          position: absolute;
+          bottom: -22px;
+          left: 0;
+
+          small {
+            color: $error-red;
+            font-size: 11px;
+          }
+        }
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 80px;
+      padding-bottom: 60px;
+
+      button {
+        height: 42px;
+        padding: 0 50px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        border-radius: 2px;
+        font-family: $font-main;
+        transition: all 0.2s ease;
+      }
+
+      .btn-save {
+        background: $primary-black;
+        color: #fff;
+        border: 1px solid $primary-black;
+        &:hover { background: #333; }
+      }
+
+      .btn-cancel {
+        background: #fff;
+        color: $primary-black;
+        border: 1px solid #ccc;
+        &:hover { background: #f5f5f5; }
+      }
+    }
+
+    .alert-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 20px;
+      margin-bottom: 30px;
+      border-radius: 4px;
+      font-size: 14px;
+
+      &.success {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #a5d6a7;
+      }
+      &.error {
+        background-color: #ffebee;
+        color: #c62828;
+        border: 1px solid #ef9a9a;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .parent-container {
+
+    .form-container {
+      padding: 16px !important;
+      max-width: 90% !important;
+
+      .section-title {
+        font-weight: 700;
+        font-size: 15px;
+        margin: 10px 0 10px 0;
+        color: #444;
+      }
+
+      .row,
+      .row3 {
+        flex-direction: column !important;
+        gap: 0 !important;
+        margin-bottom: 0 !important;
+      }
+
+      .form-group {
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+        margin-bottom: 16px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
 
         label {
-          font-size: 13px !important;
-          font-weight: 400 !important;
-          text-transform: none !important;
-          letter-spacing: 0 !important;
-          color: #333 !important;
+          flex: unset !important;
+          width: 100% !important;
+          text-align: left !important;
+          font-size: 0.8rem !important;
+          font-weight: 500 !important;
+          text-transform: uppercase !important;
+          color: #888 !important;
+          padding-bottom: 4px !important;
+          margin-bottom: 0 !important;
+        }
+
+        input[type="date"],
+        input[type="time"] {
+          width: 100% !important;
+          padding: 6px 0 8px 0 !important;
+        }
+
+        .input-wrapper {
+          width: 100% !important;
+
+          input,
+          textarea,
+          mat-select {
+            width: 100% !important;
+            box-sizing: border-box !important;
+            border: none !important;
+            border-bottom: 1.5px solid #ccc !important;
+            border-radius: 0 !important;
+            padding: 6px 0 8px 0 !important;
+            background: transparent !important;
+            font-size: 14px !important;
+            outline: none !important;
+
+            &:focus { border-bottom: 1.5px solid #000 !important; }
+          }
+
+          input[readonly] {
+            background: transparent !important;
+            border-bottom: 1.5px solid #ccc !important;
+            color: #888 !important;
+            cursor: not-allowed !important;
+          }
+
+          textarea {
+            resize: none !important;
+            display: block !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+          }
+        }
+
+        .radio-group {
           display: flex !important;
+          flex-direction: row !important;
+          flex-wrap: nowrap !important;
+          gap: 20px !important;
           align-items: center !important;
-          gap: 6px !important;
-          width: auto !important;
-          padding-bottom: 0 !important;
-          cursor: pointer !important;
+          border-bottom: none !important;
+          margin-top: 6px !important;
+
+          label {
+            font-size: 13px !important;
+            font-weight: 400 !important;
+            text-transform: none !important;
+            letter-spacing: 0 !important;
+            color: #333 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            width: auto !important;
+            padding-bottom: 0 !important;
+            cursor: pointer !important;
+          }
+        }
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+        padding-bottom: 60px;
+
+        button {
+          height: 42px;
+          padding: 0 50px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          border-radius: 2px;
+          font-family: $font-main;
+          transition: all 0.2s ease;
+        }
+
+        .btn-save {
+          background: $primary-black;
+          color: #fff;
+          border: 1px solid $primary-black;
+          &:hover { background: #333; }
+        }
+
+        .btn-cancel {
+          background: #fff;
+          color: $primary-black;
+          border: 1px solid #ccc;
+          &:hover { background: #f5f5f5; }
         }
       }
     }

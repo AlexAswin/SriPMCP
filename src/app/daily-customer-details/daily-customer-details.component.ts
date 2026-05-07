@@ -48,16 +48,16 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   billNbr = new FormControl<string>('', [Validators.required]);
   dailyStatus = new FormControl<string>('Unpaid', [Validators.required]);
   fromDateDaily = new FormControl<string | null>(null, [Validators.required]);
-  entryTime = new FormControl<string | null>(null, [Validators.required]);
-  
+  entryTime = new FormControl<string | null>('00:00', [Validators.required]);
+
   endDateDaily = new FormControl<string | null>(null);
   exitTime = new FormControl<string | null>(null);
   billAmount = new FormControl<string | number>('');
-  
-  actualCost = new FormControl<string>('', [
-    Validators.pattern('^[0-9]*$')
-  ]);
-  
+
+  actualCost = new FormControl<string>('', [Validators.required]);
+  settledCost = new FormControl<string>('', [Validators.required]);
+
+
   note = new FormControl<string>('');
 
   appxexitTime: string = '';
@@ -66,25 +66,46 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   vehicleTypes$!: Observable<VehicleType[]>;
 
+  hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  minutes = [0, 15, 30, 45];
+
+  entryHour = new FormControl<number | null>(null, Validators.required);
+  entryMinute = new FormControl<number | null>(null, Validators.required);
+  entryPeriod = new FormControl<string>('AM');
+
+  exitHour = new FormControl('', Validators.required);
+  exitMinute = new FormControl('', Validators.required);
+  exitPeriod = new FormControl('AM');
+
   ngOnInit() {
     this.vehicleTypes$ = this.adminService.getVehicleTypes().pipe(take(1));
 
-  this.vehicleDetailsForm.get('vehicleType')?.valueChanges
-  .pipe(
-    withLatestFrom(this.vehicleTypes$),
-    takeUntil(this.destroy$)
-  )
-  .subscribe(([selectedType, vehicleTypes]) => {
-    const selectedVehicle = vehicleTypes.find(v => v.vehicleType === selectedType);
-    if (selectedVehicle) {
-      this.vehicleDetailsForm.get('amount')?.setValue(selectedVehicle.dailyCost, { emitEvent: false });
-    }
-  });
+    this.vehicleDetailsForm
+      .get('vehicleType')
+      ?.valueChanges.pipe(
+        withLatestFrom(this.vehicleTypes$),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(([selectedType, vehicleTypes]) => {
+        const selectedVehicle = vehicleTypes.find(
+          (v) => v.vehicleType === selectedType
+        );
+        if (selectedVehicle) {
+          this.vehicleDetailsForm
+            .get('amount')
+            ?.setValue(selectedVehicle.dailyCost, { emitEvent: false });
+        }
+      });
 
     const vehicleCtrl = this.vehicleDetailsForm.get('vehicleNumber');
 
     vehicleCtrl?.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), filter(value => value?.length >= 9 ), takeUntil(this.destroy$))
+      .pipe(
+        debounceTime(500),
+        distinctUntilChanged(),
+        filter((value) => value?.length >= 9),
+        takeUntil(this.destroy$)
+      )
       .subscribe((value) => {
         if (value) {
           this.getCustomerDetails(value);
@@ -117,7 +138,6 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       vehicleNumber: [{ value: '', disabled: false }, Validators.required],
       vehicleType: [{ value: '', disabled: false }, Validators.required],
       vehicleName: [{ value: '', disabled: false }, [Validators.required]],
-      lotNumber: [{ value: '', disabled: false }, [Validators.required], [this.lotNumberOccupied()]],
 
       customerName: [{ value: '', disabled: false }, Validators.required],
       customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
@@ -131,7 +151,9 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   onDailylyStatusChange(status: string) {
     if (status === 'paid') {
       this.alreadyPaid = true;
-      this.actualCost.setValidators([Validators.required, Validators.pattern('^[0-9]*$')]);
+      this.actualCost.setValidators([
+        Validators.required
+      ]);
       this.endDateDaily.setValidators([Validators.required]);
     } else {
       this.alreadyPaid = false;
@@ -145,32 +167,32 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   restrictVehicleInput(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
     const key = event.key;
-  
+
     const rawValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const control = this.vehicleDetailsForm.get('vehicleNumber');
-  
+
     if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(key))
       return;
-  
+
     if (!/^[a-zA-Z0-9]$/.test(key)) {
       event.preventDefault();
       return;
     }
-  
+
     control?.setErrors(null);
-  
+
     if (rawValue.length < 2 && !/^[A-Za-z]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ letterExpected: true });
       return;
     }
-  
+
     if (rawValue.length >= 2 && rawValue.length < 4 && !/^[0-9]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ digitExpected: true });
       return;
     }
-  
+
     if (rawValue.length === 4 && !/^[A-Za-z]$/.test(key)) {
       event.preventDefault();
       control?.setErrors({ letterExpected: true });
@@ -189,7 +211,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       control?.setErrors({ digitExpected: true });
       return;
     }
-  
+
     if (rawValue.length >= 10) {
       event.preventDefault();
     }
@@ -197,39 +219,39 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   onVehicleNumberInput(event: Event) {
     const input = event.target as HTMLInputElement;
-  
+
     let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     raw = raw.substring(0, 10);
-  
+
     let formatted = '';
-  
+
     if (raw.length > 0) formatted += raw.substring(0, 2);
     if (raw.length > 2) formatted += ' ' + raw.substring(2, 4);
-  
+
     if (raw.length > 4) {
       const remainder = raw.substring(4);
-  
+
       const digitMatch = remainder.match(/\d/);
       const firstDigitIndex = digitMatch
         ? remainder.indexOf(digitMatch[0])
         : -1;
-  
+
       if (firstDigitIndex === -1) {
         formatted += ' ' + remainder.substring(0, 2);
       } else {
         const series = remainder.substring(0, firstDigitIndex);
-  
+
         const digits = remainder
           .substring(firstDigitIndex)
           .replace(/[^0-9]/g, '')
           .substring(0, 4);
-  
+
         formatted += ' ' + series + ' ' + digits;
       }
     }
-  
+
     input.value = formatted.trim();
-  
+
     this.vehicleDetailsForm
       .get('vehicleNumber')
       ?.setValue(input.value, { emitEvent: false });
@@ -261,32 +283,6 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-
-  lotNumberOccupied(): AsyncValidatorFn {
-    return (control: AbstractControl): Observable<ValidationErrors | null> => {
-      if (!control.value) return of(null);
-
-      // const status = control.parent?.get('monthlyStatus')?.value;
-      // if (status === 'InActive') return of(null);
-  
-      return of(control.value).pipe(
-        debounceTime(300),
-        switchMap(lotNumber =>
-          this.newCustomerEntryService.getActiveLotNumbers().pipe(
-            map((activeLots: any) => {
-              const isOccupied = activeLots.some(
-                (lot: any) => String(lot.lotNumber) === String(lotNumber)
-              );
-              return isOccupied ? { lotOccupied: true } : null;
-            }),
-            catchError(() => of(null))
-          )
-        ),
-        first()
-      );
-    };
-  }
-
   getVehicleNbrAndCheckForExistence = () => {
     const vehicleNbr = this.vehicleDetailsForm.get('vehicleNumber');
     if (!vehicleNbr) {
@@ -294,180 +290,174 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     }
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNbr.value);
     this.getCustomerDetails(formatedVehicleNbr);
+  };
 
-  }
   getCustomerDetails = async (vehicleNbr: string) => {
     if (!vehicleNbr) return;
 
     const formatedVehicleNbr = this.normalizeVehicleNumber(vehicleNbr);
-    const res = await this.newCustomerEntryService.getVehicleByNumber(formatedVehicleNbr, 'vehicleNbr');
+    const res = await this.newCustomerEntryService.getVehicleByNumber(
+      formatedVehicleNbr,
+      'vehicleNbr'
+    );
 
     this.showAlert = false;
 
     if (!res) {
-        this.isNewDailyCustomer = true;
-        return;
+      this.isNewDailyCustomer = true;
+      return;
     }
 
     this.currentCustomer = res.vehicleNumber;
 
     if (res.dailyStatus === 'Unpaid') {
-        this.isDailyUnpaidCustomer = true;
-        this.isNewDailyCustomer = false;
-        this.isDailyPaidCustomer = false;
-        this.isMonthlyActiveCustomer = false;
+      this.isDailyUnpaidCustomer = true;
+      this.isNewDailyCustomer = false;
+      this.isDailyPaidCustomer = false;
+      this.isMonthlyActiveCustomer = false;
 
-        this.vehicleDetailsForm.patchValue({
-            vehicleNumber: res.vehicleNumber,
-            vehicleType: res.vehicleType,
-            vehicleName: res.vehicleName,
-            lotNumber: res.lotNumber,
-            customerName: res.customerName,
-            customerPhoneNbr: res.customerPhoneNbr,
-            customerType: res.customerType,
-            address: res.address,
-            amount: res.amount,
-        });
+      this.vehicleDetailsForm.patchValue({
+        vehicleNumber: res.vehicleNumber,
+        vehicleType: res.vehicleType,
+        vehicleName: res.vehicleName,
+        customerName: res.customerName,
+        customerPhoneNbr: res.customerPhoneNbr,
+        customerType: res.customerType,
+        address: res.address,
+        amount: res.amount,
+      });
 
-        this.billNbr.setValue(res.billNumber);
-        this.dailyStatus.setValue(res.dailyStatus);
-        this.fromDateDaily.setValue(res.fromDateDaily);
-        this.entryTime.setValue(res.entryTime);
-        this.note.setValue(res.note);
-        
-        this.calculateBillAmount(res.fromDateDaily, res.entryTime);
-    } 
-    
-    else if (res.dailyStatus === 'paid') {
-        this.isDailyUnpaidCustomer = false;
-        this.isNewDailyCustomer = false;
-        this.isDailyPaidCustomer = true;
-        this.alreadyPaid = true;
+      this.billNbr.setValue(res.billNumber);
+      this.dailyStatus.setValue(res.dailyStatus);
+      this.fromDateDaily.setValue(res.fromDateDaily);
+      this.entryTime.setValue(res.entryTime);
+      this.note.setValue(res.note);
+      this.setEntryTime(res.entryTime);
 
-        this.vehicleDetailsForm.patchValue({
-            vehicleNumber: res.vehicleNumber,
-            vehicleType: res.vehicleType,
-            customerName: res.customerName,
-            customerPhoneNbr: res.customerPhoneNbr,
-            customerType: res.customerType,
-            address: res.address,
-            amount: res.amount,
-        });
+      this.calculateBillAmount(res.fromDateDaily, res.entryTime);
+    } else if (res.dailyStatus === 'paid') {
+      this.isDailyUnpaidCustomer = false;
+      this.isNewDailyCustomer = false;
+      this.isDailyPaidCustomer = true;
+      this.alreadyPaid = true;
 
-        this.billNbr.setValue(res.billNumber);
-        this.dailyStatus.setValue(res.dailyStatus);
-        this.fromDateDaily.setValue(res.fromDateDaily);
-        this.entryTime.setValue(res.entryTime);
-        this.billAmount.setValue(res.billAmount);
-        this.endDateDaily.setValue(res.endDateDaily);
-        this.exitTime.setValue(res.exitTime);
-        this.actualCost.setValue(res.settledAmount);
-        this.note.setValue(res.note);
-    } 
-    
-    else if (res.monthlyStatus === 'Active') {
-        this.isMonthlyActiveCustomer = true;
-        this.showAlert = true;
-        this.type = 'error';
-        this.message = 'Error: This is an Active Monthly Customer.';
-    } 
-    
-    else if (res.monthlyStatus === 'InActive') {
-        this.isNewDailyCustomer = false;
-        this.isDailyPaidCustomer = false;
-        this.isDailyUnpaidCustomer = false;
-        this.isMonthlyActiveCustomer = false;
-        this.isMonthlyInActiveCustomer = true;
+      this.vehicleDetailsForm.patchValue({
+        vehicleNumber: res.vehicleNumber,
+        vehicleType: res.vehicleType,
+        vehicleName: res.vehicleName,
+        customerName: res.customerName,
+        customerPhoneNbr: res.customerPhoneNbr,
+        customerType: res.customerType,
+        address: res.address,
+        amount: res.amount,
+      });
 
-        this.vehicleDetailsForm.patchValue({
-            vehicleNumber: res.vehicleNumber,
-            vehicleType: res.vehicleType,
-            customerName: res.customerName,
-            customerPhoneNbr: res.customerPhoneNbr,
-            address: res.address,
-        });
-        
-        this.showAlert = true;
-        this.type = 'warning';
-        this.message = 'Previous Monthly Customer detected. Ready for Daily entry.';
-    } 
-    
-    else {
-        this.isNewDailyCustomer = true;
-        this.resetFormForNewCustomer(); 
-        this.message = 'New vehicle detected. Please enter details.';
-        this.type = 'info';
+      this.billNbr.setValue(res.billNumber);
+      this.dailyStatus.setValue(res.dailyStatus);
+      this.fromDateDaily.setValue(res.fromDateDaily);
+      this.entryTime.setValue(res.entryTime);
+      this.billAmount.setValue(res.billAmount);
+      this.endDateDaily.setValue(res.endDateDaily);
+      this.exitTime.setValue(res.exitTime);
+      this.actualCost.setValue(res.settledAmount);
+      this.note.setValue(res.note);
+    } else if (res.monthlyStatus === 'Active') {
+      this.isMonthlyActiveCustomer = true;
+      this.showAlert = true;
+      this.type = 'error';
+      this.message = 'Error: This is an Active Monthly Customer.';
+    } else if (res.monthlyStatus === 'InActive') {
+      this.isNewDailyCustomer = false;
+      this.isDailyPaidCustomer = false;
+      this.isDailyUnpaidCustomer = false;
+      this.isMonthlyActiveCustomer = false;
+      this.isMonthlyInActiveCustomer = true;
+
+      this.vehicleDetailsForm.patchValue({
+        vehicleNumber: res.vehicleNumber,
+        vehicleType: res.vehicleType,
+        customerName: res.customerName,
+        customerPhoneNbr: res.customerPhoneNbr,
+        address: res.address,
+      });
+
+      this.showAlert = true;
+      this.type = 'warning';
+      this.message =
+        'Previous Monthly Customer detected. Ready for Daily entry.';
+    } else {
+      this.isNewDailyCustomer = true;
+      this.resetFormForNewCustomer();
+      this.message = 'New vehicle detected. Please enter details.';
+      this.type = 'info';
       this.showAlert = true;
     }
-};
+  };
 
-private resetFormForNewCustomer() {
-  this.vehicleDetailsForm.reset({
-    customerType: 'Daily',
-    vehicleNumber: this.vehicleDetailsForm.get('vehicleNumber')?.value 
-  });
+  private resetFormForNewCustomer() {
+    this.vehicleDetailsForm.reset({
+      customerType: 'Daily',
+      vehicleNumber: this.vehicleDetailsForm.get('vehicleNumber')?.value,
+    });
 
-  this.billNbr.setValue('');
-  this.dailyStatus.setValue('Unpaid'); 
-  this.endDateDaily.setValue(null);
-  this.exitTime.setValue(null);
-  this.billAmount.setValue('');
-  this.actualCost.setValue('');
-  this.note.setValue('');
+    this.billNbr.setValue('');
+    this.dailyStatus.setValue('Unpaid');
+    this.endDateDaily.setValue(null);
+    this.exitTime.setValue(null);
+    this.billAmount.setValue('');
+    this.actualCost.setValue('');
+    this.note.setValue('');
 
-  this.isDailyUnpaidCustomer = false;
-  this.isDailyPaidCustomer = false;
-  this.isMonthlyActiveCustomer = false;
-  this.isMonthlyInActiveCustomer = false;
-  this.alreadyPaid = false;
-  this.showPaidDetails = false;
+    this.isDailyUnpaidCustomer = false;
+    this.isDailyPaidCustomer = false;
+    this.isMonthlyActiveCustomer = false;
+    this.isMonthlyInActiveCustomer = false;
+    this.alreadyPaid = false;
+    this.showPaidDetails = false;
 
-  this.vehicleDetailsForm.markAsPristine();
-  this.vehicleDetailsForm.markAsUntouched();
-}
+    this.vehicleDetailsForm.markAsPristine();
+    this.vehicleDetailsForm.markAsUntouched();
+  }
 
   onEntryDateChange(event: any) {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    this.entryTime.setValue(`${hours}:${minutes}`);
-
-    const istDateTime = this.getTimeInIST(this.fromDateDaily, this.entryTime);
-    this.entryTime.setValue(istDateTime);
+    if (!this.fromDateDaily.value) return;
+    this.calculateBillAmount(this.fromDateDaily.value, this.entryTime12hr);
   }
 
   onExitDateChange(event: any) {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    this.exitTime.setValue(`${hours}:${minutes}`);
-    const istDateTime = this.getTimeInIST(this.endDateDaily, this.exitTime);
-    this.exitTime.setValue(istDateTime);
+    if (!this.endDateDaily.value) return;
     this.calculateBillAmount(
       this.fromDateDaily.value,
-      this.entryTime.value,
+      this.entryTime12hr,
       this.endDateDaily.value,
-      this.exitTime.value
+      this.exitTime12hr
     );
   }
 
-  getTimeInIST(
-    dateControl: FormControl<string | null>,
-    timeControl: FormControl<string | null>
-  ): string | null {
-    if (!dateControl.value || !timeControl.value) return null;
+  get entryTime12hr(): string {
+    const h = this.entryHour.value;
+    const m = this.entryMinute.value;
+    const p = this.entryPeriod.value;
+    if (!h || m === null) return '';
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${p}`;
+  }
 
-    const [hours, minutes] = timeControl.value.split(':').map(Number);
+  get exitTime12hr(): string {
+    const h = this.exitHour.value;
+    const m = this.exitMinute.value;
+    const p = this.exitPeriod.value;
+    if (!h || m === '' || m === null) return '';
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${p}`;
+  }
 
-    const date = new Date(dateControl.value);
-    date.setHours(hours, minutes, 0, 0);
+  setEntryTime(time: string) {
+    if (!time) return;
 
-    return date.toLocaleTimeString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
+    const [hourStr, minuteStr, period] = time.trim().split(/[:\s]/);
+
+    this.entryHour.setValue(Number(hourStr));
+    this.entryMinute.setValue(Number(minuteStr));
+    this.entryPeriod.setValue(period.toUpperCase());
   }
 
   calculateBillAmount = (
@@ -477,55 +467,47 @@ private resetFormForNewCustomer() {
     exitTime?: string | null
   ) => {
     if (!fromDate || !entryTime) {
-      return { hours: 0, amount: '0.00', entryIST: '', exitIST: '' };
+      return { days: 0, hours: 0, amount: '0.00', entryIST: '', exitIST: '' };
     }
 
-    const entryParts = entryTime.trim().split(/[:\s]/); 
-    let entryHours = parseInt(entryParts[0], 10);
-    const entryMinutes = parseInt(entryParts[1], 10);
-    const entryAmPm = entryParts[2].toLowerCase();
+    const toISTDate = (dateStr: string, timeStr: string) => {
+      const [h, m, period] = timeStr.trim().split(/[:\s]/);
+      let hours = parseInt(h, 10);
+      const minutes = parseInt(m, 10);
 
-    if (entryAmPm === 'pm' && entryHours < 12) entryHours += 12;
-    if (entryAmPm === 'am' && entryHours === 12) entryHours = 0;
+      if (period.toLowerCase() === 'pm' && hours < 12) hours += 12;
+      if (period.toLowerCase() === 'am' && hours === 12) hours = 0;
 
-    const [y, m, d] = fromDate.split('-').map(Number);
-    const entryDate = new Date(
-      Date.UTC(y, m - 1, d, entryHours - 5, entryMinutes - 30)
-    );
+      const [y, mo, d] = dateStr.split('-').map(Number);
+
+      const utc = Date.UTC(y, mo - 1, d, hours, minutes);
+      return new Date(utc - 5.5 * 60 * 60 * 1000);
+    };
+
+    const entryDate = toISTDate(fromDate, entryTime);
 
     let exitDate: Date;
 
     if (endDate && exitTime) {
-      const exitParts = exitTime.trim().split(/[:\s]/);
-      let exitHours = parseInt(exitParts[0], 10);
-      const exitMinutes = parseInt(exitParts[1], 10);
-      const exitAmPm = exitParts[2].toLowerCase();
-
-      if (exitAmPm === 'pm' && exitHours < 12) exitHours += 12;
-      if (exitAmPm === 'am' && exitHours === 12) exitHours = 0;
-
-      const [ey, em, ed] = endDate.split('-').map(Number);
-      exitDate = new Date(
-        Date.UTC(ey, em - 1, ed, exitHours - 5, exitMinutes - 30)
-      );
+      exitDate = toISTDate(endDate, exitTime);
     } else {
       const now = new Date();
-      exitDate = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+      const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+      exitDate = istNow;
     }
 
     const diffMs = exitDate.getTime() - entryDate.getTime();
+
+    if (diffMs <= 0) {
+      return { days: 0, hours: 0, amount: '0.00', entryIST: '', exitIST: '' };
+    }
+
     const hoursDiff = diffMs / (1000 * 60 * 60);
 
-    const flatRate = this.vehicleDetailsForm.get('amount')?.value || 0;
-    let amount: number;
+    const numberOfDays = Math.max(1, Math.ceil(hoursDiff / 24));
 
-    if (hoursDiff <= 24) {
-      amount = flatRate;
-    } else {
-      const extraHours = hoursDiff - 24;
-      const extraDays = Math.ceil(extraHours / 24);
-      amount = flatRate + extraDays * flatRate;
-    }
+    const dailyRate = Number(this.vehicleDetailsForm.get('amount')?.value) || 0;
+    const amount = dailyRate * numberOfDays;
 
     const formatOptions: Intl.DateTimeFormatOptions = {
       timeZone: 'Asia/Kolkata',
@@ -540,9 +522,10 @@ private resetFormForNewCustomer() {
     const entryIST = entryDate.toLocaleString('en-IN', formatOptions);
     const exitIST = exitDate.toLocaleString('en-IN', formatOptions);
 
-    this.billAmount.setValue(amount.toFixed(2));
+    this.actualCost.setValue(amount.toFixed(2));
 
     return {
+      days: numberOfDays,
       hours: hoursDiff.toFixed(2),
       amount: amount.toFixed(2),
       entryIST,
@@ -569,17 +552,29 @@ private resetFormForNewCustomer() {
     this.fromDateDaily.reset();
     this.endDateDaily.reset();
     this.note.reset();
+    this.entryHour.reset();
+    this.entryMinute.reset();
+    this.entryPeriod.reset();
+    this.actualCost.reset();
+    this.exitHour.reset();
+    this.exitMinute.reset();
+    this.exitPeriod.reset();
+    this.settledCost.reset();
   }
 
   private buildHistory(
     Entry: string | null,
     Exit: string | null,
-    BillNumber: string | null
+    BillNumber: string | null,
+    exitTime: string | null,
+    entryTime: string | null
   ) {
     const history: any = {
       Entry,
       Exit,
       BillNumber,
+      exitTime,
+      entryTime
     };
 
     return history;
@@ -587,29 +582,29 @@ private resetFormForNewCustomer() {
 
   isFormValid(): boolean {
     const isMainFormValid = this.vehicleDetailsForm.valid;
-  
-    const isStaticValid = 
-      this.billNbr.valid && 
-      this.dailyStatus.valid && 
-      this.fromDateDaily.valid && 
+
+    const isStaticValid =
+      this.billNbr.valid &&
+      this.dailyStatus.valid &&
+      this.fromDateDaily.valid &&
       this.entryTime.valid;
-  
+
     let isConditionalValid = true;
-    
+
     if (this.dailyStatus.value === 'paid') {
       const hasExitData = !!this.endDateDaily.value && !!this.actualCost.value;
       const isExitValid = this.endDateDaily.valid && this.actualCost.valid;
-      
+
       isConditionalValid = hasExitData && isExitValid;
-      
+
       if (!isConditionalValid) {
         this.endDateDaily.markAsTouched();
         this.actualCost.markAsTouched();
       }
     }
-  
+
     const totalValid = isMainFormValid && isStaticValid && isConditionalValid;
-  
+
     if (!totalValid) {
       this.vehicleDetailsForm.markAllAsTouched();
       this.billNbr.markAsTouched();
@@ -617,105 +612,140 @@ private resetFormForNewCustomer() {
       this.fromDateDaily.markAsTouched();
       this.entryTime.markAsTouched();
     }
-  
+
     return totalValid;
   }
 
-submitForm = async () => {
-  const isFormGroupValid = this.vehicleDetailsForm.valid;
-  const areStandalonesValid = 
-    this.dailyStatus.valid && 
-    this.fromDateDaily.valid && 
-    (this.dailyStatus.value === 'paid' ? (this.endDateDaily.valid && this.actualCost.valid) : true);
-
-  if (!isFormGroupValid || !areStandalonesValid) {
-    this.vehicleDetailsForm.markAllAsTouched();
-    this.dailyStatus.markAsTouched();
-    this.actualCost.markAsTouched();
-    this.fromDateDaily.markAsTouched();
-    
-    this.showAlert = true;
-    this.type = 'error';
-    this.message = 'Please fill all required fields correctly.';
-    return;
-  }
-
-  try {
-    const formValue = this.vehicleDetailsForm.getRawValue();
-    const normalizedData = this.normalizePayload({ ...formValue });
-    
-    const billingData = {
-      billNumber: this.billNbr.value,
-      dailyStatus: this.dailyStatus.value,
-      fromDateDaily: this.fromDateDaily.value,
-      entryTime: this.entryTime.value,
-      note: this.note.value
-    };
-
-    if (this.isNewDailyCustomer) {
-      const payload = { ...normalizedData, ...billingData };
-      await this.newCustomerEntryService.addNewCustomerEntry(payload);
-      this.message = 'Daily Customer Added Successfully!';
-    } 
-
-    else if (this.isDailyUnpaidCustomer) {
-      const updatePayload = {
-        ...normalizedData,
-        dailyStatus: 'paid',
-        endDateDaily: this.endDateDaily.value,
-        exitTime: this.exitTime.value,
-        billAmount: this.billAmount.value,
-        settledAmount: this.actualCost.value,
-      };
-      
-      const historyPayload = this.buildHistory(
-        this.fromDateDaily.value ?? '',
-        this.endDateDaily.value ?? '',
-        this.billNbr.value ?? ''
-      );
-
-      await this.newCustomerEntryService.updateCustomerByVehicleNumber(
-        this.currentCustomer,
-        updatePayload,
-        historyPayload
-      );
-      this.message = 'Payment Settled & History Updated!';
-    }
-
-    else if (this.isMonthlyInActiveCustomer) {
-      const convertPayload = {
-        ...normalizedData,
-        ...billingData,
-        dailyStatus: 'Unpaid' 
-      };
-      
-      await this.newCustomerEntryService.updateCustomerByVehicleNumber(
-        this.currentCustomer,
-        convertPayload
-      );
-      this.message = 'Customer converted to Daily status.';
-    }
-
-    this.type = 'success';
-    this.showAlert = true;
-    this.onSuccessCleanup(); 
-
-  } catch (error) {
-    this.type = 'error';
-    this.showAlert = true;
-    this.message = 'Database error. Please try again.';
-    console.error('Submission Error:', error);
-  }
-};
-
-private onSuccessCleanup() {
-  this.vehicleDetailsForm.reset();
-  this.resetStandaloneControls(); 
-  this.vehicleDetailsForm.markAsPristine();
-  this.vehicleDetailsForm.markAsUntouched();
+  submitForm = async () => {
+    const isFormGroupValid = this.vehicleDetailsForm.valid;
+    const areStandalonesValid =
+      this.dailyStatus.valid &&
+      this.fromDateDaily.valid &&
+      (this.dailyStatus.value === 'paid'
+        ? this.endDateDaily.valid && this.actualCost.valid
+        : true);
   
-  setTimeout(() => this.showAlert = false, 3000);
-}
+    if (!isFormGroupValid || !areStandalonesValid) {
+      this.vehicleDetailsForm.markAllAsTouched();
+      this.dailyStatus.markAsTouched();
+      this.actualCost.markAsTouched();
+      this.fromDateDaily.markAsTouched();
+  
+      this.showAlert = true;
+      this.type = 'error';
+      this.message = 'Please fill all required fields correctly.';
+      return;
+    }
+  
+    try {
+      const formValue = this.vehicleDetailsForm.getRawValue();
+      const normalizedData = this.normalizePayload({ ...formValue });
+  
+      const billingData = {
+        billNumber:    this.billNbr.value,
+        dailyStatus:   this.dailyStatus.value,
+        fromDateDaily: this.fromDateDaily.value,
+        entryTime:     this.entryTime12hr,
+        endDateDaily:  null,
+        exitTime:      null,
+        settledCost:   null,
+        note:          this.note.value,
+      };
+  
+      // ── New customer ─────────────────────────────────────
+      if (this.isNewDailyCustomer) {
+        const payload = { ...normalizedData, ...billingData };
+        await this.newCustomerEntryService.addNewCustomerEntry(payload);
+        this.message = 'Daily Customer Added Successfully!';
+  
+      // ── Settle payment (unpaid → paid) ───────────────────
+      } else if (this.isDailyUnpaidCustomer) {
+        const updatePayload = {
+          ...normalizedData,
+          dailyStatus:  'paid',
+          endDateDaily: this.endDateDaily.value,
+          exitTime:     this.exitTime12hr,
+          actualCost:   this.actualCost.value,
+          settledCost:  this.settledCost.value,
+        };
+  
+        const historyPayload = this.buildHistory(
+          this.fromDateDaily.value ?? '',
+          this.endDateDaily.value ?? '',
+          this.billNbr.value ?? '',
+          this.exitTime12hr ?? '',
+          this.entryTime12hr ?? ''
+        );
+  
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+          this.currentCustomer,
+          updatePayload,
+          historyPayload
+        );
+        this.message = 'Payment Settled & History Updated!';
+  
+      // ── Monthly → Daily conversion ───────────────────────
+      } else if (this.isMonthlyInActiveCustomer) {
+        const convertPayload = {
+          ...normalizedData,
+          ...billingData,
+          dailyStatus: 'Unpaid',
+        };
+  
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+          this.currentCustomer,
+          convertPayload
+        );
+        this.message = 'Customer converted to Daily status.';
+  
+      // ── Reactivate existing daily customer ───────────────
+      } else if (this.isReactivatingCustomer) {
+        const reactivatePayload = {
+          ...normalizedData,
+          ...billingData,
+          dailyStatus:  'Unpaid', 
+          endDateDaily: null,
+          exitTime:     null,
+          settledCost:  null,
+        };
+  
+        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+          this.currentCustomer,
+          reactivatePayload
+        );
+        this.message = 'Customer Reactivated Successfully!';
+      }
+  
+      this.type = 'success';
+      this.showAlert = true;
+      this.onSuccessCleanup();
+  
+    } catch (error) {
+      this.type = 'error';
+      this.showAlert = true;
+      this.message = 'Database error. Please try again.';
+      console.error('Submission Error:', error);
+    }
+  };
+
+  get isReactivatingCustomer(): boolean {
+    return (
+      !!this.currentCustomer &&           // existing customer
+      !this.isNewDailyCustomer &&
+      !this.isDailyUnpaidCustomer &&
+      !this.isMonthlyInActiveCustomer &&
+      this.dailyStatus.value === 'Unpaid'  // previously settled
+    );
+  }
+
+  private onSuccessCleanup() {
+    this.vehicleDetailsForm.reset();
+    this.resetStandaloneControls();
+    this.vehicleDetailsForm.markAsPristine();
+    this.vehicleDetailsForm.markAsUntouched();
+
+    setTimeout(() => (this.showAlert = false), 3000);
+  }
 
   cancelEntry() {}
 
