@@ -7,7 +7,7 @@ import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, catchError, combineLatest, debounceTime, distinctUntilChanged, filter, first, map, of, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs';
+import { Observable, Subject, catchError, combineLatest, debounceTime, distinctUntilChanged, filter, first, from, map, of, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { AdminService, VehicleType } from '../admin.service';
@@ -45,7 +45,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   isMonthlyActiveCustomer: boolean = false;
   isMonthlyInActiveCustomer: boolean = false;
 
-  billNbr = new FormControl<string>('', [Validators.required]);
+  billNbr = new FormControl<number | null>(null, [Validators.required]);
   dailyStatus = new FormControl<string>('Unpaid', [Validators.required]);
   fromDateDaily = new FormControl<string | null>(null, [Validators.required]);
   entryTime = new FormControl<string | null>('00:00', [Validators.required]);
@@ -77,6 +77,9 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   exitHour = new FormControl<number | null>(null, Validators.required);
   exitMinute = new FormControl<number | null>(null, Validators.required);
   exitPeriod = new FormControl<string>('AM');
+
+  isBillNumberTaken = false;
+  isCheckingBillNumber = false;
 
   ngOnInit() {
     this.vehicleTypes$ = this.adminService.getVehicleTypes().pipe(take(1));
@@ -111,6 +114,20 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         if (value) {
           this.getCustomerDetails(value);
         }
+      });
+
+      this.billNbr.valueChanges.pipe(
+        debounceTime(500),
+        distinctUntilChanged(),
+        filter(value => value !== null && value !== 0),
+        switchMap(value => {
+          this.isCheckingBillNumber = true;
+          this.isBillNumberTaken = false;
+          return from(this.newCustomerEntryService.isBillNumberTaken(value as number));
+        })
+      ).subscribe(isTaken => {
+        this.isCheckingBillNumber = false;
+        this.isBillNumberTaken = isTaken;
       });
 
     this.isNewDailyCustomer = true;
@@ -415,7 +432,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       vehicleNumber: this.vehicleDetailsForm.get('vehicleNumber')?.value,
     });
 
-    this.billNbr.setValue('');
+    this.billNbr.setValue(0);
     this.dailyStatus.setValue('Unpaid');
     this.endDateDaily.setValue(null);
     this.exitTime.setValue(null);
@@ -584,7 +601,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   private buildHistory(
     Entry: string | null,
     Exit: string | null,
-    BillNumber: string | null,
+    BillNumber: number | null,
     exitTime: string | null,
     entryTime: string | null,
     actualCost: number | null,
@@ -605,29 +622,30 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   isFormValid(): boolean {
     const isMainFormValid = this.vehicleDetailsForm.valid;
-
+  
     const isStaticValid =
       this.billNbr.valid &&
       this.dailyStatus.valid &&
       this.fromDateDaily.valid &&
-      this.entryTime.valid;
-
+      this.entryTime.valid &&
+      !this.isBillNumberTaken; // ← add this
+  
     let isConditionalValid = true;
-
+  
     if (this.dailyStatus.value === 'paid') {
       const hasExitData = !!this.endDateDaily.value && !!this.actualCost.value;
       const isExitValid = this.endDateDaily.valid && this.actualCost.valid;
-
+  
       isConditionalValid = hasExitData && isExitValid;
-
+  
       if (!isConditionalValid) {
         this.endDateDaily.markAsTouched();
         this.actualCost.markAsTouched();
       }
     }
-
+  
     const totalValid = isMainFormValid && isStaticValid && isConditionalValid;
-
+  
     if (!totalValid) {
       this.vehicleDetailsForm.markAllAsTouched();
       this.billNbr.markAsTouched();
@@ -635,7 +653,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.fromDateDaily.markAsTouched();
       this.entryTime.markAsTouched();
     }
-
+  
     return totalValid;
   }
 
@@ -701,7 +719,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         const historyPayload = this.buildHistory(
           this.fromDateDaily.value ?? '',
           this.endDateDaily.value ?? '',
-          this.billNbr.value ?? '',
+          this.billNbr.value ??  0,
           this.exitTime12hr ?? '',
           this.entryTime12hr ?? '',
           this.actualCost.value ?? 0,

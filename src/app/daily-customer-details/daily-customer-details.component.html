@@ -66,11 +66,19 @@
                     <label>Bill Number</label>
                     <div class="input-wrapper">
                         <input type="text" [formControl]="billNbr" placeholder="Bill Number" />
-                        <div class="error-msg" *ngIf="billNbr.touched && billNbr.invalid">
-                            <small>Bill Number is required</small>
+                        <div class="error-msg">
+                
+                            <small *ngIf="!isCheckingBillNumber && isBillNumberTaken" style="color: red;">
+                                Bill number already taken
+                            </small>
+                
+                            <small *ngIf="billNbr.touched && billNbr.hasError('required')">
+                                Bill Number is required
+                            </small>
                         </div>
+                
                     </div>
-                </div>
+                  </div>
             </div>
 
 
