@@ -50,12 +50,13 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   fromDateDaily = new FormControl<string | null>(null, [Validators.required]);
   entryTime = new FormControl<string | null>('00:00', [Validators.required]);
 
-  endDateDaily = new FormControl<string | null>(null);
+  endDateDaily = new FormControl<string | null>(null, [Validators.required]);
   exitTime = new FormControl<string | null>(null);
   billAmount = new FormControl<string | number>('');
 
-  actualCost = new FormControl<string>('', [Validators.required]);
-  settledCost = new FormControl<string>('', [Validators.required]);
+  actualCost = new FormControl<number>( 0, [Validators.required]);
+  settledCost = new FormControl<number>(0, [Validators.required]);
+  totalDays = new FormControl<number>(0, [Validators.required]);
 
 
   note = new FormControl<string>('');
@@ -73,9 +74,9 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   entryMinute = new FormControl<number | null>(null, Validators.required);
   entryPeriod = new FormControl<string>('AM');
 
-  exitHour = new FormControl('', Validators.required);
-  exitMinute = new FormControl('', Validators.required);
-  exitPeriod = new FormControl('AM');
+  exitHour = new FormControl<number | null>(null, Validators.required);
+  exitMinute = new FormControl<number | null>(null, Validators.required);
+  exitPeriod = new FormControl<string>('AM');
 
   ngOnInit() {
     this.vehicleTypes$ = this.adminService.getVehicleTypes().pipe(take(1));
@@ -141,7 +142,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
       customerName: [{ value: '', disabled: false }, Validators.required],
       customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
-      address: [{ value: '', disabled: false }],
+      address: [{ value: '', disabled: false }, Validators.required],
 
       customerType: 'Daily',
       amount: [{ value: '', disabled: false }],
@@ -159,6 +160,18 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.alreadyPaid = false;
       this.actualCost.clearValidators();
       this.endDateDaily.clearValidators();
+      this.fromDateDaily.reset();
+    this.endDateDaily.reset();
+    this.note.reset();
+    this.entryHour.reset();
+    this.entryMinute.reset();
+    this.entryPeriod.reset('AM');
+    this.actualCost.reset();
+    this.exitHour.reset();
+    this.exitMinute.reset();
+    this.exitPeriod.reset();
+    this.settledCost.reset();
+    this.totalDays.reset();
     }
     this.actualCost.updateValueAndValidity();
     this.endDateDaily.updateValueAndValidity();
@@ -355,11 +368,13 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.billNbr.setValue(res.billNumber);
       this.dailyStatus.setValue(res.dailyStatus);
       this.fromDateDaily.setValue(res.fromDateDaily);
-      this.entryTime.setValue(res.entryTime);
+      this.setEntryTime(res.entryTime)
       this.billAmount.setValue(res.billAmount);
       this.endDateDaily.setValue(res.endDateDaily);
-      this.exitTime.setValue(res.exitTime);
-      this.actualCost.setValue(res.settledAmount);
+      this.setExitTime(res.exitTime);
+      this.actualCost.setValue(res.actualCost);
+      this.settledCost.setValue(res.settledCost);
+      this.totalDays.setValue(res.totalDays);
       this.note.setValue(res.note);
     } else if (res.monthlyStatus === 'Active') {
       this.isMonthlyActiveCustomer = true;
@@ -405,7 +420,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.endDateDaily.setValue(null);
     this.exitTime.setValue(null);
     this.billAmount.setValue('');
-    this.actualCost.setValue('');
+    this.actualCost.setValue(0);
     this.note.setValue('');
 
     this.isDailyUnpaidCustomer = false;
@@ -421,11 +436,13 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   onEntryDateChange(event: any) {
     if (!this.fromDateDaily.value) return;
+    if (this.entryHour.invalid || this.entryMinute.invalid) return; 
     this.calculateBillAmount(this.fromDateDaily.value, this.entryTime12hr);
   }
 
   onExitDateChange(event: any) {
     if (!this.endDateDaily.value) return;
+    if (this.exitHour.invalid || this.exitMinute.invalid) return; 
     this.calculateBillAmount(
       this.fromDateDaily.value,
       this.entryTime12hr,
@@ -446,7 +463,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     const h = this.exitHour.value;
     const m = this.exitMinute.value;
     const p = this.exitPeriod.value;
-    if (!h || m === '' || m === null) return '';
+    if (!h || m === null) return '';
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${p}`;
   }
 
@@ -460,6 +477,16 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.entryPeriod.setValue(period.toUpperCase());
   }
 
+  setExitTime(time: string) {
+    if (!time) return;
+
+    const [hourStr, minuteStr, period] = time.trim().split(/[:\s]/);
+
+    this.exitHour.setValue(Number(hourStr));
+    this.exitMinute.setValue(Number(minuteStr));
+    this.exitPeriod.setValue(period.toUpperCase());
+  }
+
   calculateBillAmount = (
     fromDate: string | null,
     entryTime: string | null,
@@ -469,64 +496,55 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     if (!fromDate || !entryTime) {
       return { days: 0, hours: 0, amount: '0.00', entryIST: '', exitIST: '' };
     }
-
-    const toISTDate = (dateStr: string, timeStr: string) => {
+  
+    const parseDateTime = (dateStr: string, timeStr: string): Date => {
       const [h, m, period] = timeStr.trim().split(/[:\s]/);
       let hours = parseInt(h, 10);
       const minutes = parseInt(m, 10);
-
+  
       if (period.toLowerCase() === 'pm' && hours < 12) hours += 12;
       if (period.toLowerCase() === 'am' && hours === 12) hours = 0;
-
+  
       const [y, mo, d] = dateStr.split('-').map(Number);
-
-      const utc = Date.UTC(y, mo - 1, d, hours, minutes);
-      return new Date(utc - 5.5 * 60 * 60 * 1000);
+      return new Date(y, mo - 1, d, hours, minutes, 0); 
     };
-
-    const entryDate = toISTDate(fromDate, entryTime);
-
-    let exitDate: Date;
-
-    if (endDate && exitTime) {
-      exitDate = toISTDate(endDate, exitTime);
-    } else {
-      const now = new Date();
-      const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
-      exitDate = istNow;
-    }
-
+  
+    const entryDate = parseDateTime(fromDate, entryTime);
+  
+    const exitDate = (endDate && exitTime)
+      ? parseDateTime(endDate, exitTime)
+      : new Date(); 
+  
     const diffMs = exitDate.getTime() - entryDate.getTime();
-
+  
     if (diffMs <= 0) {
       return { days: 0, hours: 0, amount: '0.00', entryIST: '', exitIST: '' };
     }
-
-    const hoursDiff = diffMs / (1000 * 60 * 60);
-
+  
+    const hoursDiff  = diffMs / (1000 * 60 * 60);
     const numberOfDays = Math.max(1, Math.ceil(hoursDiff / 24));
-
+  
     const dailyRate = Number(this.vehicleDetailsForm.get('amount')?.value) || 0;
-    const amount = dailyRate * numberOfDays;
-
+    const amount    = dailyRate * numberOfDays;
+  
     const formatOptions: Intl.DateTimeFormatOptions = {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit',
-      hour: '2-digit',
+      year:   'numeric',
+      month:  'short',
+      day:    '2-digit',
+      hour:   '2-digit',
       minute: '2-digit',
       hour12: true,
     };
-
+  
     const entryIST = entryDate.toLocaleString('en-IN', formatOptions);
-    const exitIST = exitDate.toLocaleString('en-IN', formatOptions);
-
-    this.actualCost.setValue(amount.toFixed(2));
-
+    const exitIST  = exitDate.toLocaleString('en-IN', formatOptions);
+  
+    this.totalDays.setValue(numberOfDays);
+    this.actualCost.setValue(amount);
+  
     return {
-      days: numberOfDays,
-      hours: hoursDiff.toFixed(2),
+      days:   numberOfDays,
+      hours:  hoursDiff.toFixed(2),
       amount: amount.toFixed(2),
       entryIST,
       exitIST,
@@ -554,12 +572,13 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     this.note.reset();
     this.entryHour.reset();
     this.entryMinute.reset();
-    this.entryPeriod.reset();
+    this.entryPeriod.reset('AM');
     this.actualCost.reset();
     this.exitHour.reset();
     this.exitMinute.reset();
-    this.exitPeriod.reset();
+    this.exitPeriod.reset('AM');
     this.settledCost.reset();
+    this.totalDays.reset();
   }
 
   private buildHistory(
@@ -567,14 +586,18 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     Exit: string | null,
     BillNumber: string | null,
     exitTime: string | null,
-    entryTime: string | null
+    entryTime: string | null,
+    actualCost: number | null,
+    settledCost: number | null
   ) {
     const history: any = {
       Entry,
       Exit,
       BillNumber,
       exitTime,
-      entryTime
+      entryTime,
+      actualCost,
+      settledCost
     };
 
     return history;
@@ -630,6 +653,11 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.dailyStatus.markAsTouched();
       this.actualCost.markAsTouched();
       this.fromDateDaily.markAsTouched();
+      this.billNbr.markAsTouched();
+      this.entryHour.markAsTouched();
+      this.endDateDaily.markAsTouched();
+      this.exitHour.markAsTouched();
+      this.settledCost.markAsTouched();
   
       this.showAlert = true;
       this.type = 'error';
@@ -667,6 +695,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
           exitTime:     this.exitTime12hr,
           actualCost:   this.actualCost.value,
           settledCost:  this.settledCost.value,
+          totalDays:    this.totalDays.value
         };
   
         const historyPayload = this.buildHistory(
@@ -674,7 +703,10 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
           this.endDateDaily.value ?? '',
           this.billNbr.value ?? '',
           this.exitTime12hr ?? '',
-          this.entryTime12hr ?? ''
+          this.entryTime12hr ?? '',
+          this.actualCost.value ?? 0,
+          this.settledCost.value ??  0,
+          
         );
   
         await this.newCustomerEntryService.updateCustomerByVehicleNumber(

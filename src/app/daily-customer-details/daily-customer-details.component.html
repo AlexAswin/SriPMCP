@@ -65,7 +65,7 @@
                 <div class="form-group">
                     <label>Bill Number</label>
                     <div class="input-wrapper">
-                        <input type="text" [formControl]="billNbr" />
+                        <input type="text" [formControl]="billNbr" placeholder="Bill Number" />
                         <div class="error-msg" *ngIf="billNbr.touched && billNbr.invalid">
                             <small>Bill Number is required</small>
                         </div>
@@ -104,7 +104,12 @@
                     <label>Address</label>
                     <div class="input-wrapper">
                         <textarea rows="1" formControlName="address"></textarea>
+                        <div class="error-msg"
+                            *ngIf="vehicleDetailsForm.get('address')?.invalid && vehicleDetailsForm.get('address')?.touched">
+                            <small>Please enter the address</small>
                     </div>
+                    </div>
+                    
                 </div>
             </div>
             <div class="section-title">Billing Details</div>
@@ -119,7 +124,7 @@
                 <div class="form-group">
                     <label>Status</label>
                     <div class="radio-group">
-                        <label *ngFor="let status of dailystatus">
+                        <label class="radioBtnLabel" *ngFor="let status of dailystatus">
                             <input type="radio" [value]="status" [formControl]="dailyStatus"
                                 (change)="onDailylyStatusChange(status)" />
                             {{ status }}
@@ -129,6 +134,16 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <label>Total Days</label>
+                    <div class="input-wrapper">
+                      <input class="readonly-input" [formControl]="totalDays" readonly />
+                      <div class="error-msg" *ngIf="totalDays.errors?.['required'] && (totalDays.dirty || totalDays.touched)">
+                          <small>totalDays is required</small>
+                      </div>
+                      </div>
+                  </div>
             </div>
 
             <div class="row3">
@@ -144,37 +159,43 @@
               
                 <div class="form-group">
                     <label>Entry Time</label>
-                    <div class="time-selects">
-                        <select [formControl]="entryHour" (change)="onEntryDateChange($event)">
-                            <option [ngValue]="null" disabled>HH</option>
-                            <option *ngFor="let h of hours" [ngValue]="h">
-                              {{ h | number:'2.0-0' }}
-                            </option>
-                          </select>
-                      <span class="sep">:</span>
-                      <select [formControl]="entryMinute" (change)="onEntryDateChange($event)">
-                        <option [ngValue]="null" disabled>MM</option>
-                        <option *ngFor="let m of minutes" [ngValue]="m">
-                          {{ m | number:'2.0-0' }}
-                        </option>
-                      </select>
-                      <select [formControl]="entryPeriod" (change)="onEntryDateChange($event)">
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                      </select>
-                    </div>
-                  </div>
+                    <div>
+                        <div class="time-selects">
+                            <select [formControl]="entryHour" (change)="onEntryDateChange($event)">
+                                <option [ngValue]="null" disabled>HH</option>
+                                <option *ngFor="let h of hours" [ngValue]="h">
+                                    {{ h | number:'2.0-0' }}
+                                </option>
+                            </select>
+                            <span class="sep">:</span>
+                            <select [formControl]="entryMinute" (change)="onEntryDateChange($event)">
+                                <option [ngValue]="null" disabled>MM</option>
+                                <option *ngFor="let m of minutes" [ngValue]="m">
+                                    {{ m | number:'2.0-0' }}
+                                </option>
+                            </select>
+                            <select [formControl]="entryPeriod" (change)="onEntryDateChange($event)">
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                            </select>
+                        </div>
+                        <div class="error-msg" *ngIf="entryHour.invalid && entryHour.touched">
+                            <small>Entry Hour is required</small>
+                        </div>
+                    </div>        
+                </div>
               
-                <!-- ✅ full-width removed -->
                 <div class="form-group">
                   <label>Actual Cost</label>
                   <div class="input-wrapper">
-                    <input [formControl]="actualCost" />
+                    <input [formControl]="actualCost" placeholder="0"/>
                     <div class="error-msg" *ngIf="actualCost.errors?.['required'] && (actualCost.dirty || actualCost.touched)">
                         <small>Actual Cost is required</small>
                     </div>
                     </div>
                 </div>
+
+                
               </div>
 
             <div class="row" *ngIf="alreadyPaid">
@@ -189,14 +210,16 @@
                 </div>
                 <div class="form-group">
                     <label>Exit Time</label>
-                    <div class="time-selects">
+                  
+                    <div>
+                      <div class="time-selects">
                         <select [formControl]="exitHour" (change)="onExitDateChange($event)">
-                          <option value="" disabled>HH</option>
+                          <option [ngValue]="null" disabled>HH</option>
                           <option *ngFor="let h of hours" [value]="h">{{ h | number:'2.0-0' }}</option>
                         </select>
-                      <span class="sep">:</span>
+                        <span class="sep">:</span>
                         <select [formControl]="exitMinute" (change)="onExitDateChange($event)">
-                          <option value="" disabled>MM</option>
+                          <option [ngValue]="null" disabled>MM</option>
                           <option *ngFor="let m of minutes" [value]="m">{{ m | number:'2.0-0' }}</option>
                         </select>
                         <select [formControl]="exitPeriod" (change)="onExitDateChange($event)">
@@ -204,18 +227,24 @@
                           <option value="PM">PM</option>
                         </select>
                       </div>
+                  
+                      <div class="error-msg" *ngIf="exitHour.invalid && exitHour.touched">
+                        <small>Exit hour is required</small>
+                      </div>
+                    </div>
                   </div>
 
-                <div class="form-group">
+                  <div class="form-group">
                     <label>Settled Cost</label>
                     <div class="input-wrapper">
-                        <input type="text" placeholder="0.00" [formControl]="settledCost" />
-
-                        <div class="error-msg" *ngIf="settledCost.invalid">
-                            <small *ngIf="settledCost.errors?.['pattern']">Numbers only</small>
-                        </div>
+                      <input type="text" placeholder="0" [formControl]="settledCost" />
+                  
+                      <div class="error-msg" *ngIf="settledCost.invalid && settledCost.touched">
+                        <small *ngIf="settledCost.errors?.['required']">Settled cost is required</small>
+                        <small *ngIf="settledCost.errors?.['pattern']">Numbers only</small>
+                      </div>
                     </div>
-                </div>
+                  </div>
             </div>
 
             <div class="row">

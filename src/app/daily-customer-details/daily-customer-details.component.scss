@@ -181,11 +181,11 @@ $bp-lg: 900px;
       display: flex;
       align-items: flex-end;
       position: relative;
-
+    
       &.full-width {
         flex: 1 1 100% !important;
       }
-
+    
       label {
         flex: 0 0 $label-width;
         font-size: 14px;
@@ -193,49 +193,19 @@ $bp-lg: 900px;
         color: #444;
         padding-bottom: 8px;
       }
-
-      .time-selects {
-        border-bottom: 1px solid #ccc;
-
-        select {
-          border: none;
-          padding-bottom: 5px;
-        }
-      }
-
-      .time-selects select {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        background: none;       
-        padding: 10px;    
-      }
-
-      input[type="date"],
-      input[type="time"] {
-        @extend %input-datetime;
-      }
-
-      .input-wrapper {
+    
+      // ✅ any direct div child (time selects wrapper) stretches like .input-wrapper
+      > div:not(.input-wrapper):not(.radio-group) {
         flex: 1;
+        display: flex;
+        flex-direction: column;
         position: relative;
-
-        input,
-        textarea,
-        mat-select {
-          @extend %input-base;
-        }
-
-        textarea {
-          resize: none;
-          display: block;
-        }
-
+    
         .error-msg {
           position: absolute;
           bottom: -18px;
           left: 0;
-
+    
           small {
             color: $error-red;
             font-size: 11px;
@@ -244,18 +214,96 @@ $bp-lg: 900px;
           }
         }
       }
-
+    
+      // ✅ time selects — matches underline style of other inputs
+      .time-selects {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border-bottom: 1px solid $border-color;
+        padding-bottom: 6px;
+    
+        &:focus-within {
+          border-bottom: 1px solid $primary-black;
+        }
+    
+        select {
+          flex: 1;
+          border: none;
+          outline: none;
+          background: transparent;
+          font-family: $font-main;
+          font-size: 14px;
+          color: #111;
+          padding: 2px 4px;
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          text-align: center;
+          cursor: pointer;
+    
+          // AM/PM fixed width
+          &:last-child {
+            flex: 0 0 48px;
+          }
+        }
+    
+        .sep {
+          color: #aaa;
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+      }
+    
+      input[type="date"],
+      input[type="time"] {
+        @extend %input-datetime;
+      }
+    
+      .input-wrapper {
+        flex: 1;
+        position: relative;
+    
+        input,
+        textarea,
+        mat-select {
+          @extend %input-base;
+        }
+    
+        textarea {
+          resize: none;
+          display: block;
+        }
+    
+        .error-msg {
+          position: absolute;
+          bottom: -18px;
+          left: 0;
+    
+          small {
+            color: $error-red;
+            font-size: 11px;
+            font-weight: 400;
+            white-space: nowrap;
+          }
+        }
+      }
+    
       .radio-group {
         display: flex;
         gap: 25px;
         align-items: center;
         position: relative;
 
+        .radioBtnLabel {
+          max-width: fit-content;
+        }
+    
         .error-msg {
           position: absolute;
           bottom: -22px;
           left: 0;
-
+    
           small {
             color: $error-red;
             font-size: 11px;

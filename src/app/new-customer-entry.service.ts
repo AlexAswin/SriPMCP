@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   addDoc,
+  arrayUnion,
   collectionData,
   doc,
   getDoc,
@@ -259,6 +260,14 @@ export class NewCustomerEntryService {
     await updateDoc(docRef, updateData);
   
     if (historyPayload) {
+      const exitDate = historyPayload.Exit ?? historyPayload.endDate;
+  
+      if (!exitDate) {
+        throw new Error('Exit Date is required for history document name');
+      }
+  
+      const monthKey = exitDate.slice(0, 7); 
+  
       const historyRef = collection(
         this.firestore,
         'CustomerEntry',
@@ -266,14 +275,19 @@ export class NewCustomerEntryService {
         'statusHistory'
       );
   
-      const exitDate = historyPayload.Exit ?? historyPayload.Exit;
+      const historyDocRef = doc(historyRef, monthKey);
+      const existingSnap = await getDoc(historyDocRef);
   
-      if (!exitDate) {
-        throw new Error('Exit Date is required for history document name');
+      if (existingSnap.exists()) {
+        await updateDoc(historyDocRef, {
+          entries: arrayUnion(historyPayload),
+        });
+      } else {
+        await setDoc(historyDocRef, {
+          // month: monthKey,
+          entries: [historyPayload],
+        });
       }
-  
-      const historyDocRef = doc(historyRef, exitDate); 
-      await setDoc(historyDocRef, historyPayload);        
     }
   
     return docSnap.id;
