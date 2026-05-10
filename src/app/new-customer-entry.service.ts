@@ -6,6 +6,7 @@ import {
   doc,
   getDoc,
   or,
+  runTransaction,
   setDoc,
   updateDoc,
   writeBatch,
@@ -33,19 +34,18 @@ export class NewCustomerEntryService {
   ) {}
 
   async addNewCustomerEntry(customerDetails: any) {
-    const batch = writeBatch(this.firestore);
-
     const customerRef = doc(
       this.firestore,
       'CustomerEntry',
       customerDetails.vehicleNumber
     );
-
-    const dateParts = customerDetails.customerType === 'Monthly' ? customerDetails.fromDateMonthly.split('-') :  customerDetails.fromDateDaily.split('-');
+  
+    const dateParts =
+      customerDetails.customerType === 'Monthly'
+        ? customerDetails.fromDateMonthly.split('-')
+        : customerDetails.fromDateDaily.split('-');
     const monthId = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
-    // const monthId = `2026-03`;
-
-
+  
     const transactionRef = doc(
       this.firestore,
       'CustomerEntry',
@@ -53,35 +53,57 @@ export class NewCustomerEntryService {
       'Transactions',
       monthId
     );
-
-    let transactionData = {}
-
-    if(customerDetails.customerType === 'monthly') {
-      transactionData = {
-        currentMonthTotal: Number(customerDetails.amount) || 0,
-        monthlyCost: Number(customerDetails.amount) || 0,
-        currentPending: Number(customerDetails.amount) || 0,
-        isTransactionMade: false,
-      };
-    } else {
-      transactionData = {
-        currentDailyTotal: Number(customerDetails.amount) || 0,
-        dailyCost: Number(customerDetails.amount) || 0,
-        currentPending: Number(customerDetails.amount) || 0,
-        isTransactionMade: false,
-      };
-    }
-
-    batch.set(customerRef, customerDetails);
-    batch.set(transactionRef, transactionData);
-
+  
+    const billNumberRef = doc(
+      this.firestore,
+      'BillNumbers',
+      customerDetails.billNumber  // e.g. "124"
+    );
+  
     try {
-      await batch.commit();
-      console.log('Customer and Transaction created atomically.');
+      await runTransaction(this.firestore, async (transaction) => {
+        // Double-check bill number inside transaction (safety net)
+        const billSnap = await transaction.get(billNumberRef);
+        if (billSnap.exists()) {
+          throw new Error(`Bill number ${customerDetails.billNumber} is already taken`);
+        }
+  
+        let transactionData = {};
+  
+        if (customerDetails.customerType === 'Monthly') {
+          transactionData = {
+            currentMonthTotal: Number(customerDetails.amount) || 0,
+            monthlyCost: Number(customerDetails.amount) || 0,
+            currentPending: Number(customerDetails.amount) || 0,
+            isTransactionMade: false,
+          };
+        } else {
+          transactionData = {
+            currentDailyTotal: Number(customerDetails.amount) || 0,
+            dailyCost: Number(customerDetails.amount) || 0,
+            currentPending: Number(customerDetails.amount) || 0,
+            isTransactionMade: false,
+          };
+        }
+  
+        transaction.set(customerRef, customerDetails);
+        transaction.set(transactionRef, transactionData);
+        transaction.set(billNumberRef, {  
+          customerId: customerDetails.vehicleNumber,
+        });
+      });
+  
+      console.log('Customer, Transaction, and BillNumber saved atomically.');
     } catch (error) {
-      console.error('Batch failed! No data was saved.', error);
+      console.error('Transaction failed!', error);
       throw error;
     }
+  }
+
+  async isBillNumberTaken(billNumber: number): Promise<boolean> {
+    const billRef = doc(this.firestore, 'BillNumbers', String(billNumber));
+    const snap = await getDoc(billRef);
+    return snap.exists();
   }
 
   async initializeMonthlyLedger(
