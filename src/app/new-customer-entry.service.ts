@@ -57,40 +57,35 @@ export class NewCustomerEntryService {
     const billNumberRef = doc(
       this.firestore,
       'BillNumbers',
-      customerDetails.billNumber  // e.g. "124"
+      String(customerDetails.billNumber) // ← convert number to string for doc ID
     );
   
     try {
       await runTransaction(this.firestore, async (transaction) => {
-        // Double-check bill number inside transaction (safety net)
-        const billSnap = await transaction.get(billNumberRef);
-        if (billSnap.exists()) {
-          throw new Error(`Bill number ${customerDetails.billNumber} is already taken`);
+        
+        // Bill number check — only for Monthly customers
+        if (customerDetails.customerType === 'Monthly') {
+          const billSnap = await transaction.get(billNumberRef);
+          if (billSnap.exists()) {
+            throw new Error(`Bill number ${customerDetails.billNumber} is already taken`);
+          }
         }
   
-        let transactionData = {};
-  
+        // Transaction data — only for Monthly customers
         if (customerDetails.customerType === 'Monthly') {
-          transactionData = {
+          const transactionData = {
             currentMonthTotal: Number(customerDetails.amount) || 0,
             monthlyCost: Number(customerDetails.amount) || 0,
             currentPending: Number(customerDetails.amount) || 0,
             isTransactionMade: false,
           };
-        } else {
-          transactionData = {
-            currentDailyTotal: Number(customerDetails.amount) || 0,
-            dailyCost: Number(customerDetails.amount) || 0,
-            currentPending: Number(customerDetails.amount) || 0,
-            isTransactionMade: false,
-          };
+          transaction.set(transactionRef, transactionData);
+          transaction.set(billNumberRef, {
+            customerId: customerDetails.vehicleNumber,
+          });
         }
   
         transaction.set(customerRef, customerDetails);
-        transaction.set(transactionRef, transactionData);
-        transaction.set(billNumberRef, {  
-          customerId: customerDetails.vehicleNumber,
-        });
       });
   
       console.log('Customer, Transaction, and BillNumber saved atomically.');

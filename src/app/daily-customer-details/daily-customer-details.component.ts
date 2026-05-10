@@ -116,19 +116,23 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         }
       });
 
-      this.billNbr.valueChanges.pipe(
-        debounceTime(500),
-        distinctUntilChanged(),
-        filter(value => value !== null && value !== 0),
-        switchMap(value => {
-          this.isCheckingBillNumber = true;
-          this.isBillNumberTaken = false;
-          return from(this.newCustomerEntryService.isBillNumberTaken(value as number));
-        })
-      ).subscribe(isTaken => {
-        this.isCheckingBillNumber = false;
-        this.isBillNumberTaken = isTaken;
-      });
+      if(this.isNewDailyCustomer) {
+        this.billNbr.valueChanges.pipe(
+          debounceTime(500),
+          distinctUntilChanged(),
+          filter(value => value !== null && value !== 0),
+          switchMap(value => {
+            this.isCheckingBillNumber = true;
+            this.isBillNumberTaken = false;
+            return from(this.newCustomerEntryService.isBillNumberTaken(value as number));
+          })
+        ).subscribe(isTaken => {
+          this.isCheckingBillNumber = false;
+          this.isBillNumberTaken = isTaken;
+        });
+      }
+
+      
 
     this.isNewDailyCustomer = true;
 
