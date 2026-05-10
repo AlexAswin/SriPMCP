@@ -57,14 +57,14 @@ export class NewCustomerEntryService {
     const billNumberRef = doc(
       this.firestore,
       'BillNumbers',
-      String(customerDetails.billNumber) // ← convert number to string for doc ID
+      String(customerDetails.billNumber)
     );
   
     try {
       await runTransaction(this.firestore, async (transaction) => {
-        
-        // Bill number check — only for Monthly customers
-        if (customerDetails.customerType === 'Monthly') {
+  
+        // Bill number check — only for Daily customers
+        if (customerDetails.customerType === 'Daily') {
           const billSnap = await transaction.get(billNumberRef);
           if (billSnap.exists()) {
             throw new Error(`Bill number ${customerDetails.billNumber} is already taken`);
@@ -80,6 +80,10 @@ export class NewCustomerEntryService {
             isTransactionMade: false,
           };
           transaction.set(transactionRef, transactionData);
+        }
+  
+        // Bill number assignment — only for Daily customers
+        if (customerDetails.customerType === 'Daily') {
           transaction.set(billNumberRef, {
             customerId: customerDetails.vehicleNumber,
           });
