@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ButtonComponent } from '../Common/button/button.component';
@@ -36,6 +36,8 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   message: string = '';
   showAlert = false;
 
+  disabled: boolean = false;
+
   dailystatus = ['paid', 'Unpaid'];
   currentCustomer: string = '';
 
@@ -53,9 +55,14 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   endDateDaily = new FormControl<string | null>(null, [Validators.required]);
   exitTime = new FormControl<string | null>(null);
   billAmount = new FormControl<string | number>('');
+  currentCustomerBillNbr: number | null = null;
 
   actualCost = new FormControl<number>( 0, [Validators.required]);
-  settledCost = new FormControl<number>(0, [Validators.required]);
+  settledCost = new FormControl<number>(0, [
+    Validators.required,
+    Validators.pattern('^[0-9]*$'),
+    this.maxCostValidator()
+  ]);
   totalDays = new FormControl<number>(0, [Validators.required]);
 
 
@@ -70,7 +77,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   hours = Array.from({ length: 12 }, (_, i) => i + 1);
   minutes = [0, 15, 30, 45];
 
-  entryHour = new FormControl<number | null>(null, Validators.required);
+  entryHour = new FormControl<number | null>({ value: null, disabled: false }, Validators.required);
   entryMinute = new FormControl<number | null>(null, Validators.required);
   entryPeriod = new FormControl<string>('AM');
 
@@ -116,16 +123,18 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         }
       });
 
-      if(this.isNewDailyCustomer) {
+      if (!this.isNewDailyCustomer) {
         this.billNbr.valueChanges.pipe(
           debounceTime(500),
           distinctUntilChanged(),
           filter(value => value !== null && value !== 0),
+          filter(() => this.billNbr.value !== this.currentCustomerBillNbr), // ✅ Skip if same customer
           switchMap(value => {
             this.isCheckingBillNumber = true;
             this.isBillNumberTaken = false;
             return from(this.newCustomerEntryService.isBillNumberTaken(value as number));
-          })
+          }),
+          takeUntil(this.destroy$)
         ).subscribe(isTaken => {
           this.isCheckingBillNumber = false;
           this.isBillNumberTaken = isTaken;
@@ -150,7 +159,8 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private adminService: AdminService
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef
   ) {
     this.vehicleDetails();
   }
@@ -170,30 +180,34 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     });
   };
 
-  onDailylyStatusChange(status: string) {
+  onDailyStatusChange(status: string) {
     if (status === 'paid') {
       this.alreadyPaid = true;
-      this.actualCost.setValidators([
-        Validators.required
-      ]);
+      this.disabled = false;
+  
+      this.actualCost.setValidators([Validators.required]);
       this.endDateDaily.setValidators([Validators.required]);
     } else {
       this.alreadyPaid = false;
+      this.disabled = false;
+  
       this.actualCost.clearValidators();
       this.endDateDaily.clearValidators();
+  
       this.fromDateDaily.reset();
-    this.endDateDaily.reset();
-    this.note.reset();
-    this.entryHour.reset();
-    this.entryMinute.reset();
-    this.entryPeriod.reset('AM');
-    this.actualCost.reset();
-    this.exitHour.reset();
-    this.exitMinute.reset();
-    this.exitPeriod.reset();
-    this.settledCost.reset();
-    this.totalDays.reset();
+      this.endDateDaily.reset();
+      this.note.reset();
+      this.entryHour.reset();
+      this.entryMinute.reset();
+      this.entryPeriod.reset('AM');
+      this.actualCost.reset();
+      this.exitHour.reset();
+      this.exitMinute.reset();
+      this.exitPeriod.reset();
+      this.settledCost.reset();
+      this.totalDays.reset();
     }
+  
     this.actualCost.updateValueAndValidity();
     this.endDateDaily.updateValueAndValidity();
   }
@@ -361,12 +375,20 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         amount: res.amount,
       });
 
-      this.billNbr.setValue(res.billNumber);
+      this.billNbr.setValue(res.billNumber, { emitEvent: false });
+      this.currentCustomerBillNbr = res.billNumber;
       this.dailyStatus.setValue(res.dailyStatus);
       this.fromDateDaily.setValue(res.fromDateDaily);
       this.entryTime.setValue(res.entryTime);
       this.note.setValue(res.note);
       this.setEntryTime(res.entryTime);
+
+      this.entryHour.disable();
+      this.entryMinute.disable();
+      this.entryPeriod.disable();
+      this.cdr.detectChanges();
+
+      this.disabled = true;
 
       this.calculateBillAmount(res.fromDateDaily, res.entryTime);
     } else if (res.dailyStatus === 'paid') {
@@ -386,7 +408,8 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         amount: res.amount,
       });
 
-      this.billNbr.setValue(res.billNumber);
+      this.billNbr.setValue(res.billNumber, { emitEvent: false });
+      this.currentCustomerBillNbr = res.billNumber;
       this.dailyStatus.setValue(res.dailyStatus);
       this.fromDateDaily.setValue(res.fromDateDaily);
       this.setEntryTime(res.entryTime)
@@ -397,6 +420,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.settledCost.setValue(res.settledCost);
       this.totalDays.setValue(res.totalDays);
       this.note.setValue(res.note);
+      this.disabled = true;
     } else if (res.monthlyStatus === 'Active') {
       this.isMonthlyActiveCustomer = true;
       this.showAlert = true;
@@ -424,6 +448,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
     } else {
       this.isNewDailyCustomer = true;
       this.resetFormForNewCustomer();
+      this.currentCustomerBillNbr = null;
       this.message = 'New vehicle detected. Please enter details.';
       this.type = 'info';
       this.showAlert = true;
@@ -453,6 +478,17 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
     this.vehicleDetailsForm.markAsPristine();
     this.vehicleDetailsForm.markAsUntouched();
+  }
+
+  maxCostValidator() {
+    return (control: AbstractControl) => {
+      const settled = Number(control.value);
+      const actual = Number(this.actualCost.value ?? 0);
+      if (settled > actual) {
+        return { exceedsActual: true };
+      }
+      return null;
+    };
   }
 
   onEntryDateChange(event: any) {

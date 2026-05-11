@@ -34,7 +34,6 @@ $bp-lg: 900px;
     color: #777;
     border-bottom: 1px solid transparent;
     background: #f9f9f9;
-    padding: 8px 10px;
   }
 }
 
@@ -194,7 +193,6 @@ $bp-lg: 900px;
         padding-bottom: 8px;
       }
     
-      // ✅ any direct div child (time selects wrapper) stretches like .input-wrapper
       > div:not(.input-wrapper):not(.radio-group) {
         flex: 1;
         display: flex;
@@ -215,16 +213,21 @@ $bp-lg: 900px;
         }
       }
     
-      // ✅ time selects — matches underline style of other inputs
       .time-selects {
         display: flex;
         align-items: center;
         gap: 4px;
         border-bottom: 1px solid $border-color;
-        padding-bottom: 6px;
+        padding: 6px;
     
         &:focus-within {
           border-bottom: 1px solid $primary-black;
+        }
+    
+        &.disabled {
+          pointer-events: none;
+          opacity: 0.6;
+          background-color: #f9f9f9;
         }
     
         select {
@@ -242,7 +245,6 @@ $bp-lg: 900px;
           text-align: center;
           cursor: pointer;
     
-          // AM/PM fixed width
           &:last-child {
             flex: 0 0 48px;
           }
@@ -263,6 +265,12 @@ $bp-lg: 900px;
       .input-wrapper {
         flex: 1;
         position: relative;
+    
+        &.disabled {
+          pointer-events: none;
+          opacity: 0.6;
+          background-color: #f9f9f9;
+        }
     
         input,
         textarea,
@@ -294,7 +302,7 @@ $bp-lg: 900px;
         gap: 25px;
         align-items: center;
         position: relative;
-
+    
         .radioBtnLabel {
           max-width: fit-content;
         }
