@@ -436,6 +436,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.vehicleDetailsForm.patchValue({
         vehicleNumber: res.vehicleNumber,
         vehicleType: res.vehicleType,
+        vehicleName: res.vehicleName,
         customerName: res.customerName,
         customerPhoneNbr: res.customerPhoneNbr,
         address: res.address,
@@ -820,11 +821,11 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   get isReactivatingCustomer(): boolean {
     return (
-      !!this.currentCustomer &&           // existing customer
+      !!this.currentCustomer &&           
       !this.isNewDailyCustomer &&
       !this.isDailyUnpaidCustomer &&
       !this.isMonthlyInActiveCustomer &&
-      this.dailyStatus.value === 'Unpaid'  // previously settled
+      this.dailyStatus.value === 'Unpaid' 
     );
   }
 
