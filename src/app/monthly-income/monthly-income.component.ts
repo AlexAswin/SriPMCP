@@ -631,15 +631,14 @@ export class MonthlyIncomeComponent implements OnInit, OnDestroy {
       valA = new Date(dateA || 0).getTime();
       valB = new Date(dateB || 0).getTime();
     }
-  
-    if (vehicleA === vehicleB) return monthA.localeCompare(monthB);
-  
+    
     if (valA === valB) {
       const vehicleComp = vehicleA.localeCompare(vehicleB);
       return vehicleComp !== 0 ? vehicleComp : monthA.localeCompare(monthB);
     }
-  
-    return sort.direction === 'dec' ? valA - valB : valB - valA;
+    
+    // ✅ Fixed direction check
+    return sort.direction === 'asc' ? valA - valB : valB - valA;
   }
   private setupTotals() {
     const totals$ = this.filteredCustomers$.pipe(

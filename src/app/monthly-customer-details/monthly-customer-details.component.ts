@@ -545,11 +545,6 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   }
 
   isFormValid(): boolean {
-    const isMainValid = this.isNewMonthlyCustomer
-      ? this.vehicleDetailsForm.valid                   
-      : this.vehicleDetailsForm.valid ||                  
-        this.isLotNumberOnlyInvalid();
-  
     const isEndDateRequired = this.monthlyStatus.value === 'InActive';
   
     const areStandalonesValid =
@@ -559,30 +554,45 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       this.note.valid &&
       (isEndDateRequired ? this.endDateMonthly.valid : true);
   
+    // Advance cannot exceed amount
     if (
       this.advance.value &&
-      this.advance.value! > this.vehicleDetailsForm?.get('amount')?.value
+      this.advance.value > this.vehicleDetailsForm?.get('amount')?.value
     ) {
       return false;
     }
   
-    if (this.monthlyStatus.value === 'InActive') {
-      return true;
+    // Active → InActive: only need standalones + endDate (no vehicleDetailsForm needed)
+    if (
+      this.isMonthlyActiveCustomer &&
+      this.monthlyStatus.value === 'InActive'
+    ) {
+      return areStandalonesValid && this.endDateMonthly.valid;
     }
   
-    if (!isMainValid || !areStandalonesValid) {
-      this.vehicleDetailsForm.markAllAsTouched();
-      this.advance.markAsTouched();
-      this.monthlyStatus.markAsTouched();
-      this.fromDateMonthly.markAsTouched();
-      this.note.markAsTouched();
-      if (isEndDateRequired) this.endDateMonthly.markAsTouched();
-  
-      this.logValidationErrors();
-      return false;
+    // InActive → Active: need vehicleDetailsForm + standalones
+    if (
+      this.isMonthlyInActiveCustomer &&
+      this.monthlyStatus.value === 'Active'
+    ) {
+      return this.vehicleDetailsForm.valid && areStandalonesValid;
     }
   
-    return true;
+    // New monthly customer: everything must be valid including lotNumber
+    if (this.isNewMonthlyCustomer) {
+      return this.vehicleDetailsForm.valid && areStandalonesValid;
+    }
+  
+    // Daily → Monthly conversion: everything valid
+    if (this.dailyToMonthlyCustomer) {
+      return this.vehicleDetailsForm.valid && areStandalonesValid;
+    }
+  
+    // Default update: vehicleDetailsForm OR lotNumber-only invalid is acceptable
+    return (
+      (this.vehicleDetailsForm.valid || this.isLotNumberOnlyInvalid()) &&
+      areStandalonesValid
+    );
   }
 
   isLotNumberOnlyInvalid(): boolean {
@@ -603,6 +613,16 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   }
 
   submitForm = async () => {
+    this.vehicleDetailsForm.markAllAsTouched();
+    this.advance.markAsTouched();
+    this.monthlyStatus.markAsTouched();
+    this.fromDateMonthly.markAsTouched();
+    this.note.markAsTouched();
+  
+    if (this.isStatusInActive) {
+      this.endDateMonthly.markAsTouched();
+    }
+  
     if (!this.isFormValid()) {
       this.showAlert = true;
       this.type = 'error';

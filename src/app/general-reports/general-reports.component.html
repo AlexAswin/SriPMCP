@@ -1,0 +1,39 @@
+<header class="admin-header">
+    <button mat-icon-button [routerLink]="['/dashBoard']" class="back-btn">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Management Console</h1>
+
+    <span class="spacer"></span>
+
+    <img src="assets/murugar_.jpg" alt="" [routerLink]="['/dashBoard']">
+
+  </header>
+  
+<div class="ledger-col">
+    <div class="ledger-col__head">
+      <h3 class="ledger-col__title">Download Monthly customers Details</h3>
+    </div>
+
+    <div class="ledger-col__body">
+      <p class="ledger-col__hint">
+        Download customer records as PDF.
+      </p>
+
+      <div class="ledger-col__divider"></div>
+
+      <button class="download-btn" (click)="downloadActiveCustomerPDF()">
+        <mat-icon class="download-btn__icon">download</mat-icon>
+        Download active customers
+      </button>
+
+      <button class="download-btn" (click)="downloadActiveCustomerPDF(true)">
+        <mat-icon class="download-btn__icon">download</mat-icon>
+        Download customer details
+      </button>
+    </div>
+
+    <div class="ledger-col__footer">
+      <p class="ledger-col__hint">Files download as PDF. Includes all active records.</p>
+    </div>
+  </div>

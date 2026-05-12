@@ -71,19 +71,15 @@
                     <div class="rightContainer">
                         <div class="form-group">
                             <div class="input-row">
-                              <label>LoT Number</label>
-                              <input type="text" placeholder="12" formControlName="lotNumber" (keydown)="restrictDigits($event)" />
+                              <label>Lot Number</label>
+                              <input type="text" placeholder="12" formControlName="lotNumber"
+                                (keydown)="restrictDigits($event)" />
                             </div>
-                          
-                            <div class="error-container" *ngIf="vehicleDetailsForm.get('lotNumber')?.invalid && 
+                            <div class="error-container" *ngIf="vehicleDetailsForm.get('lotNumber')?.invalid &&
                                  (vehicleDetailsForm.get('lotNumber')?.dirty || vehicleDetailsForm.get('lotNumber')?.touched)">
-                              <small *ngIf="vehicleDetailsForm.get('lotNumber')?.errors?.['required']">Lot Number is required</small>
-                              <small *ngIf="vehicleDetailsForm.get('lotNumber')?.errors?.['lotOccupied']" style="color: red;">
-                                Lot {{ vehicleDetailsForm.get('lotNumber')?.value }} is already occupied
-                              </small>
+                              <small *ngIf="vehicleDetailsForm.get('lotNumber')?.errors?.['required']">Lot number is required</small>
+                              <small *ngIf="vehicleDetailsForm.get('lotNumber')?.errors?.['pattern']">Lot number must be numeric</small>
                             </div>
-                          
-                            <small *ngIf="vehicleDetailsForm.get('lotNumber')?.pending">Checking lot availability...</small>
                           </div>
                     </div>
                 </div>
@@ -116,7 +112,15 @@
                         <div class="input-row">
                             <label>Address</label>
                             <textarea rows="2" formControlName="address"></textarea>
-                        
+                            <span
+                            class="error-container"
+                            *ngIf="vehicleDetailsForm.get('address')?.invalid && 
+                                   vehicleDetailsForm.get('address')?.touched"
+                          >
+                            <small *ngIf="vehicleDetailsForm.get('address')?.errors?.['required']">
+                              Address is required.
+                            </small>
+                          </span>
                         </div>
                     </div>
                 </div>
@@ -169,37 +173,40 @@
                         </div>
                     </div>
             
-                    <div class="billing-row mt-20"> <div class="form-group">
-                        <div class="input-row">
-                            <label>From Date</label>
-                            <input 
-                                type="date" 
-                                [formControl]="fromDateMonthly" 
-                                [min]="minDate"
-                                [max]="maxDate"/>
-                            
-                            <div *ngIf="fromDateMonthly.value && (fromDateMonthly.value < minDate || fromDateMonthly.value > maxDate) && isNewMonthlyCustomer" 
-                                 style="color: red; font-size: 12px;">
-                                Only current month allowed
-                            </div>
-                        </div>
-                            <div class="error-container" *ngIf="fromDateMonthly.invalid && (fromDateMonthly.dirty || fromDateMonthly.touched)">
-                                <small>Start date is required</small>
-                            </div>
-                    </div>
-            
-                        <div class="form-group" *ngIf="isStatusInActive">
+                    <div class="billing-row mt-20"> 
+                        <div class="form-group">
                             <div class="input-row">
-                                <label>End Date</label>
-                                <input type="date" [formControl]="endDateMonthly" [min]="fromDateMonthly.value || minDate" [max]="maxDate" />
+                              <label>From Date</label>
+                              <input type="date" [formControl]="fromDateMonthly" [min]="minDate" [max]="maxDate" />
                             </div>
-                            <div class="error-container" *ngIf="endDateMonthly.invalid && (endDateMonthly.dirty || endDateMonthly.touched)">
-                                <small>End date is required</small>
+                            <div class="error-container" *ngIf="fromDateMonthly.invalid &&
+                                 (fromDateMonthly.dirty || fromDateMonthly.touched)">
+                              <small *ngIf="fromDateMonthly.errors?.['required']">From date is required</small>
                             </div>
-                            <div *ngIf="isEndDateInvalid()" style="color: red; font-size: 12px;">
-                                End date cannot be less than From date
-                              </div>
+                            <div class="error-container" *ngIf="fromDateMonthly.value &&
+                                 (fromDateMonthly.value < minDate || fromDateMonthly.value > maxDate) && isNewMonthlyCustomer">
+                              <small>Only current month dates are allowed</small>
                             </div>
+                          </div>
+            
+                          <div class="form-group" *ngIf="isStatusInActive">
+                            <div class="input-row">
+                              <label>End Date</label>
+                              <input
+                                type="date"
+                                [formControl]="endDateMonthly"
+                                [min]="fromDateMonthly.value || minDate"
+                                [max]="maxDate"
+                              />
+                            </div>
+                            <div class="error-container"
+                              *ngIf="endDateMonthly.invalid && (endDateMonthly.dirty || endDateMonthly.touched)">
+                              <small *ngIf="endDateMonthly.errors?.['required']">End date is required</small>
+                            </div>
+                            <div class="error-container" *ngIf="isEndDateInvalid()">
+                              <small>End date cannot be less than from date</small>
+                            </div>
+                          </div>
                     </div>
                 </div>
             </div>
