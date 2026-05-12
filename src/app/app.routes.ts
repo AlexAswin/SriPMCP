@@ -9,6 +9,7 @@ import { MonthlyPaymentsComponent } from './monthly-payments/monthly-payments.co
 import { ExpenseDetailsComponent } from './expense-details/expense-details.component';
 import { DailyIncomeComponent } from './daily-income/daily-income.component';
 import { authGuard } from './auth.guard';
+import { GeneralReportsComponent } from './general-reports/general-reports.component';
 
 export const routes: Routes = [
   { path: '', component: LogInComponent },
@@ -28,6 +29,7 @@ export const routes: Routes = [
           { path: 'monthlyIncome', component: MonthlyIncomeComponent },
           { path: 'dailyIncome',   component: DailyIncomeComponent },
           { path: 'expense',       component: ExpenseDetailsComponent },
+          { path: 'generalReports',  component: GeneralReportsComponent },
         ]
       }
     ]

@@ -1,0 +1,132 @@
+$text-main:     #111827;
+
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding: 10px 0px;
+  
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: $text-main;
+    }
+  
+    button {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      margin-right: 20px;
+      flex-shrink: 0;
+  
+      &:hover {
+        transform: translateX(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+  
+      mat-icon { color: #555; }
+    }
+  
+    img {
+      width: 60px;
+      height: 60px;
+      margin-right: 40px;
+    }
+  }
+
+.ledger-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    max-width: 360px;
+    margin: 0 auto;
+  
+    &__head {
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+  
+    &__title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      color: #1a202c;
+    }
+  
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+  
+    &__hint {
+      font-size: 13px;
+      color: #718096;
+      margin: 0;
+      line-height: 1.5;
+    }
+  
+    &__divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 0.25rem 0;
+    }
+  
+    &__footer {
+      padding-top: 0.75rem;
+      border-top: 1px solid #e2e8f0;
+    }
+  }
+  
+  .download-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2d3748;
+    background: transparent;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+  
+    &__icon {
+      font-size: 18px;
+      color: #718096;
+      flex-shrink: 0;
+    }
+  
+    &:hover {
+      background: #f7fafc;
+      border-color: #a0aec0;
+    }
+  
+    &:active {
+      transform: scale(0.98);
+    }
+  
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.4);
+    }
+  }
