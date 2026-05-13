@@ -3,6 +3,7 @@ import {
   addDoc,
   arrayUnion,
   collectionData,
+  deleteField,
   doc,
   getDoc,
   or,
@@ -278,7 +279,26 @@ export class NewCustomerEntryService {
     const customerDocId = docSnap.id;
     const docRef = doc(this.firestore, 'CustomerEntry', docSnap.id);
   
-    await updateDoc(docRef, updateData);
+    const MONTHLY_FIELDS = ['lotNumber', 'monthlyStatus', 'startDateMonthly', 'endDateMonthly'];
+    const DAILY_FIELDS   = ['dailyStatus', 'billNumber', 'fromDateDaily', 'endDateDaily', 'entryTime', 'exitTime', 'billAmount', 'actualCost', 'settledCost', 'totalDays'];
+  
+    const isDailyConversion   = updateData.dailyStatus === 'Unpaid' && !updateData.monthlyStatus;
+    const isMonthlyConversion = updateData.monthlyStatus === 'Active' && !updateData.dailyStatus;
+  
+    const fieldsToDelete = isDailyConversion
+      ? MONTHLY_FIELDS
+      : isMonthlyConversion
+      ? DAILY_FIELDS
+      : [];
+  
+    const sanitizedData = fieldsToDelete.length
+      ? {
+          ...updateData,
+          ...Object.fromEntries(fieldsToDelete.map(field => [field, deleteField()])),
+        }
+      : updateData;
+  
+    await updateDoc(docRef, sanitizedData);
   
     if (historyPayload) {
       const exitDate = historyPayload.Exit ?? historyPayload.endDate;
@@ -287,7 +307,7 @@ export class NewCustomerEntryService {
         throw new Error('Exit Date is required for history document name');
       }
   
-      const monthKey = exitDate.slice(0, 7); 
+      const monthKey = exitDate.slice(0, 7);
   
       const historyRef = collection(
         this.firestore,
@@ -305,7 +325,6 @@ export class NewCustomerEntryService {
         });
       } else {
         await setDoc(historyDocRef, {
-          // month: monthKey,
           entries: [historyPayload],
         });
       }
