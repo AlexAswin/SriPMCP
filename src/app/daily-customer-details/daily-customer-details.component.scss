@@ -372,6 +372,11 @@ $bp-lg: 900px;
         color: #c62828;
         border: 1px solid #ef9a9a;
       }
+      &.warning {
+        background-color: #f3efc0;
+        color: #c62828;
+        border: 1px solid #ef9a9a;
+      }
     }
   }
 }
