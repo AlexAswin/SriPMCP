@@ -74,12 +74,7 @@ export class NewCustomerEntryService {
   
         // Transaction data — only for Monthly customers
         if (customerDetails.customerType === 'Monthly') {
-          const transactionData = {
-            currentMonthTotal: Number(customerDetails.amount) || 0,
-            monthlyCost: Number(customerDetails.amount) || 0,
-            currentPending: Number(customerDetails.amount) || 0,
-            isTransactionMade: false,
-          };
+          const transactionData = this.buildMonthlyTransactionData(customerDetails.amount);
           transaction.set(transactionRef, transactionData);
         }
   
@@ -98,6 +93,16 @@ export class NewCustomerEntryService {
       console.error('Transaction failed!', error);
       throw error;
     }
+  }
+
+  private buildMonthlyTransactionData(amount: any) {
+    const parsedAmount = Number(amount) || 0;
+    return {
+      currentMonthTotal: parsedAmount,
+      monthlyCost:       parsedAmount,
+      currentPending:    parsedAmount,
+      isTransactionMade: false,
+    };
   }
 
   async isBillNumberTaken(billNumber: number): Promise<boolean> {
@@ -266,18 +271,7 @@ export class NewCustomerEntryService {
     updateData: any,
     historyPayload?: any
   ) {
-    const ref = collection(this.firestore, 'CustomerEntry');
-  
-    const q = query(ref, where('vehicleNumber', '==', vehicleNumber));
-    const snapshot = await getDocs(q);
-  
-    if (snapshot.empty) {
-      throw new Error('Customer not found');
-    }
-  
-    const docSnap = snapshot.docs[0];
-    const customerDocId = docSnap.id;
-    const docRef = doc(this.firestore, 'CustomerEntry', docSnap.id);
+    const docRef = doc(this.firestore, 'CustomerEntry', vehicleNumber);
   
     const MONTHLY_FIELDS = ['lotNumber', 'monthlyStatus', 'startDateMonthly', 'endDateMonthly', 'fromDateMonthly', 'advance'];
     const DAILY_FIELDS   = ['dailyStatus', 'billNumber', 'fromDateDaily', 'endDateDaily', 'entryTime', 'exitTime', 'billAmount', 'actualCost', 'settledCost', 'totalDays'];
@@ -298,39 +292,47 @@ export class NewCustomerEntryService {
         }
       : updateData;
   
-    await updateDoc(docRef, sanitizedData);
+    await runTransaction(this.firestore, async (transaction) => {
   
-    if (historyPayload) {
-      const exitDate = historyPayload.Exit ?? historyPayload.endDate;
+      // ── ALL READS FIRST ────────────────────────────────────
+      let existingSnap     = null;
+      let historyDocRef    = null;
   
-      if (!exitDate) {
-        throw new Error('Exit Date is required for history document name');
+      if (historyPayload) {
+        const exitDate = historyPayload.Exit ?? historyPayload.endDate;
+  
+        if (!exitDate) {
+          throw new Error('Exit Date is required for history document name');
+        }
+  
+        const monthKey   = exitDate.slice(0, 7);
+        const historyRef = collection(this.firestore, 'CustomerEntry', vehicleNumber, 'statusHistory');
+        historyDocRef    = doc(historyRef, monthKey);
+        existingSnap     = await transaction.get(historyDocRef);
       }
   
-      const monthKey = exitDate.slice(0, 7);
+      // ── ALL WRITES AFTER ───────────────────────────────────
+      transaction.update(docRef, sanitizedData);
   
-      const historyRef = collection(
-        this.firestore,
-        'CustomerEntry',
-        customerDocId,
-        'statusHistory'
-      );
+      if (isMonthlyConversion) {
+        const dateParts       = updateData.fromDateMonthly.split('-');
+        const monthId         = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
+        const transactionRef  = doc(this.firestore, 'CustomerEntry', vehicleNumber, 'Transactions', monthId);
+        const transactionData = this.buildMonthlyTransactionData(updateData.amount);
   
-      const historyDocRef = doc(historyRef, monthKey);
-      const existingSnap = await getDoc(historyDocRef);
-  
-      if (existingSnap.exists()) {
-        await updateDoc(historyDocRef, {
-          entries: arrayUnion(historyPayload),
-        });
-      } else {
-        await setDoc(historyDocRef, {
-          entries: [historyPayload],
-        });
+        transaction.set(transactionRef, transactionData);
       }
-    }
   
-    return docSnap.id;
+      if (historyPayload && existingSnap && historyDocRef) {
+        if (existingSnap.exists()) {
+          transaction.update(historyDocRef, { entries: arrayUnion(historyPayload) });
+        } else {
+          transaction.set(historyDocRef, { entries: [historyPayload] });
+        }
+      }
+    });
+  
+    return vehicleNumber;
   }
 
   getActiveMonthlyCustomers(): Observable<any[]> {

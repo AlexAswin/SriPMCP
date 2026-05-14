@@ -47,7 +47,6 @@ export class EntryFormComponent {
   }
 
   if (!inputValue) {
-    console.log(`No ${identifier} number entered`);
     return;
   }
     const formatedVehicleNbr = this.formateVehicleNumber(inputValue);

@@ -603,122 +603,119 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
   submitForm = async () => {
     if (!this.isFormValid()) {
       this.showAlert = true;
-      this.type = 'error';
-      this.message = 'Please fill all required fields correctly.';
+      this.type      = 'error';
+      this.message   = 'Please fill all required fields correctly.';
       return;
     }
-
+  
     try {
-      const formValue = this.vehicleDetailsForm.getRawValue();
+      const formValue      = this.vehicleDetailsForm.getRawValue();
       const normalizedData = this.normalizePayload({ ...formValue });
-
+  
       const fullPayload = {
         ...normalizedData,
-        advance: this.advance.value,
-        monthlyStatus: this.monthlyStatus.value,
+        advance:         this.advance.value,
+        monthlyStatus:   this.monthlyStatus.value,
         fromDateMonthly: this.fromDateMonthly.value,
-        note: this.note.value,
-        endDateMonthly:
-          this.monthlyStatus.value === 'Active'
-            ? null
-            : this.endDateMonthly.value,
+        note:            this.note.value,
+        endDateMonthly:  this.monthlyStatus.value === 'Active' ? null : this.endDateMonthly.value,
       };
-
+  
+      // ── New customer ───────────────────────────────────────
       if (this.isNewMonthlyCustomer) {
         await this.newCustomerEntryService.addNewCustomerEntry(fullPayload);
         this.message = 'New Customer Added Successfully!';
+  
+      // ── Daily → Monthly conversion ─────────────────────────
       } else if (this.dailyToMonthlyCustomer) {
         await this.newCustomerEntryService.updateCustomerByVehicleNumber(
           this.currentCustomer,
           fullPayload
         );
         this.message = 'Daily Customer converted to Monthly!';
+  
+      // ── Existing customer updates ──────────────────────────
       } else {
-        let updatePayload: any;
-        let historyPayload: any = null;
-
-        if (
-          this.isMonthlyInActiveCustomer &&
-          this.monthlyStatus.value === 'Active'
-        ) {
-          updatePayload = {
-            ...normalizedData,
-            monthlyStatus: 'Active',
-            fromDateMonthly: this.fromDateMonthly.value,
-            endDateMonthly: null,
-            advance: this.advance.value,
-            note: this.note.value,
-          };
-
-          const reactivateDate = this.fromDateMonthly.value
-            ? new Date(this.fromDateMonthly.value)
-            : new Date();
-
-          const formatter = new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'Asia/Kolkata',
-            year: 'numeric',
-            month: '2-digit',
-          });
-
-          const parts = formatter.formatToParts(reactivateDate);
-          const year = parts.find((p) => p.type === 'year')?.value;
-          const month = parts.find((p) => p.type === 'month')?.value;
-
-          const monthId = `${year}-${month}`;
-
-          await this.newCustomerEntryService.initializeMonthlyLedger(
-            normalizedData.vehicleNumber,
-            this.endDateMonthly.value,
-            this.fromDateMonthly.value,
-            normalizedData.amount
-          );
-          this.message = 'Customer Reactivated Successfully!';
-        } else if (
-          this.isMonthlyActiveCustomer &&
-          this.monthlyStatus.value === 'InActive'
-        ) {
-          updatePayload = {
-            ...normalizedData,
-            monthlyStatus: 'InActive',
-            lotNumber: null,
-            endDateMonthly: this.endDateMonthly.value,
-            note: this.note.value,
-          };
-
-          historyPayload = this.buildHistory(
-            this.fromDateMonthly.value ?? '',
-            this.endDateMonthly.value ?? ''
-          );
-          this.message = 'Customer session saved to history and deactivated.';
-          this.transactionService.makeIdelTransactionForInactiveCustomer(normalizedData.vehicleNumber, this.endDateMonthly.value);
-        } else {
-          updatePayload = {
-            ...normalizedData,
-            advance: this.advance.value,
-            fromDateMonthly: this.fromDateMonthly.value,
-            note: this.note.value,
-            monthlyStatus: this.monthlyStatus.value,
-          };
-          this.message = 'Customer Details Updated Successfully!';
-        }
-
-        await this.newCustomerEntryService.updateCustomerByVehicleNumber(
-          this.currentCustomer,
-          updatePayload,
-          historyPayload
-        );
+        await this.handleExistingCustomerUpdate(normalizedData);
       }
-
-      this.type = 'success';
+  
+      this.type      = 'success';
       this.showAlert = true;
       this.onSuccessCleanup();
+  
     } catch (error) {
-      this.type = 'error';
+      this.type      = 'error';
       this.showAlert = true;
-      this.message = 'An error occurred while saving. Please try again.';
+      this.message   = 'An error occurred while saving. Please try again.';
       console.error('Submission Error:', error);
     }
   };
+  
+  private async handleExistingCustomerUpdate(normalizedData: any): Promise<void> {
+    let updatePayload: any;
+    let historyPayload: any = null;
+  
+    // ── Reactivate inactive monthly customer ───────────────
+    if (this.isMonthlyInActiveCustomer && this.monthlyStatus.value === 'Active') {
+      updatePayload = {
+        ...normalizedData,
+        monthlyStatus:   'Active',
+        fromDateMonthly: this.fromDateMonthly.value,
+        endDateMonthly:  null,
+        advance:         this.advance.value,
+        note:            this.note.value,
+      };
+  
+      await this.newCustomerEntryService.initializeMonthlyLedger(
+        normalizedData.vehicleNumber,
+        this.endDateMonthly.value,
+        this.fromDateMonthly.value,
+        normalizedData.amount
+      );
+  
+      this.message = 'Customer Reactivated Successfully!';
+  
+    // ── Deactivate active monthly customer ─────────────────
+    } else if (this.isMonthlyActiveCustomer && this.monthlyStatus.value === 'InActive') {
+      updatePayload = {
+        ...normalizedData,
+        monthlyStatus:  'InActive',
+        lotNumber:      null,
+        endDateMonthly: this.endDateMonthly.value,
+        note:           this.note.value,
+      };
+  
+      historyPayload = this.buildHistory(
+        this.fromDateMonthly.value ?? '',
+        this.endDateMonthly.value ?? ''
+      );
+  
+      this.transactionService.makeIdelTransactionForInactiveCustomer(
+        normalizedData.vehicleNumber,
+        this.endDateMonthly.value
+      );
+  
+      this.message = 'Customer session saved to history and deactivated.';
+  
+    // ── General update ─────────────────────────────────────
+    } else {
+      updatePayload = {
+        ...normalizedData,
+        advance:         this.advance.value,
+        fromDateMonthly: this.fromDateMonthly.value,
+        note:            this.note.value,
+        monthlyStatus:   this.monthlyStatus.value,
+      };
+  
+      this.message = 'Customer Details Updated Successfully!';
+    }
+  
+    await this.newCustomerEntryService.updateCustomerByVehicleNumber(
+      this.currentCustomer,
+      updatePayload,
+      historyPayload
+    );
+  }
 
   private onSuccessCleanup() {
     this.vehicleDetailsForm.reset({ customerType: 'Monthly' });
