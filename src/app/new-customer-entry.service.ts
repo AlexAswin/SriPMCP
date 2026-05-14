@@ -279,7 +279,7 @@ export class NewCustomerEntryService {
     const customerDocId = docSnap.id;
     const docRef = doc(this.firestore, 'CustomerEntry', docSnap.id);
   
-    const MONTHLY_FIELDS = ['lotNumber', 'monthlyStatus', 'startDateMonthly', 'endDateMonthly'];
+    const MONTHLY_FIELDS = ['lotNumber', 'monthlyStatus', 'startDateMonthly', 'endDateMonthly', 'fromDateMonthly', 'advance'];
     const DAILY_FIELDS   = ['dailyStatus', 'billNumber', 'fromDateDaily', 'endDateDaily', 'entryTime', 'exitTime', 'billAmount', 'actualCost', 'settledCost', 'totalDays'];
   
     const isDailyConversion   = updateData.dailyStatus === 'Unpaid' && !updateData.monthlyStatus;

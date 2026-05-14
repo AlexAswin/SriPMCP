@@ -530,8 +530,6 @@ export class MonthlyCustomerDetailsComponent implements OnInit, OnDestroy {
       endDate: endDate,
       amountPaid: this.vehicleDetailsForm.get('amount')?.value,
       advancePaid: this.advance.value,
-      note: this.note.value,
-      completedAt: new Date().toISOString(),
     };
   }
 
