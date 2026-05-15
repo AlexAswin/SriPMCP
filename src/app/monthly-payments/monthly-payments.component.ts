@@ -155,40 +155,41 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const control  = this.monthlyPaymentForm.get('vehicleNumber');
     const cursor   = input.selectionStart ?? 0;
   
-    // Strip spaces only up to cursor to get accurate raw position
     const rawIndex = input.value.substring(0, cursor).replace(/\s/g, '').length;
     const rawTotal = input.value.replace(/\s/g, '');
   
-    // Clear inline errors before re-validating
     this.clearInlineErrors(control, ['letterExpected', 'digitExpected']);
   
-    // Position 0–1: must be letters (state code)
     if (rawIndex < 2 && !isLetter) {
       control?.setErrors({ ...control.errors, letterExpected: true });
       return event.preventDefault();
     }
   
-    // Position 2–3: must be digits (district code)
     if (rawIndex >= 2 && rawIndex < 4 && !isDigit) {
       control?.setErrors({ ...control.errors, digitExpected: true });
       return event.preventDefault();
     }
   
-    // Position 4–5: must be letters (series)
-    if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
+    const rawValue = rawTotal.toUpperCase();
+
+    if (rawIndex === 4 && !isLetter) {
       control?.setErrors({ ...control.errors, letterExpected: true });
       return event.preventDefault();
     }
-  
-    // Position 6–9: must be digits (number plate digits, max 4)
-    if (rawIndex >= 6 && rawIndex < 10 && !isDigit) {
-      control?.setErrors({ ...control.errors, digitExpected: true });
+    
+    if (rawIndex === 5 && !isLetter && !isDigit) {
       return event.preventDefault();
     }
-  
-    // Hard cap at 10 raw characters
-    if (rawTotal.length >= 10) {
-      return event.preventDefault();
+    
+    if (rawIndex > 5) {
+      const hasTwoLetterSeries = /^[A-Z]{2}\d{2}[A-Z]{2}/.test(rawValue);
+    
+      const digitStart = hasTwoLetterSeries ? 6 : 5;
+    
+      if (rawIndex >= digitStart && !isDigit) {
+        control?.setErrors({ ...control.errors, digitExpected: true });
+        return event.preventDefault();
+      }
     }
   }
   
@@ -208,13 +209,20 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
     const state  = raw.substring(0, 2);
     const dist   = raw.substring(2, 4);
     const rest   = raw.substring(4);
-    const series = (rest.match(/^[A-Z]{1,2}/) ?? [''])[0];
-    const digits = (rest.replace(/^[A-Z]+/, '').match(/^\d{1,4}/) ?? [''])[0];
+    let series = '';
+    let digits = '';
+
+    if (/^[A-Z]{1}\d/.test(rest)) {
+      series = rest.substring(0, 1);
+      digits = (rest.substring(1).match(/^\d{1,4}/) ?? [''])[0];
+    } else {
+      series = (rest.match(/^[A-Z]{1,2}/) ?? [''])[0];
+      digits = (rest.replace(/^[A-Z]+/, '').match(/^\d{1,4}/) ?? [''])[0];
+    }
   
     const parts     = [state, dist, series, digits].filter(Boolean);
     const formatted = parts.join(' ');
   
-    // ── Find cursor in raw space ───────────────────────────
     const rawCursorPos = this.getRawIndex(oldVal, oldCursor);
     const newCursor    = this.getFormattedIndex(formatted, rawCursorPos);
   
@@ -224,17 +232,14 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
       .get('vehicleNumber')
       ?.setValue(formatted, { emitEvent: false });
   
-    // Set synchronously AND in setTimeout as fallback
     input.setSelectionRange(newCursor, newCursor);
     setTimeout(() => input.setSelectionRange(newCursor, newCursor), 0);
   }
   
-  // Convert formatted string cursor position → raw index (no spaces)
   private getRawIndex(value: string, cursorPos: number): number {
     return value.substring(0, cursorPos).replace(/\s/g, '').length;
   }
   
-  // Convert raw index → cursor position in formatted string
   private getFormattedIndex(formatted: string, rawIndex: number): number {
     let rawCount = 0;
   
