@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { ButtonComponent } from '../Common/button/button.component';
 import { MatInputModule } from '@angular/material/input';
@@ -143,94 +143,107 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
 
   restrictVehicleInput(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
-    const key = event.key;
+    const key   = event.key;
+  
     if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) return;
   
-    const control = this.monthlyPaymentForm.get('vehicleNumber');
-
-    const currentErrors = control?.errors;
-    if (currentErrors) {
-      delete currentErrors['letterExpected'];
-      delete currentErrors['digitExpected'];
-      control?.setErrors(Object.keys(currentErrors).length ? currentErrors : null);
-    }
-  
-    const cursor = input.selectionStart ?? 0;
-    const isDigit = /^[0-9]$/.test(key);
+    const isDigit  = /^[0-9]$/.test(key);
     const isLetter = /^[a-zA-Z]$/.test(key);
-    
-    const rawTotal = input.value.replace(/\s/g, '');
-    const rawBefore = input.value.substring(0, cursor).replace(/\s/g, '');
-    const rawIndex = rawBefore.length;
   
     if (!isDigit && !isLetter) return event.preventDefault();
-
-    if (rawIndex >= 9 && isLetter) {
-      return event.preventDefault();
-    }
   
+    const control  = this.monthlyPaymentForm.get('vehicleNumber');
+    const cursor   = input.selectionStart ?? 0;
+  
+    // Strip spaces only up to cursor to get accurate raw position
+    const rawIndex = input.value.substring(0, cursor).replace(/\s/g, '').length;
+    const rawTotal = input.value.replace(/\s/g, '');
+  
+    // Clear inline errors before re-validating
+    this.clearInlineErrors(control, ['letterExpected', 'digitExpected']);
+  
+    // Position 0–1: must be letters (state code)
     if (rawIndex < 2 && !isLetter) {
       control?.setErrors({ ...control.errors, letterExpected: true });
       return event.preventDefault();
-    } 
-    
+    }
+  
+    // Position 2–3: must be digits (district code)
     if (rawIndex >= 2 && rawIndex < 4 && !isDigit) {
       control?.setErrors({ ...control.errors, digitExpected: true });
       return event.preventDefault();
     }
   
-    if (rawIndex >= 4 && rawIndex < 6) {
-      const remainder = rawTotal.substring(4);
-      const digitCount = (remainder.match(/\d/g) || []).length;
-  
-      if (isDigit && digitCount >= 4) {
-        control?.setErrors({ ...control.errors, letterExpected: true });
-        return event.preventDefault();
-      }
-
-      if (rawIndex === 4 && !isLetter) {
-        control?.setErrors({ ...control.errors, letterExpected: true });
-        return event.preventDefault();
-      }
+    // Position 4–5: must be letters (series)
+    if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
+      control?.setErrors({ ...control.errors, letterExpected: true });
+      return event.preventDefault();
     }
   
-
-    if (rawIndex >= 6  && isLetter) {
+    // Position 6–9: must be digits (number plate digits, max 4)
+    if (rawIndex >= 6 && rawIndex < 10 && !isDigit) {
       control?.setErrors({ ...control.errors, digitExpected: true });
       return event.preventDefault();
     }
-
-    
+  
+    // Hard cap at 10 raw characters
+    if (rawTotal.length >= 10) {
+      return event.preventDefault();
+    }
   }
-
+  
+  private clearInlineErrors(control: AbstractControl | null, keys: string[]): void {
+    if (!control?.errors) return;
+    const updated = { ...control.errors };
+    keys.forEach(k => delete updated[k]);
+    control.setErrors(Object.keys(updated).length ? updated : null);
+  }
+  
   onVehicleNumberInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const oldCursor = input.selectionStart || 0;
-    const oldVal = input.value;
+    const input     = event.target as HTMLInputElement;
+    const oldCursor = input.selectionStart ?? 0;
+    const oldVal    = input.value;
   
-
-    let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const raw    = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const state  = raw.substring(0, 2);
+    const dist   = raw.substring(2, 4);
+    const rest   = raw.substring(4);
+    const series = (rest.match(/^[A-Z]{1,2}/) ?? [''])[0];
+    const digits = (rest.replace(/^[A-Z]+/, '').match(/^\d{1,4}/) ?? [''])[0];
   
-    let state = raw.substring(0, 2);
-    let dist = raw.substring(2, 4);
-    let rest = raw.substring(4);
-
-    const seriesMatch = rest.match(/^[A-Z]+/);
-    const series = seriesMatch ? seriesMatch[0].substring(0, 2) : '';
-
-    const digitsMatch = rest.match(/\d+$/);
-    const digits = digitsMatch ? digitsMatch[0].substring(0, 4) : '';
+    const parts     = [state, dist, series, digits].filter(Boolean);
+    const formatted = parts.join(' ');
   
-    let formatted = state;
-    if (dist) formatted += ' ' + dist;
-    if (series) formatted += ' ' + series;
-    if (digits) formatted += ' ' + digits;
+    // ── Find cursor in raw space ───────────────────────────
+    const rawCursorPos = this.getRawIndex(oldVal, oldCursor);
+    const newCursor    = this.getFormattedIndex(formatted, rawCursorPos);
   
-    input.value = formatted.trim();
-    this.monthlyPaymentForm.get('vehicleNumber')?.setValue(input.value, { emitEvent: false });
-
-    const diff = input.value.length - oldVal.length;
-    input.setSelectionRange(oldCursor + diff, oldCursor + diff);
+    input.value = formatted;
+  
+    this.monthlyPaymentForm
+      .get('vehicleNumber')
+      ?.setValue(formatted, { emitEvent: false });
+  
+    // Set synchronously AND in setTimeout as fallback
+    input.setSelectionRange(newCursor, newCursor);
+    setTimeout(() => input.setSelectionRange(newCursor, newCursor), 0);
+  }
+  
+  // Convert formatted string cursor position → raw index (no spaces)
+  private getRawIndex(value: string, cursorPos: number): number {
+    return value.substring(0, cursorPos).replace(/\s/g, '').length;
+  }
+  
+  // Convert raw index → cursor position in formatted string
+  private getFormattedIndex(formatted: string, rawIndex: number): number {
+    let rawCount = 0;
+  
+    for (let i = 0; i < formatted.length; i++) {
+      if (rawCount === rawIndex) return i;
+      if (formatted[i] !== ' ') rawCount++;
+    }
+  
+    return formatted.length;
   }
 
   openDialog() {
