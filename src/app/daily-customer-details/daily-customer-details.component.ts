@@ -89,6 +89,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   ]);
   totalDays = new FormControl<number>(0, [Validators.required]);
 
+  private lockedRawIndex: number | null = null; 
 
   note = new FormControl<string>('');
 
@@ -238,20 +239,37 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   restrictVehicleInput(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
-    const key   = event.key;
+    const key   = event.key.toUpperCase();
   
-    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) return;
+    if (['TAB', 'ARROWLEFT', 'ARROWRIGHT', 'ENTER'].includes(key)) return;
+  
+    const cursor   = input.selectionStart ?? 0;
+    const rawIndex = input.value.substring(0, cursor).replace(/\s/g, '').length;
+    const control  = this.vehicleDetailsForm.get('vehicleNumber');
+  
+    if (key === 'BACKSPACE') {
+      if (rawIndex > 0) {
+        this.lockedRawIndex = rawIndex - 1; 
+      }
+      return; 
+    }
+  
+    if (key === 'DELETE') {
+      this.lockedRawIndex = rawIndex;
+      return;
+    }
   
     const isDigit  = /^[0-9]$/.test(key);
-    const isLetter = /^[a-zA-Z]$/.test(key);
+    const isLetter = /^[A-Z]$/.test(key);
   
     if (!isDigit && !isLetter) return event.preventDefault();
   
-    const control  = this.vehicleDetailsForm.get('vehicleNumber');
-    const cursor   = input.selectionStart ?? 0;
+    if (this.lockedRawIndex !== null && rawIndex !== this.lockedRawIndex) {
+      return event.preventDefault(); 
+    }
   
-    const rawIndex = input.value.substring(0, cursor).replace(/\s/g, '').length;
     const rawTotal = input.value.replace(/\s/g, '');
+    if (rawTotal.length >= 10) return event.preventDefault();
   
     this.clearInlineErrors(control, ['letterExpected', 'digitExpected']);
   
@@ -265,26 +283,30 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       return event.preventDefault();
     }
   
-    const rawValue = rawTotal.toUpperCase();
+if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
+  const raw        = input.value.replace(/\s/g, '').toUpperCase();
+  const charAtPos4 = raw[4];
+  const afterPos5  = raw.substring(5); 
 
-    if (rawIndex === 4 && !isLetter) {
-      control?.setErrors({ ...control.errors, letterExpected: true });
+  if (
+    rawIndex === 5 &&
+    charAtPos4 && /^[A-Z]$/.test(charAtPos4) &&
+    isDigit &&
+    afterPos5.length === 0 
+  ) {
+  } else {
+    control?.setErrors({ ...control.errors, letterExpected: true });
+    return event.preventDefault();
+  }
+}
+  
+    if (rawIndex >= 6 && rawIndex < 10 && !isDigit) {
+      control?.setErrors({ ...control.errors, digitExpected: true });
       return event.preventDefault();
     }
-    
-    if (rawIndex === 5 && !isLetter && !isDigit) {
-      return event.preventDefault();
-    }
-    
-    if (rawIndex > 5) {
-      const hasTwoLetterSeries = /^[A-Z]{2}\d{2}[A-Z]{2}/.test(rawValue);
-    
-      const digitStart = hasTwoLetterSeries ? 6 : 5;
-    
-      if (rawIndex >= digitStart && !isDigit) {
-        control?.setErrors({ ...control.errors, digitExpected: true });
-        return event.preventDefault();
-      }
+  
+    if (this.lockedRawIndex !== null && rawIndex === this.lockedRawIndex) {
+      this.lockedRawIndex = null;
     }
   }
   
