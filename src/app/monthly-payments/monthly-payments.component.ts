@@ -54,23 +54,23 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.monthlyPaymentFormDetails();
     this.paymentMethods$ = this.adminService.getPaymentMethods().pipe(take(1));
-
-    const vehicleCtrl = this.searchWithVehicleNbr;
-
-    vehicleCtrl?.valueChanges
+    this.getMaxDate();
+  
+    const vehicleCtrl = this.monthlyPaymentForm.get('vehicleNumber');
+  
+    if (!vehicleCtrl) return; // null guard — safe exit
+  
+    vehicleCtrl.valueChanges
       .pipe(
         debounceTime(500),
         distinctUntilChanged(),
         takeUntil(this.destroy$)
       )
       .subscribe((value) => {
-        if (value) {
-          this.checkExistingUser(value);
+        if (value?.trim()) {               // FIX 2: trim whitespace
+          this.checkExistingUser(value.trim());
         }
       });
-
-    this.getMaxDate();
-
   }
 
   constructor (private fb: FormBuilder,
