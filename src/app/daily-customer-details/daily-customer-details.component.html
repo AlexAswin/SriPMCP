@@ -88,12 +88,32 @@
                 <div class="form-group">
                     <label>Customer Name</label>
                     <div class="input-wrapper">
-                        <input type="text" placeholder="Enter customer name" formControlName="customerName" />
-                        <div class="error-msg"
-                            *ngIf="vehicleDetailsForm.get('customerName')?.invalid && vehicleDetailsForm.get('customerName')?.touched">
-                            <small>Name is required</small>
+                        <input
+                          type="text"
+                          placeholder="9123456789"
+                          formControlName="customerPhoneNbr"
+                          maxlength="10"
+                          minlength="10"
+                          (keydown)="restrictDigits($event)"
+                        />
+                      
+                        <div class="error-msg" *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.invalid && 
+                                                      vehicleDetailsForm.get('customerPhoneNbr')?.touched">
+                      
+                          <small *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.errors?.['required']">
+                            Phone number is required
+                          </small>
+                      
+                          <small *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.errors?.['minlength']">
+                            Phone number must be at least 10 digits
+                          </small>
+                      
+                          <small *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.errors?.['pattern']">
+                            Phone number must contain only digits
+                          </small>
+                      
                         </div>
-                    </div>
+                      </div>
                 </div>
                 <div class="form-group">
                     <label>Phone Number</label>

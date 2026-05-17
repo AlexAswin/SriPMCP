@@ -197,7 +197,14 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
       vehicleName: [{ value: '', disabled: false }, [Validators.required]],
 
       customerName: [{ value: '', disabled: false }, Validators.required],
-      customerPhoneNbr: [{ value: '', disabled: false }, Validators.required],
+      customerPhoneNbr: [
+        { value: '', disabled: false },
+        [
+          Validators.required,
+          Validators.minLength(10),  
+          Validators.pattern(/^[0-9]{10}$/)
+        ]
+      ],
       address: [{ value: '', disabled: false }, Validators.required],
 
       customerType: 'Daily',
