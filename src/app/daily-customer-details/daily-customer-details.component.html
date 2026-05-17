@@ -264,7 +264,7 @@
 
                   <div class="form-group">
                     <label>Settled Cost</label>
-                    <div class="input-wrapper">
+                    <div class="input-wrapper" [class.disabled]="disabled">
                       <input type="text" placeholder="0" [formControl]="settledCost" min="1" />
                   
                       <div class="error-msg" *ngIf="settledCost.invalid && settledCost.touched">
