@@ -37,16 +37,38 @@
         <div class="vehicle-info">
           <div class="form-group">
             <label>Vehicle Number</label>
-            <input type="text" placeholder="TN 01 AB 1234" formControlName="vehicleNumber" maxlength="13"
-              (input)="onVehicleNumberInput($event)" (keydown)="restrictVehicleInput($event)" />
-            <div class="error-container" *ngIf="monthlyPaymentForm.get('vehicleNumber')?.invalid && 
-                                                     (monthlyPaymentForm.get('vehicleNumber')?.dirty ||
-                                                     monthlyPaymentForm.get('vehicleNumber')?.touched)">
-              <small *ngIf="monthlyPaymentForm.get('vehicleNumber')?.errors?.['required']">Vehicle number is required</small>
-              <small *ngIf="monthlyPaymentForm.get('vehicleNumber')?.errors?.['pattern']">Format must be like TN 01 AB
-                1234</small>
-              <small *ngIf="monthlyPaymentForm.get('vehicleNumber')?.errors?.['letterExpected']">Only letters allowed here</small>
-              <small *ngIf="monthlyPaymentForm.get('vehicleNumber')?.errors?.['digitExpected']">Only digits allowed here</small>
+            <input
+              type="text"
+              placeholder="TN 01 AB 1234"
+              formControlName="vehicleNumber"
+              maxlength="13"
+              autocomplete="off"
+              spellcheck="false"
+              (input)="onVehicleNumberInput($event)"
+              (keydown)="restrictVehicleInput($event)"
+            />
+            <div
+              class="error-container"
+              *ngIf="monthlyPaymentForm.get('vehicleNumber')?.invalid &&
+                     (monthlyPaymentForm.get('vehicleNumber')?.dirty ||
+                      monthlyPaymentForm.get('vehicleNumber')?.touched)"
+            >
+              <small *ngIf="monthlyPaymentForm.get('vehicleNumber')?.errors?.['required']">
+                Vehicle number is required
+              </small>
+          
+              <small *ngIf="monthlyPaymentForm.get('vehicleNumber')?.errors?.['pattern']">
+                <!-- FIX 3: mention both formats -->
+                Format must be like TN 01 AB 1234 or TN 01 A 1234
+              </small>
+          
+              <small *ngIf="monthlyPaymentForm.get('vehicleNumber')?.errors?.['letterExpected']">
+                Only letters allowed here
+              </small>
+          
+              <small *ngIf="monthlyPaymentForm.get('vehicleNumber')?.errors?.['digitExpected']">
+                Only digits allowed here
+              </small>
             </div>
           </div>
   

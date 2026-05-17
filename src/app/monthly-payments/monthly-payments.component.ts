@@ -58,7 +58,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
   
     const vehicleCtrl = this.monthlyPaymentForm.get('vehicleNumber');
   
-    if (!vehicleCtrl) return; // null guard — safe exit
+    if (!vehicleCtrl) return; 
   
     vehicleCtrl.valueChanges
       .pipe(
@@ -67,7 +67,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe((value) => {
-        if (value?.trim()) {               // FIX 2: trim whitespace
+        if (value?.trim()) {
           this.checkExistingUser(value.trim());
         }
       });
@@ -82,7 +82,7 @@ export class MonthlyPaymentsComponent implements OnInit, OnDestroy {
 
   monthlyPaymentFormDetails = () => {
     this.monthlyPaymentForm = this.fb.group({
-      vehicleNumber: [{ value: '', disabled: false }, Validators.required],
+      vehicleNumber: [{ value: '', disabled: false }, Validators.required, Validators.pattern(/^[A-Z]{2} \d{2} [A-Z]{1,2} \d{1,4}$/)],
       vehicleType: [{ value: '', disabled: false }, Validators.required],
       customerName: [{ value: '', disabled: false }, Validators.required],
       amount: [{ value: '', disabled: false }, Validators.required],
@@ -229,14 +229,15 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
     const oldCursor = input.selectionStart ?? 0;
     const oldVal    = input.value;
   
-    const raw    = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const state  = raw.substring(0, 2);
-    const dist   = raw.substring(2, 4);
-    const rest   = raw.substring(4);
+    const raw   = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const state = raw.substring(0, 2);
+    const dist  = raw.substring(2, 4);
+    const rest  = raw.substring(4);
+  
     let series = '';
     let digits = '';
-
-    if (/^[A-Z]{1}\d/.test(rest)) {
+  
+    if (/^[A-Z]\d/.test(rest)) {
       series = rest.substring(0, 1);
       digits = (rest.substring(1).match(/^\d{1,4}/) ?? [''])[0];
     } else {
@@ -247,16 +248,30 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
     const parts     = [state, dist, series, digits].filter(Boolean);
     const formatted = parts.join(' ');
   
-    const rawCursorPos = this.getRawIndex(oldVal, oldCursor);
+    const safeCursor   = Math.min(oldCursor, oldVal.length);
+    const rawCursorPos = this.getRawIndex(oldVal, safeCursor);
     const newCursor    = this.getFormattedIndex(formatted, rawCursorPos);
   
+    const control = this.monthlyPaymentForm.get('vehicleNumber');
+  
+    const customErrors: Record<string, boolean> = {};
+    if (control?.errors?.['letterExpected']) customErrors['letterExpected'] = true;
+    if (control?.errors?.['digitExpected'])  customErrors['digitExpected']  = true;
+  
     input.value = formatted;
+    input.setSelectionRange(newCursor, newCursor); // ← restore after input.value set
   
-    this.monthlyPaymentForm
-      .get('vehicleNumber')
-      ?.setValue(formatted, { emitEvent: false });
+    control?.setValue(formatted, { emitEvent: false });
+    input.setSelectionRange(newCursor, newCursor); // ← restore after setValue writeValue()
   
-    input.setSelectionRange(newCursor, newCursor);
+    control?.updateValueAndValidity({ emitEvent: false });
+    input.setSelectionRange(newCursor, newCursor); // ← restore after pattern validator CD
+  
+    if (Object.keys(customErrors).length) {
+      control?.setErrors({ ...control.errors, ...customErrors });
+    }
+  
+    // Final safety net for any remaining async Angular CD cycles
     setTimeout(() => input.setSelectionRange(newCursor, newCursor), 0);
   }
   
