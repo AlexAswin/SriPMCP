@@ -148,27 +148,40 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         }
       });
 
-      if (!this.isNewDailyCustomer) {
         this.billNbr.valueChanges.pipe(
           debounceTime(500),
           distinctUntilChanged(),
           filter(value => value !== null && value !== 0),
-          filter(() => this.billNbr.value !== this.currentCustomerBillNbr), // ✅ Skip if same customer
+          filter(() => this.billNbr.value !== this.currentCustomerBillNbr),
           switchMap(value => {
             this.isCheckingBillNumber = true;
-            this.isBillNumberTaken = false;
-            return from(this.newCustomerEntryService.isBillNumberTaken(value as number));
+            this.isBillNumberTaken    = false;
+      
+            return from(this.newCustomerEntryService.isBillNumberTaken(value as number)).pipe(
+              catchError(() => {
+                this.isCheckingBillNumber = false;
+                return of({ exists: false, data: null }); 
+              })
+            );
           }),
           takeUntil(this.destroy$)
-        ).subscribe(isTaken => {
+        ).subscribe(async result => {
           this.isCheckingBillNumber = false;
-          this.isBillNumberTaken = isTaken;
+          this.isBillNumberTaken    = result.exists; 
+      
+          if (this.isBillNumberTaken ) {
+            if (result.data?.['customerId'] && (result.data?.['customerId'] !== vehicleCtrl?.value)) {  
+              if (!this.isNewDailyCustomer) {
+                const billNbr = this.billNbr.value?? 0;
+                const billingDetails = await this.newCustomerEntryService.getDetailsByBillNbr(billNbr, result.data)
+                this.getCustomerDetails(result.data['customerId'], billingDetails)
+              }    
+            }
+          }
         });
-      }
-
       
 
-    this.isNewDailyCustomer = true;
+    // this.isNewDailyCustomer = true;
 
     const vehicleNbr = this.route.snapshot.queryParamMap.get('vehicleNbr');
 
@@ -410,7 +423,7 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
     this.getCustomerDetails(formatedVehicleNbr);
   };
 
-  getCustomerDetails = async (vehicleNbr: string): Promise<void> => {
+  getCustomerDetails = async (vehicleNbr: string, billingDetails?: any): Promise<void> => {
     if (!vehicleNbr) return;
   
     const formattedVehicleNbr = this.normalizeVehicleNumber(vehicleNbr);
@@ -418,19 +431,19 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
   
     this.showAlert = false;
   
-    if (!res) {
+    if (res === null) {
       this.isNewDailyCustomer = true;
       return;
     }
   
     this.currentCustomer = res.vehicleNumber;
-    this.handleCustomerStatus(res);
+    this.handleCustomerStatus(res, billingDetails);
   };
   
-  private handleCustomerStatus(res: VehicleResponse): void {
+  private handleCustomerStatus(res: VehicleResponse, billingDetails?: any): void {
     const handlers: Partial<Record<string, () => void>> = {
       'daily:Unpaid':   () => this.handleUnpaidDailyCustomer(res),
-      'daily:paid':     () => this.handlePaidDailyCustomer(res),
+      'daily:paid':     () => this.handlePaidDailyCustomer(res, billingDetails),
       'monthly:Active': () => this.handleActiveMonthlyCustomer(),
       'monthly:InActive': () => this.handleInactiveMonthlyCustomer(res),
     };
@@ -460,7 +473,7 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
       customerType:      res.customerType,
       address:           res.address,
       amount:            res.amount,
-    });
+    }, { emitEvent: false });
   }
   
   private resetCustomerFlags(): void {
@@ -497,25 +510,27 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
     this.calculateBillAmount(res.fromDateDaily, res.entryTime);
   }
   
-  private handlePaidDailyCustomer(res: VehicleResponse): void {
+  private handlePaidDailyCustomer(res: VehicleResponse, billingDetails?: any): void {
     this.resetCustomerFlags();
     this.isDailyPaidCustomer = true;
     this.alreadyPaid         = true;
   
-    this.patchVehicleForm(res);
-    this.billNbr.setValue(res.billNumber, { emitEvent: false });
-    this.currentCustomerBillNbr = res.billNumber;
-    this.dailyStatus.setValue(res.dailyStatus);
-    this.fromDateDaily.setValue(res.fromDateDaily);
-    this.billAmount.setValue(res.billAmount);
-    this.endDateDaily.setValue(res.endDateDaily);
-    this.actualCost.setValue(res.actualCost);
-    this.settledCost.setValue(res.settledCost);
-    this.totalDays.setValue(res.totalDays);
-    this.note.setValue(res.note);
+    const opts = { emitEvent: false };
   
-    this.setEntryTime(res.entryTime);
-    this.setExitTime(res.exitTime);
+    this.patchVehicleForm(res);
+    this.billNbr.setValue(billingDetails?.BillNumber?? res.billNumber, opts);
+    this.currentCustomerBillNbr = res.billNumber;
+    this.dailyStatus.setValue(res.dailyStatus, opts);
+    this.fromDateDaily.setValue(billingDetails?.Entry      ?? res.fromDateDaily, opts);
+    this.billAmount.setValue(res.billAmount, opts);
+    this.endDateDaily.setValue(billingDetails?.Exit        ?? res.endDateDaily, opts);
+    this.actualCost.setValue(billingDetails?.actualCost    ?? res.actualCost, opts);
+    this.settledCost.setValue(billingDetails?.settledCost  ?? res.settledCost, opts);
+    this.totalDays.setValue(res.totalDays, opts);
+    this.note.setValue(res.note, opts);
+  
+    this.setEntryTime(billingDetails?.entryTime ?? res.entryTime);
+    this.setExitTime(billingDetails?.exitTime   ?? res.exitTime);
   
     this.disabled = true;
   }

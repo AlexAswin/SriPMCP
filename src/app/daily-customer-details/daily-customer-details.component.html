@@ -68,7 +68,7 @@
                         <input type="text" [formControl]="billNbr" placeholder="Bill Number" />
                         <div class="error-msg">
                 
-                            <small *ngIf="!isCheckingBillNumber && isBillNumberTaken" style="color: red;">
+                            <small *ngIf="!isCheckingBillNumber && isBillNumberTaken && isNewDailyCustomer" style="color: red;">
                                 Bill number already taken
                             </small>
                 
@@ -87,6 +87,16 @@
             <div class="row">
                 <div class="form-group">
                     <label>Customer Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" placeholder="Enter customer name" formControlName="customerName" />
+                        <div class="error-msg"
+                            *ngIf="vehicleDetailsForm.get('customerName')?.invalid && (vehicleDetailsForm.get('customerName')?.dirty || vehicleDetailsForm.get('customerName')?.touched)">
+                            <small>Name is required</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
                     <div class="input-wrapper">
                         <input
                           type="text"
@@ -114,17 +124,6 @@
                       
                         </div>
                       </div>
-                </div>
-                <div class="form-group">
-                    <label>Phone Number</label>
-                    <div class="input-wrapper">
-                        <input type="text" placeholder="9123456789" formControlName="customerPhoneNbr" maxlength="10"
-                            (keydown)="restrictDigits($event)" />
-                        <div class="error-msg"
-                            *ngIf="vehicleDetailsForm.get('customerPhoneNbr')?.invalid && vehicleDetailsForm.get('customerPhoneNbr')?.touched">
-                            <small>Invalid phone number</small>
-                        </div>
-                    </div>
                 </div>
             </div>
             <div class="row">

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
+  DocumentData,
   addDoc,
   arrayUnion,
   collectionData,
@@ -82,6 +83,7 @@ export class NewCustomerEntryService {
         if (customerDetails.customerType === 'Daily') {
           transaction.set(billNumberRef, {
             customerId: customerDetails.vehicleNumber,
+            monthId: monthId
           });
         }
   
@@ -105,10 +107,47 @@ export class NewCustomerEntryService {
     };
   }
 
-  async isBillNumberTaken(billNumber: number): Promise<boolean> {
+  async isBillNumberTaken(billNumber: number): Promise<{ exists: boolean; data: DocumentData | null }> {
     const billRef = doc(this.firestore, 'BillNumbers', String(billNumber));
-    const snap = await getDoc(billRef);
-    return snap.exists();
+    const snap    = await getDoc(billRef);
+  
+    return {
+      exists: snap.exists(),
+      data  : snap.exists() ? snap.data() : null
+    };
+  }
+
+  getDetailsByBillNbr = async (billNbr: number, details: any) => {
+
+  
+    const customer = details['customerId'];
+    const monthId  = details['monthId'];
+  
+    if (!customer || !monthId) {
+      console.warn('getDetailsByBillNbr: missing customerId or monthId', details.data);
+      return null;
+    }
+  
+    const billingRef = doc(
+      this.firestore,
+      'CustomerEntry',
+      customer,
+      'statusHistory',
+      monthId
+    );
+  
+    const snapshot = await getDoc(billingRef);
+  
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      const matchedEntry = data['entries']?.find(
+        (item: any) => item.BillNumber == billNbr
+      );
+      console.log(matchedEntry);
+      return matchedEntry;
+    }
+  
+    return null;
   }
 
   async initializeMonthlyLedger(
