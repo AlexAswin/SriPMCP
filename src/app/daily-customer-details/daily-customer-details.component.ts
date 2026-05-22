@@ -2,12 +2,12 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ButtonComponent } from '../Common/button/button.component';
-import { AbstractControl, AsyncValidatorFn, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, AsyncValidatorFn, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { NewCustomerEntryService } from '../new-customer-entry.service';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, catchError, combineLatest, debounceTime, distinctUntilChanged, filter, first, from, map, of, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs';
+import { Observable, Subject, catchError, combineLatest, debounceTime, distinctUntilChanged, filter, first, from, map, of, startWith, switchMap, take, takeUntil, tap, withLatestFrom } from 'rxjs';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { AdminService, VehicleType } from '../admin.service';
@@ -80,6 +80,7 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
   exitTime = new FormControl<string | null>(null);
   billAmount = new FormControl<string | number>('');
   currentCustomerBillNbr: number | null = null;
+  private loadedByBillNbr = false;
 
   actualCost = new FormControl<number>( 0, [Validators.required]);
   settledCost = new FormControl<number>(0, [
@@ -148,37 +149,43 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
         }
       });
 
-        this.billNbr.valueChanges.pipe(
-          debounceTime(500),
-          distinctUntilChanged(),
-          filter(value => value !== null && value !== 0),
-          filter(() => this.billNbr.value !== this.currentCustomerBillNbr),
-          switchMap(value => {
-            this.isCheckingBillNumber = true;
+      this.billNbr.valueChanges.pipe(
+        debounceTime(500),
+        distinctUntilChanged(),
+        filter(value => value !== null && value !== 0),
+        tap(value => {
+          if (value === this.currentCustomerBillNbr) {
             this.isBillNumberTaken    = false;
-      
-            return from(this.newCustomerEntryService.isBillNumberTaken(value as number)).pipe(
-              catchError(() => {
-                this.isCheckingBillNumber = false;
-                return of({ exists: false, data: null }); 
-              })
-            );
-          }),
-          takeUntil(this.destroy$)
-        ).subscribe(async result => {
-          this.isCheckingBillNumber = false;
-          this.isBillNumberTaken    = result.exists; 
-      
-          if (this.isBillNumberTaken ) {
-            if (result.data?.['customerId'] && (result.data?.['customerId'] !== vehicleCtrl?.value)) {  
-              if (!this.isNewDailyCustomer) {
-                const billNbr = this.billNbr.value?? 0;
-                const billingDetails = await this.newCustomerEntryService.getDetailsByBillNbr(billNbr, result.data)
-                this.getCustomerDetails(result.data['customerId'], billingDetails)
-              }    
-            }
+            this.isCheckingBillNumber = false;
           }
-        });
+        }),
+        filter(value => value !== this.currentCustomerBillNbr),
+        switchMap(value => {
+          this.isCheckingBillNumber = true;
+          this.isBillNumberTaken    = false;
+      
+          return from(this.newCustomerEntryService.isBillNumberTaken(value as number)).pipe(
+            catchError(() => {
+              this.isCheckingBillNumber = false;
+              return of({ exists: false, data: null });
+            })
+          );
+        }),
+        takeUntil(this.destroy$)
+      ).subscribe(async result => {
+            this.isCheckingBillNumber = false;
+            this.isBillNumberTaken    = result.exists; // ✅ always set, always shows error
+          
+            if (this.isBillNumberTaken && result.data?.['customerId'] && (result.data?.['customerId'] !== vehicleCtrl?.value)) {
+              if (!this.isNewDailyCustomer && !this.loadedByBillNbr) {
+                const billNbr        = this.billNbr.value ?? 0;
+                const billingDetails = await this.newCustomerEntryService.getDetailsByBillNbr(billNbr, result.data);
+                this.getCustomerDetails(result.data['customerId'], billingDetails);
+                this.loadedByBillNbr  = true;
+                this.isBillNumberTaken = false; // ✅ clear error after loading customer
+              }
+            }
+          });
       
 
     // this.isNewDailyCustomer = true;
@@ -227,12 +234,15 @@ export class DailyCustomerDetailsComponent implements OnInit, OnDestroy {
 
   onDailyStatusChange(status: string) {
     if (status === 'paid') {
+      console.log('to paid')
       this.alreadyPaid = true;
       this.disabled = false;
   
       this.actualCost.setValidators([Validators.required]);
       this.endDateDaily.setValidators([Validators.required]);
     } else {
+      console.log('to unpaid')
+      this.billNbr.reset();
       this.alreadyPaid = false;
       this.disabled = false;
   
@@ -596,13 +606,13 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
     this.vehicleDetailsForm.markAsUntouched();
   }
 
-  maxCostValidator() {
-    return (control: AbstractControl) => {
-      const settled = Number(control.value);
-      const actual = Number(this.actualCost.value ?? 0);
-      if (settled > actual) {
-        return { exceedsActual: true };
-      }
+  maxCostValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = Number(control.value);
+  
+      if (value < 1) return { minValue: true };
+      if (value > Number(this.actualCost?.value)) return { exceedsActual: true };
+  
       return null;
     };
   }
@@ -784,19 +794,20 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
       this.dailyStatus.valid &&
       this.fromDateDaily.valid &&
       this.entryTime.valid &&
-      !this.isBillNumberTaken; // ← add this
+      !this.isBillNumberTaken;
   
     let isConditionalValid = true;
   
     if (this.dailyStatus.value === 'paid') {
-      const hasExitData = !!this.endDateDaily.value && !!this.actualCost.value;
-      const isExitValid = this.endDateDaily.valid && this.actualCost.valid;
-  
+      const hasExitData = !!this.endDateDaily.value && !!this.actualCost.value && !!this.settledCost.value;
+      const isExitValid = this.endDateDaily.valid && this.actualCost.valid && this.settledCost.valid;
+    
       isConditionalValid = hasExitData && isExitValid;
-  
+    
       if (!isConditionalValid) {
         this.endDateDaily.markAsTouched();
         this.actualCost.markAsTouched();
+        this.settledCost.markAsTouched();
       }
     }
   
@@ -814,33 +825,15 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
   }
 
   submitForm = async () => {
-    const isFormGroupValid = this.vehicleDetailsForm.valid;
-    const areStandalonesValid =
-      this.dailyStatus.valid &&
-      this.fromDateDaily.valid &&
-      (this.dailyStatus.value === 'paid'
-        ? this.endDateDaily.valid && this.actualCost.valid
-        : true);
-  
-    if (!isFormGroupValid || !areStandalonesValid) {
-      this.vehicleDetailsForm.markAllAsTouched();
-      this.dailyStatus.markAsTouched();
-      this.actualCost.markAsTouched();
-      this.fromDateDaily.markAsTouched();
-      this.billNbr.markAsTouched();
-      this.entryHour.markAsTouched();
-      this.endDateDaily.markAsTouched();
-      this.exitHour.markAsTouched();
-      this.settledCost.markAsTouched();
-  
+    if (!this.isFormValid()) {
       this.showAlert = true;
-      this.type = 'error';
-      this.message = 'Please fill all required fields correctly.';
+      this.type      = 'error';
+      this.message   = 'Please fill all required fields correctly.';
       return;
     }
   
     try {
-      const formValue = this.vehicleDetailsForm.getRawValue();
+      const formValue      = this.vehicleDetailsForm.getRawValue();
       const normalizedData = this.normalizePayload({ ...formValue });
   
       const billingData = {
@@ -905,20 +898,30 @@ if (rawIndex >= 4 && rawIndex < 6 && !isLetter) {
         this.message = 'Customer converted to Daily status.';
   
       // ── Reactivate existing daily customer ───────────────
-      } else if (this.isReactivatingCustomer) {
+      }else if (this.isReactivatingCustomer) {
         const reactivatePayload = {
           ...normalizedData,
           ...billingData,
-          dailyStatus:  'Unpaid', 
+          dailyStatus:  'Unpaid',
           endDateDaily: null,
           exitTime:     null,
           settledCost:  null,
         };
-  
+      
         await this.newCustomerEntryService.updateCustomerByVehicleNumber(
           this.currentCustomer,
           reactivatePayload
         );
+
+        const dateParts = reactivatePayload.fromDateDaily.split('-');
+        const monthId   = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}`;
+      
+        await this.newCustomerEntryService.updateBillNumber(
+          this.currentCustomer,
+          reactivatePayload.billNumber,
+          monthId
+        );
+      
         this.message = 'Customer Reactivated Successfully!';
       }
   
