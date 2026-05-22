@@ -97,6 +97,25 @@ export class NewCustomerEntryService {
     }
   }
 
+  async updateBillNumber(
+    vehicleNumber: string,
+    newBillNumber: number,
+    monthId: string
+  ): Promise<void> {
+    const newBillRef = doc(this.firestore, 'BillNumbers', String(newBillNumber));
+  
+    await runTransaction(this.firestore, async (transaction) => {
+      const billSnap = await transaction.get(newBillRef);
+      if (billSnap.exists()) {
+        throw new Error(`Bill number ${newBillNumber} is already taken`);
+      }
+      transaction.set(newBillRef, {
+        customerId: vehicleNumber,
+        monthId
+      });
+    });
+  }
+
   private buildMonthlyTransactionData(amount: any) {
     const parsedAmount = Number(amount) || 0;
     return {
